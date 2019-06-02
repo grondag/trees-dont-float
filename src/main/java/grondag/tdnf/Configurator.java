@@ -29,6 +29,7 @@ import grondag.fermion.shadow.jankson.Jankson;
 import grondag.fermion.shadow.jankson.JsonObject;
 import me.shedaniel.cloth.api.ConfigScreenBuilder;
 import me.shedaniel.cloth.api.ConfigScreenBuilder.SavedConfig;
+import me.shedaniel.cloth.gui.entries.BooleanListEntry;
 import me.shedaniel.cloth.gui.entries.EnumListEntry;
 import me.shedaniel.cloth.gui.entries.IntegerSliderEntry;
 import net.fabricmc.api.EnvType;
@@ -48,6 +49,9 @@ public class Configurator {
     @SuppressWarnings("hiding")
     static class ConfigData {
         @Comment("TODO")
+        boolean stackDrops = true;
+        
+        @Comment("TODO")
         EffectLevel effectLevel = EffectLevel.SOME;
         
         @Comment("TODO")
@@ -64,6 +68,7 @@ public class Configurator {
     private static final Gson GSON = new GsonBuilder().create();
     private static final Jankson JANKSON = Jankson.builder().build();
     
+    public static boolean stackDrops = DEFAULTS.stackDrops;
     public static EffectLevel effectLevel = DEFAULTS.effectLevel;
     public static int maxBreaksPerTick = DEFAULTS.maxBreaksPerTick;
     public static int breakCooldownTicks = DEFAULTS.breakCooldownTicks;
@@ -93,14 +98,17 @@ public class Configurator {
             e.printStackTrace();
             TreesDoNotFloat.LOG.error("Unable to load config. Using default values.");
         }
+        stackDrops = config.stackDrops;
         effectLevel = config.effectLevel;
         maxBreaksPerTick = config.maxBreaksPerTick;
         breakCooldownTicks = config.breakCooldownTicks;
         maxSearchPosPerTick = config.maxSearchPosPerTick;
+        
     }
 
     private static void saveConfig() {
         ConfigData config = new ConfigData();
+        config.stackDrops = stackDrops;
         config.effectLevel = effectLevel;
         config.maxBreaksPerTick = maxBreaksPerTick;
         config.breakCooldownTicks = breakCooldownTicks;
@@ -133,6 +141,10 @@ public class Configurator {
         // FEATURES
         ConfigScreenBuilder.CategoryBuilder features = builder.addCategory("config.tdnf.category.features");
         
+        features.addOption(new BooleanListEntry("config.tdnf.value.stackDrops", stackDrops, "config.tdnf.reset", 
+                () -> DEFAULTS.stackDrops, b -> stackDrops = b, 
+                () -> Optional.of(I18n.translate("config.tdnf.help.stackDrops").split(";"))));
+        
         features.addOption(new EnumListEntry(
                 "config.tdnf.value.effectLevel", 
                 EffectLevel.class, 
@@ -154,11 +166,6 @@ public class Configurator {
         features.addOption(new IntegerSliderEntry("config.tdnf.value.maxSearchPosPerTick", 1, 256, maxSearchPosPerTick, "config.tdnf.reset", 
                 () -> DEFAULTS.maxSearchPosPerTick, b -> maxSearchPosPerTick = b, 
                 () -> Optional.of(I18n.translate("config.tdnf.help.maxSearchPosPerTick").split(";"))));
-        
-//        tweaks.addOption(new BooleanListEntry("config.canvas.value.single_pass_cutout", enableSinglePassCutout, "config.canvas.reset", 
-//                () -> DEFAULTS.enableSinglePassCutout, b -> {enableSinglePassCutout = b; reloadTerrain = true;}, 
-//                () -> Optional.of(I18n.translate("config.canvas.help.single_pass_cutout").split(";"))));
-        
         
         builder.setDoesConfirmSave(false);
         

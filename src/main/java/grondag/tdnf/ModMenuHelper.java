@@ -33,7 +33,7 @@ public class ModMenuHelper implements ModMenuApi {
     
     @Override
     public String getModId() {
-        return "canvas";
+        return TreesDoNotFloat.MODID;
     }
 
 }

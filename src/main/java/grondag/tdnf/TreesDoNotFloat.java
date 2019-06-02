@@ -9,6 +9,7 @@ public class TreesDoNotFloat implements ModInitializer {
     @Override
     public void onInitialize() {
         Dispatcher.init();
+        Configurator.init();
     }
     
     public static final String MODID = "trees-do-not-float";

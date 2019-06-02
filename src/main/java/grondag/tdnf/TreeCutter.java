@@ -10,6 +10,7 @@ import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -17,6 +18,8 @@ import net.minecraft.block.LeavesBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.EntityContext;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.item.ItemStack;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -61,6 +64,8 @@ public class TreeCutter
 
     private final BlockPos.Mutable searchPos = new BlockPos.Mutable();
 
+    private final ObjectArrayList<ItemStack> drops = new ObjectArrayList<>();
+    
     private long startPos;
 
     private boolean needsFirstEffect = true;
@@ -92,6 +97,7 @@ public class TreeCutter
                 visited.clear();
                 toVisit.clear();
                 toClear.clear();
+                drops.clear();
                 startState = Blocks.AIR.getDefaultState();
                 this.startPos = startPos;
                 operation = Operation.IDLE;
@@ -107,7 +113,7 @@ public class TreeCutter
                 switch(this.operation) {
                 case IDLE:
                     this.operation = startSearch(world);
-                    return this.operation == Operation.COMPLETE;
+                    break;
 
                 case SEARCHING: {
                     Operation op = Operation.SEARCHING;
@@ -116,7 +122,7 @@ public class TreeCutter
                         op = doSearch(world);
                     }
                     this.operation = op;
-                    return op == Operation.COMPLETE;
+                    break;
                 }
 
                 case CLEARING: {
@@ -127,7 +133,11 @@ public class TreeCutter
                     }
                     this.cooldownTicks = Configurator.breakCooldownTicks;
                     this.operation = op;
-                    return op == Operation.COMPLETE;
+                    // drop logs now in case player doesn't want to wait for rest
+                    if(op != Operation.CLEARING && Configurator.stackDrops) {
+                        spawnDrops(world);
+                    }
+                    break;
                 }
 
                 case TICKING: {
@@ -138,12 +148,22 @@ public class TreeCutter
                     }
                     this.cooldownTicks = Configurator.breakCooldownTicks;
                     this.operation = op;
-                    return op == Operation.COMPLETE;
+                    break;
                 }
 
-                case COMPLETE:
                 default:
+                    operation = Operation.COMPLETE; // handle WTF
+                case COMPLETE:
+                    break;
+                }
+                
+                if(operation == Operation.COMPLETE) {
+                    if(Configurator.stackDrops) {
+                        spawnDrops(world);
+                    }
                     return true;
+                } else {
+                    return false;
                 }
             }
 
@@ -345,8 +365,8 @@ public class TreeCutter
                 }
                 final FluidState fluidState = world.getFluidState(pos);
                 final BlockEntity blockEntity = blockState.getBlock().hasBlockEntity() ? world.getBlockEntity(pos) : null;
-                Block.dropStacks(blockState, world, pos, blockEntity);
-
+                doDrops(blockState, world, pos, blockEntity);
+                
                 world.setBlockState(pos, fluidState.getBlockState(), 3);
 
                 final EffectLevel fxLevel = Configurator.effectLevel;
@@ -354,6 +374,73 @@ public class TreeCutter
                     world.playLevelEvent(2001, pos, Block.getRawIdFromState(blockState));
                     needsFirstEffect = false;
                 }
+            }
+            
+            private void doDrops(BlockState blockState, World world, BlockPos pos, BlockEntity blockEntity) {
+                if(Configurator.stackDrops) {
+                    Block.getDroppedStacks(blockState, (ServerWorld)world, pos, blockEntity).forEach(s -> consolidateDrops(world, s));
+                     //XP, etc. - probably not needed for logs but just in case
+                     blockState.onStacksDropped(world, pos, ItemStack.EMPTY);
+                } else {
+                    Block.dropStacks(blockState, world, pos, blockEntity);
+                }
+            }
+            
+            private void consolidateDrops(World world, ItemStack stack) {
+                if(stack == null || stack.isEmpty()) {
+                    return;
+                }
+                stack = stack.copy();
+                
+                if(!stack.canStack()) {
+                    Block.dropStack(world, PackedBlockPos.unpackTo(startPos, searchPos), stack);
+                    return;
+                }
+                
+                final ObjectArrayList<ItemStack> drops = this.drops;
+                
+                if(drops.isEmpty() || !stack.canStack()) {
+                    drops.add(stack);
+                } else {
+                    final int limit = drops.size();
+                    for(int i = 0; i < limit; i++) {
+                        ItemStack existing = drops.get(i);
+                        final int capacity = existing.getMaxAmount() - existing.getAmount();
+                        if(capacity > 0 && stack.getItem() == existing.getItem() 
+                                && ItemStack.areTagsEqual(stack, existing)) {
+                            int amt = Math.min(stack.getAmount(), capacity);
+                            if(amt > 0) {
+                                stack.subtractAmount(amt);
+                                existing.addAmount(amt);
+                            }
+                            
+                            if(existing.getAmount() == existing.getMaxAmount()) {
+                                Block.dropStack(world, PackedBlockPos.unpackTo(startPos, searchPos), existing);
+                                drops.remove(i);
+                                break;
+                            }
+                            
+                            if(stack.isEmpty()) {
+                                return;
+                            }
+                        }
+                    }
+                    if(!stack.isEmpty()) {
+                        drops.add(stack);
+                    }
+                }
+            }
+            
+            private void spawnDrops(World world) {
+                if(!drops.isEmpty()) {
+                    BlockPos pos = PackedBlockPos.unpackTo(startPos, searchPos);
+                    final int limit = drops.size();
+                    for(int i = 0; i < limit; i++) {
+                        Block.dropStack(world, pos, drops.get(i));
+                    }
+                    drops.clear();
+                }
+                
             }
             
             private Operation doTicking(World world) {
