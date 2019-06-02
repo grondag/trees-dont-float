@@ -10,6 +10,7 @@ import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -43,9 +44,6 @@ public class TreeCutter
     /** if search in progress, starting state of search */
     private BlockState startState = Blocks.AIR.getDefaultState(); 
 
-    /** If search in progress, starting point of search 
-     *  Not used during search, but is serialized if saved while search in progress. */
-
     private final PriorityQueue<Visit> toVisit = new PriorityQueue<>(
             new Comparator<Visit>() 
             {
@@ -62,6 +60,8 @@ public class TreeCutter
 
     private final LongArrayFIFOQueue toTick = new LongArrayFIFOQueue();
 
+    private final Object2IntOpenHashMap<Block> leafCounts = new Object2IntOpenHashMap<>();
+    
     private final BlockPos.Mutable searchPos = new BlockPos.Mutable();
 
     private final ObjectArrayList<ItemStack> drops = new ObjectArrayList<>();
@@ -98,6 +98,7 @@ public class TreeCutter
         toVisit.clear();
         toClear.clear();
         drops.clear();
+        leafCounts.clear();
         startState = Blocks.AIR.getDefaultState();
         this.startPos = startPos;
         operation = Operation.IDLE;
@@ -202,7 +203,6 @@ public class TreeCutter
             enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
             enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
             return Operation.SEARCHING;
-
         }
         else return Operation.COMPLETE;
 
@@ -219,48 +219,69 @@ public class TreeCutter
 
         byte newDepth = (byte) (toVisit.depth + 1);
 
-
         if(!this.visited.containsKey(packedPos)) {
             BlockState state = world.getBlockState(searchPos);
 
             Block block = state.getBlock();
 
             if(block.matches(BlockTags.LEAVES)) {
-                // leaves are always valid to visit, even from other leaves
-                this.visited.put(packedPos, POS_TYPE_LEAF);
+                boolean validVisit = false;
+                        
+                if(fromType == POS_TYPE_LEAF) {
+                    // leaf visit only valid from leaves that were one less away than this one
+                    if(state.get(LeavesBlock.DISTANCE) == newDepth + 1) {
+                        validVisit = true;
+                        this.visited.put(packedPos, POS_TYPE_LEAF);
+                    }
+                } else { // assume coming from log
+                    
+                    // leaf visits from logs always count as visited, even if will not be followed
+                    this.visited.put(packedPos, POS_TYPE_LEAF);
+                    
+                    // leaf visits coming from logs are expected to have distance = 1,
+                    // otherwise they must belong to a different tree.
+                    if(state.get(LeavesBlock.DISTANCE) == 1) {
+                        validVisit = true;
+                        
+                        // restart depth of search when transitioning from log to leaf
+                        newDepth = 0;
+                        
+                        // leaves that are most common next to trunk are the ones we will break
+                        leafCounts.addTo(block, 1);
+                    }
+                }
 
-                // restart depth of search when transition from log to leaf
-                if(fromType != POS_TYPE_LEAF) newDepth = 0;
-
-                enqueIfViable(PackedBlockPos.up(packedPos), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.east(packedPos), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.west(packedPos), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.north(packedPos), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.south(packedPos), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.down(packedPos), POS_TYPE_LEAF, newDepth);
-
-                enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LEAF, newDepth);
-
-                enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LEAF, newDepth);
-
-                enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, 0), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, 1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, 0, -1, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, 0, -1, 1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, 1, -1, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, 1, -1, 0), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(PackedBlockPos.add(packedPos, 1, -1, 1), POS_TYPE_LEAF, newDepth);
+                if(validVisit) {
+                    enqueIfViable(PackedBlockPos.up(packedPos), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.east(packedPos), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.west(packedPos), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.north(packedPos), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.south(packedPos), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.down(packedPos), POS_TYPE_LEAF, newDepth);
+    
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LEAF, newDepth);
+    
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LEAF, newDepth);
+    
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, 0), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, 1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 0, -1, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 0, -1, 1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 1, -1, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 1, -1, 0), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 1, -1, 1), POS_TYPE_LEAF, newDepth);
+                }
             }
             else if(fromType != POS_TYPE_LEAF) {
                 // visiting from wood (ignore type never added to queue)
