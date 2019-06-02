@@ -1,0 +1,15 @@
+{
+	"config.tdnf.title" : "Trees Do Not Float",
+	"config.tdnf.reset" : "Reset",
+	
+	"config.tdnf.value.consolidate_drops" : "Combine Stacks",
+	"config.tdnf.help.consolidate_drops" : "Consolidate item drops;into stacks to prevent lag",
+	"config.tdnf.value.effect_level" : "Effect Level",
+	"config.tdnf.help.effect_level" : "Spawn breaking particles and play sounds?",
+	"config.tdnf.value.max_breaks_per_tick" : "Max Breaks per Tick",
+	"config.tdnf.help.max_breaks_per_tick" : "Max log & leaf blocks;to break per tick",
+	"config.tdnf.value.break_cooldown_ticks" : "Cooldown Ticks",
+	"config.tdnf.help.break_cooldown_ticks" : "Ticks to wait between;breaking blocks",
+	"config.tdnf.value.max_search_pos_per_tick" : "Max Searches Per Tick",
+	"config.tdnf.help.max_search_pos_per_tick" : "Max blocks checked per tick;when searching for logs & leaves"
+}

@@ -8,8 +8,8 @@
     "Grondag"
   ],
   "contact": {
-    "homepage": "https://minecraft.curseforge.com/projects/tdnf",
-    "sources": "https://github.com/grondag/tdnf"
+    "homepage": "https://minecraft.curseforge.com/projects/trees-do-not-float",
+    "issues": "https://github.com/grondag/trees-dont-float/issues"
   },
   "license": "Apache-2.0",
   "icon": "assets/tdnf/tdnf_icon.png",

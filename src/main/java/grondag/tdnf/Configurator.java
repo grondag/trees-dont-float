@@ -48,20 +48,20 @@ public class Configurator {
     
     @SuppressWarnings("hiding")
     static class ConfigData {
-        @Comment("TODO")
+        @Comment("Consolidate item drops into stacks to prevent lag.")
         boolean stackDrops = true;
         
-        @Comment("TODO")
+        @Comment("Play particles and sounds? Choises are some, none, and all.")
         EffectLevel effectLevel = EffectLevel.SOME;
         
-        @Comment("TODO")
-        int maxBreaksPerTick = 16;
+        @Comment("Max log/leaf blocks to break per tick. 1 - 128")
+        int maxBreaksPerTick = 32;
         
-        @Comment("TODO")
-        int breakCooldownTicks = 4;
+        @Comment("Ticks to wait between breaking blocks. 0 - 40")
+        int breakCooldownTicks = 0;
         
-        @Comment("TODO")
-        int maxSearchPosPerTick = 64;
+        @Comment("Max blocks checked per tick when searching for logs/leaves. 1 - 512")
+        int maxSearchPosPerTick = 128;
     }
     
     static final ConfigData DEFAULTS = new ConfigData();
@@ -136,40 +136,38 @@ public class Configurator {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private static Screen display() {
         
-        ConfigScreenBuilder builder = ConfigScreenBuilder.create(screenIn, "config.tdnf.title", null);
+        ConfigScreenBuilder builder = ConfigScreenBuilder.create(screenIn, "config.tdnf.title", Configurator::saveUserInput);
         
         // FEATURES
         ConfigScreenBuilder.CategoryBuilder features = builder.addCategory("config.tdnf.category.features");
         
-        features.addOption(new BooleanListEntry("config.tdnf.value.stackDrops", stackDrops, "config.tdnf.reset", 
+        features.addOption(new BooleanListEntry("config.tdnf.value.consolidate_drops", stackDrops, "config.tdnf.reset", 
                 () -> DEFAULTS.stackDrops, b -> stackDrops = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.stackDrops").split(";"))));
+                () -> Optional.of(I18n.translate("config.tdnf.help.consolidate_drops").split(";"))));
         
         features.addOption(new EnumListEntry(
-                "config.tdnf.value.effectLevel", 
+                "config.tdnf.value.effect_level", 
                 EffectLevel.class, 
                 effectLevel, 
                 "config.tdnf.reset", 
                 () -> DEFAULTS.effectLevel, 
                 (b) -> effectLevel = (EffectLevel) b,
                 a -> a.toString(),
-                () -> Optional.of(I18n.translate("config.tdnf.help.effectLevel").split(";"))));
+                () -> Optional.of(I18n.translate("config.tdnf.help.effect_level").split(";"))));
         
-        features.addOption(new IntegerSliderEntry("config.tdnf.value.maxBreaksPerTick", 1, 64, maxBreaksPerTick, "config.tdnf.reset", 
+        features.addOption(new IntegerSliderEntry("config.tdnf.value.max_breaks_per_tick", 1, 128, maxBreaksPerTick, "config.tdnf.reset", 
                 () -> DEFAULTS.maxBreaksPerTick, b -> maxBreaksPerTick = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.maxBreaksPerTick").split(";"))));
+                () -> Optional.of(I18n.translate("config.tdnf.help.max_breaks_per_tick").split(";"))));
         
-        features.addOption(new IntegerSliderEntry("config.tdnf.value.breakCooldownTicks", 0, 40, breakCooldownTicks, "config.tdnf.reset", 
+        features.addOption(new IntegerSliderEntry("config.tdnf.value.break_cooldown_ticks", 0, 40, breakCooldownTicks, "config.tdnf.reset", 
                 () -> DEFAULTS.breakCooldownTicks, b -> breakCooldownTicks = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.breakCooldownTicks").split(";"))));
+                () -> Optional.of(I18n.translate("config.tdnf.help.break_cooldown_ticks").split(";"))));
         
-        features.addOption(new IntegerSliderEntry("config.tdnf.value.maxSearchPosPerTick", 1, 256, maxSearchPosPerTick, "config.tdnf.reset", 
+        features.addOption(new IntegerSliderEntry("config.tdnf.value.max_search_pos_per_tick", 1, 512, maxSearchPosPerTick, "config.tdnf.reset", 
                 () -> DEFAULTS.maxSearchPosPerTick, b -> maxSearchPosPerTick = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.maxSearchPosPerTick").split(";"))));
+                () -> Optional.of(I18n.translate("config.tdnf.help.max_search_pos_per_tick").split(";"))));
         
         builder.setDoesConfirmSave(false);
-        
-        builder.setOnSave(Configurator::saveUserInput);
         
         return builder.build();
     }
