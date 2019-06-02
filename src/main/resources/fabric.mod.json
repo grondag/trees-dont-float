@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "tdnf",
   "version": "${version}",
-  "name": "Trees Don't Float",
+  "name": "Trees Do Not Float",
   "description": "Trees - or anything made of logs - plus adjacent leaves fall down when no longer supported by a solid surface.",
   "authors": [
     "Grondag"
@@ -17,19 +17,20 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "grondag.tdnd.TreesDontFloat"
+      "grondag.tdnf.TreesDoNotFloat"
     ]
   },
   
   "mixins": [
+    "tdnf.server.json"
   ],
   
   "requires": {
-    "fabricloader": ">=0.4.0",
-    "fabric": "*"
+    "fabricloader": ">=0.4.8",
+    "fabric": ">=0.3.0"
   },
   "custom": {
-    "modmenu:api": false,
+    "modmenu:api": true,
     "modmenu:clientsideOnly": false
   }
 }
