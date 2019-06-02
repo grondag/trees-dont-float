@@ -1,3 +1,19 @@
+/*******************************************************************************
+ * Copyright 2019 grondag
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License.  You may obtain a copy
+ * of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ ******************************************************************************/
+
 package grondag.tdnf;
 
 import java.util.Comparator;
@@ -6,12 +22,12 @@ import java.util.PriorityQueue;
 import grondag.fermion.world.PackedBlockPos;
 import grondag.tdnf.Configurator.EffectLevel;
 import io.netty.util.internal.ThreadLocalRandom;
-import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -39,7 +55,7 @@ import net.minecraft.world.World;
  */
 public class TreeCutter
 {
-    private Operation operation = Operation.IDLE;
+    private Operation operation = Operation.STARTING;
 
     /** if search in progress, starting state of search */
     private BlockState startState = Blocks.AIR.getDefaultState(); 
@@ -54,22 +70,37 @@ public class TreeCutter
                 }
             });
 
+    /** packed positions that have received a valid visit */
     private final Long2ByteOpenHashMap visited = new Long2ByteOpenHashMap();
 
-    private final LongArrayFIFOQueue toClear = new LongArrayFIFOQueue();
+    /** logs to be cleared - populated during pre-clearing */
+    private final LongArrayFIFOQueue logs = new LongArrayFIFOQueue();
 
-    private final LongArrayFIFOQueue toTick = new LongArrayFIFOQueue();
+    /** leaves to be cleared - populated during pre-clearing */
+    private final LongArrayFIFOQueue leaves = new LongArrayFIFOQueue();
 
+    /** Used to determine which leaf block should be {@link #leafBlock} */
     private final Object2IntOpenHashMap<Block> leafCounts = new Object2IntOpenHashMap<>();
     
+    /** general purpose mutable pos */
     private final BlockPos.Mutable searchPos = new BlockPos.Mutable();
 
+    /** holds consolidated drops */
     private final ObjectArrayList<ItemStack> drops = new ObjectArrayList<>();
 
+    /** iterator traversed durnig pre-clearing */
+    private ObjectIterator<Entry> prepIt = null;
+    
+    /** most common leaf block next to trunk */
+    private Block leafBlock = null;
+    
+    /** packed staring pos */
     private long startPos;
 
+    /** true when limiting particles, etc. - ensures we do at least one */
     private boolean needsFirstEffect = true;
 
+    /** cooldown timer if configured */
     private int cooldownTicks = 0;
 
     private static final byte POS_TYPE_LOG_FROM_ABOVE = 0;
@@ -96,12 +127,15 @@ public class TreeCutter
     public void reset(long startPos) {
         visited.clear();
         toVisit.clear();
-        toClear.clear();
+        logs.clear();
+        leaves.clear();
         drops.clear();
         leafCounts.clear();
+        prepIt = null;
+        leafBlock = null;
         startState = Blocks.AIR.getDefaultState();
         this.startPos = startPos;
-        operation = Operation.IDLE;
+        operation = Operation.STARTING;
         needsFirstEffect = true;
     }
 
@@ -112,7 +146,7 @@ public class TreeCutter
         }
 
         switch(this.operation) {
-        case IDLE:
+        case STARTING:
             this.operation = startSearch(world);
             break;
 
@@ -125,27 +159,37 @@ public class TreeCutter
             this.operation = op;
             break;
         }
+        
+        case PRECLEARING: {
+            Operation op = Operation.PRECLEARING;
+            int budget = Configurator.maxSearchPosPerTick;
+            while(budget-- > 0 && op == Operation.PRECLEARING) {
+                op = doPreClearing(world);
+            }
+            this.operation = op;
+            break;
+        }
 
-        case CLEARING: {
-            Operation op = Operation.CLEARING;
+        case CLEARING_LEAVES: {
+            Operation op = Operation.CLEARING_LEAVES;
             int budget = Configurator.maxBreaksPerTick;
-            while(budget-- > 0 && op == Operation.CLEARING) {
-                op = doClearing(world);
+            while(budget-- > 0 && op == Operation.CLEARING_LEAVES) {
+                op = doLeafClearing(world);
             }
             this.cooldownTicks = Configurator.breakCooldownTicks;
             this.operation = op;
-            // drop logs now in case player doesn't want to wait for rest
-            if(op != Operation.CLEARING && Configurator.stackDrops) {
+            // drop logs now in case player doesn't want to wait for logs
+            if(op != Operation.CLEARING_LEAVES && Configurator.stackDrops) {
                 spawnDrops(world);
             }
             break;
         }
-
-        case TICKING: {
-            Operation op = Operation.TICKING;
+        
+        case CLEARING_LOGS: {
+            Operation op = Operation.CLEARING_LOGS;
             int budget = Configurator.maxBreaksPerTick;
-            while(budget-- > 0 && op == Operation.TICKING) {
-                op = doTicking(world);
+            while(budget-- > 0 && op == Operation.CLEARING_LOGS) {
+                op = doLogClearing(world);
             }
             this.cooldownTicks = Configurator.breakCooldownTicks;
             this.operation = op;
@@ -229,7 +273,7 @@ public class TreeCutter
                         
                 if(fromType == POS_TYPE_LEAF) {
                     // leaf visit only valid from leaves that were one less away than this one
-                    if(state.get(LeavesBlock.DISTANCE) == newDepth + 1) {
+                    if(state.get(LeavesBlock.DISTANCE) == Math.min(7, newDepth + 1)) {
                         validVisit = true;
                         this.visited.put(packedPos, POS_TYPE_LEAF);
                     }
@@ -322,32 +366,27 @@ public class TreeCutter
 
             }
         }
-
+        
         if(this.toVisit.isEmpty()) {
-            this.visited.long2ByteEntrySet()
-            .stream()
-            .filter(e -> e.getByteValue() != POS_TYPE_IGNORE)
-            .sorted(new  Comparator<Long2ByteMap.Entry>() {
-
-                @Override
-                public int compare(Entry o1, Entry o2) {
-                    // logs before leaves
-                    return Byte.compare(o1.getByteValue(), o2.getByteValue());
+            prepIt = this.visited.long2ByteEntrySet().iterator();
+            
+            // id most common leaf type next to trunk - will use it for breaking
+            if(!leafCounts.isEmpty()) {
+                int max = 0;
+                ObjectIterator<it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<Block>> it = leafCounts.object2IntEntrySet().iterator();
+                while(it.hasNext()) {
+                    it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<Block> e = it.next();
+                    if(e.getIntValue() > max) {
+                        max = e.getIntValue();
+                        leafBlock = e.getKey();
+                    }
                 }
-
-            })
-            .forEach(e -> this.toClear.enqueue(e.getLongKey()));
-
-            if(this.toClear.isEmpty()) {
-                return Operation.COMPLETE;
-            } else {
-                // prep for leaves
-                toTick.clear();
-                return Operation.CLEARING;
             }
-        } 
-        else return Operation.SEARCHING;
-
+            
+            return Operation.PRECLEARING;
+        } else {
+            return Operation.SEARCHING;
+        }
     }
 
     private void enqueIfViable(long packedPos, byte type, byte depth) {
@@ -355,31 +394,61 @@ public class TreeCutter
 
         if(depth == Byte.MAX_VALUE || depth < 0) return;
 
-        if(type == POS_TYPE_LEAF && depth > 7) return;
-
         this.toVisit.offer(new Visit(packedPos, type, depth));
     }
 
-    private Operation doClearing(World world) {
-        long packedPos = this.toClear.dequeueLong();
-        BlockPos pos = PackedBlockPos.unpack(packedPos);
+    private Operation doPreClearing(World world) {
+        final ObjectIterator<Entry> prepIt = this.prepIt;
+        
+        if(prepIt.hasNext()) {
+            Entry e = prepIt.next();
+            final byte type = e.getByteValue();
+            if(type != POS_TYPE_IGNORE) {
+                if(type == POS_TYPE_LEAF) {
+                    leaves.enqueue(e.getLongKey());
+                } else {
+                    logs.enqueue(e.getLongKey());
+                }
+            }
+            return Operation.PRECLEARING;
+        } else {
+            if(!leaves.isEmpty() && leafBlock != null) {
+                return Operation.CLEARING_LEAVES;
+            } else if(!logs.isEmpty()) {
+                return Operation.CLEARING_LOGS;
+            } else {
+                return Operation.COMPLETE;
+            }
+        }
+    }
+    
+    private Operation doLeafClearing(World world) {
+        long packedPos = leaves.dequeueLong();
+        BlockPos pos = PackedBlockPos.unpackTo(packedPos, searchPos);
         BlockState state = world.getBlockState(pos);
         Block block = state.getBlock();
 
-        if(block.matches(BlockTags.LOGS)) {
-            breakLog(pos, world);
-        } else if(block.matches(BlockTags.LEAVES)) {
-            if(state.get(LeavesBlock.DISTANCE) != 7) {
-                block.onScheduledTick(state, world, pos, null);
-            }
-            // do block ticks in reverse order
-            toTick.enqueueFirst(packedPos);
+        if(block == leafBlock) {
+            breakBlock(pos, world);
         }
 
-        return this.toClear.isEmpty() ? Operation.TICKING:  Operation.CLEARING;
+        return leaves.isEmpty() ? Operation.CLEARING_LOGS:  Operation.CLEARING_LEAVES;
     }
 
-    private void breakLog(BlockPos pos, World world) {
+    private Operation doLogClearing(World world) {
+        final long packedPos = logs.dequeueLong();
+        final BlockPos pos = PackedBlockPos.unpackTo(packedPos, searchPos);
+        final BlockState state = world.getBlockState(pos);
+        final Block block = state.getBlock();
+
+        if(block.matches(BlockTags.LOGS)) {
+            breakBlock(pos, world);
+        }
+
+        return this.logs.isEmpty() ? Operation.COMPLETE:  Operation.CLEARING_LOGS;
+    }
+    
+    private void breakBlock(BlockPos pos, World world) {
         BlockState blockState = world.getBlockState(pos);
         if (blockState.isAir()) {
             return;
@@ -396,7 +465,7 @@ public class TreeCutter
             needsFirstEffect = false;
         }
     }
-
+    
     private void doDrops(BlockState blockState, World world, BlockPos pos, BlockEntity blockEntity) {
         if(Configurator.stackDrops) {
             Block.getDroppedStacks(blockState, (ServerWorld)world, pos, blockEntity).forEach(s -> consolidateDrops(world, s));
@@ -462,20 +531,5 @@ public class TreeCutter
             drops.clear();
         }
 
-    }
-
-    private Operation doTicking(World world) {
-        if(toTick.isEmpty()) {
-            return Operation.IDLE;
-        }
-
-        BlockPos pos = PackedBlockPos.unpack(toTick.dequeueLong());
-        BlockState state = world.getBlockState(pos);
-        Block block = state.getBlock();
-
-        if(block.matches(BlockTags.LEAVES))
-            block.onRandomTick(state, world, pos, null);
-
-        return Operation.TICKING;
     }
 }
