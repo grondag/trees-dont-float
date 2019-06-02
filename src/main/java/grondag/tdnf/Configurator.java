@@ -51,7 +51,7 @@ public class Configurator {
         @Comment("Consolidate item drops into stacks to prevent lag.")
         boolean stackDrops = true;
         
-        @Comment("Play particles and sounds? Choises are some, none, and all.")
+        @Comment("Play particles and sounds? Choises are SOME, NONE, and ALL.")
         EffectLevel effectLevel = EffectLevel.SOME;
         
         @Comment("Max log/leaf blocks to break per tick. 1 - 128")
