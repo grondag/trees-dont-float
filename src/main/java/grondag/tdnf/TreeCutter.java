@@ -18,6 +18,7 @@ package grondag.tdnf;
 
 import java.util.Comparator;
 import java.util.PriorityQueue;
+import java.util.Random;
 
 import grondag.fermion.world.PackedBlockPos;
 import grondag.tdnf.Configurator.EffectLevel;
@@ -25,6 +26,7 @@ import io.netty.util.internal.ThreadLocalRandom;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -32,6 +34,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.LeavesBlock;
+import net.minecraft.block.LogBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.EntityContext;
 import net.minecraft.fluid.FluidState;
@@ -60,6 +63,8 @@ public class TreeCutter
     /** if search in progress, starting state of search */
     private BlockState startState = Blocks.AIR.getDefaultState(); 
 
+    private Block startBlock;
+
     private final PriorityQueue<Visit> toVisit = new PriorityQueue<>(
             new Comparator<Visit>() 
             {
@@ -76,12 +81,14 @@ public class TreeCutter
     /** logs to be cleared - populated during pre-clearing */
     private final LongArrayFIFOQueue logs = new LongArrayFIFOQueue();
 
+    private final LongArrayList fallingLogs = new LongArrayList();
+
     /** leaves to be cleared - populated during pre-clearing */
     private final LongArrayFIFOQueue leaves = new LongArrayFIFOQueue();
 
     /** Used to determine which leaf block should be {@link #leafBlock} */
     private final Object2IntOpenHashMap<Block> leafCounts = new Object2IntOpenHashMap<>();
-    
+
     /** general purpose mutable pos */
     private final BlockPos.Mutable searchPos = new BlockPos.Mutable();
 
@@ -90,10 +97,10 @@ public class TreeCutter
 
     /** iterator traversed durnig pre-clearing */
     private ObjectIterator<Entry> prepIt = null;
-    
+
     /** most common leaf block next to trunk */
     private Block leafBlock = null;
-    
+
     /** packed staring pos */
     private long startPos;
 
@@ -102,6 +109,15 @@ public class TreeCutter
 
     /** cooldown timer if configured */
     private int cooldownTicks = 0;
+    
+    private int xStart = 0;
+    private int zStart = 0;
+    
+    private int xSum = 0;
+    private int zSum = 0;
+    
+    private double xVelocity = 0;
+    private double zVelocity = 0;
 
     private static final byte POS_TYPE_LOG_FROM_ABOVE = 0;
     private static final byte POS_TYPE_LOG = 1;
@@ -128,12 +144,18 @@ public class TreeCutter
         visited.clear();
         toVisit.clear();
         logs.clear();
+        fallingLogs.clear();
         leaves.clear();
         drops.clear();
         leafCounts.clear();
+        xSum = 0;
+        zSum = 0;
+        xStart = PackedBlockPos.getX(startPos);
+        zStart = PackedBlockPos.getZ(startPos);
         prepIt = null;
         leafBlock = null;
         startState = Blocks.AIR.getDefaultState();
+        startBlock = Blocks.AIR;
         this.startPos = startPos;
         operation = Operation.STARTING;
         needsFirstEffect = true;
@@ -159,7 +181,7 @@ public class TreeCutter
             this.operation = op;
             break;
         }
-        
+
         case PRECLEARING: {
             Operation op = Operation.PRECLEARING;
             int budget = Configurator.maxSearchPosPerTick;
@@ -184,7 +206,7 @@ public class TreeCutter
             }
             break;
         }
-        
+
         case CLEARING_LOGS: {
             Operation op = Operation.CLEARING_LOGS;
             int budget = Configurator.maxBreaksPerTick;
@@ -196,6 +218,17 @@ public class TreeCutter
             break;
         }
 
+        case DROPPING_LOGS: {
+            Operation op = Operation.DROPPING_LOGS;
+            int budget = Configurator.maxBreaksPerTick;
+            while(budget-- > 0 && op == Operation.DROPPING_LOGS) {
+                op = doLogDropping(world);
+            }
+            this.cooldownTicks = Configurator.breakCooldownTicks;
+            this.operation = op;
+            break;
+        }
+        
         default:
             operation = Operation.COMPLETE; // handle WTF
         case COMPLETE:
@@ -219,13 +252,16 @@ public class TreeCutter
         BlockState state = world.getBlockState(searchPos);
 
         if(state.getBlock().matches(BlockTags.LOGS)) {
+
+            this.startState = state;
+            this.startBlock = state.getBlock();
+
             this.visited.put(packedPos, POS_TYPE_LOG);
 
             // shoudln't really be necessary, but reflect the
             // reason we are doing this is the block below is (or was) hot lava
             this.visited.put(PackedBlockPos.down(packedPos), POS_TYPE_IGNORE);
 
-            this.startState = state;
 
             enqueIfViable(PackedBlockPos.east(packedPos), POS_TYPE_LOG, ZERO_BYTE);
             enqueIfViable(PackedBlockPos.west(packedPos), POS_TYPE_LOG, ZERO_BYTE);
@@ -270,7 +306,7 @@ public class TreeCutter
 
             if(block.matches(BlockTags.LEAVES)) {
                 boolean validVisit = false;
-                        
+
                 if(fromType == POS_TYPE_LEAF) {
                     // leaf visit only valid from leaves that were one less away than this one
                     if(state.get(LeavesBlock.DISTANCE) == Math.min(7, newDepth + 1)) {
@@ -278,18 +314,18 @@ public class TreeCutter
                         this.visited.put(packedPos, POS_TYPE_LEAF);
                     }
                 } else { // assume coming from log
-                    
+
                     // leaf visits from logs always count as visited, even if will not be followed
                     this.visited.put(packedPos, POS_TYPE_LEAF);
-                    
+
                     // leaf visits coming from logs are expected to have distance = 1,
                     // otherwise they must belong to a different tree.
                     if(state.get(LeavesBlock.DISTANCE) == 1) {
                         validVisit = true;
-                        
+
                         // restart depth of search when transitioning from log to leaf
                         newDepth = 0;
-                        
+
                         // leaves that are most common next to trunk are the ones we will break
                         leafCounts.addTo(block, 1);
                     }
@@ -302,12 +338,12 @@ public class TreeCutter
                     enqueIfViable(PackedBlockPos.north(packedPos), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(PackedBlockPos.south(packedPos), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(PackedBlockPos.down(packedPos), POS_TYPE_LEAF, newDepth);
-    
+
                     enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LEAF, newDepth);
-    
+
                     enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LEAF, newDepth);
@@ -316,7 +352,7 @@ public class TreeCutter
                     enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LEAF, newDepth);
-    
+
                     enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, -1), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, 0), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, 1), POS_TYPE_LEAF, newDepth);
@@ -366,10 +402,10 @@ public class TreeCutter
 
             }
         }
-        
+
         if(this.toVisit.isEmpty()) {
             prepIt = this.visited.long2ByteEntrySet().iterator();
-            
+
             // id most common leaf type next to trunk - will use it for breaking
             if(!leafCounts.isEmpty()) {
                 int max = 0;
@@ -382,7 +418,7 @@ public class TreeCutter
                     }
                 }
             }
-            
+
             return Operation.PRECLEARING;
         } else {
             return Operation.SEARCHING;
@@ -399,7 +435,7 @@ public class TreeCutter
 
     private Operation doPreClearing(World world) {
         final ObjectIterator<Entry> prepIt = this.prepIt;
-        
+
         if(prepIt.hasNext()) {
             Entry e = prepIt.next();
             final byte type = e.getByteValue();
@@ -407,7 +443,12 @@ public class TreeCutter
                 if(type == POS_TYPE_LEAF) {
                     leaves.enqueue(e.getLongKey());
                 } else {
-                    logs.enqueue(e.getLongKey());
+                    long pos = e.getLongKey();
+                    if(Configurator.fallingBlocks) {
+                        xSum += PackedBlockPos.getX(pos) - xStart;
+                        zSum += PackedBlockPos.getZ(pos) - zStart;
+                    }
+                    logs.enqueue(pos);
                 }
             }
             return Operation.PRECLEARING;
@@ -421,7 +462,7 @@ public class TreeCutter
             }
         }
     }
-    
+
     private Operation doLeafClearing(World world) {
         long packedPos = leaves.dequeueLong();
         BlockPos pos = PackedBlockPos.unpackTo(packedPos, searchPos);
@@ -432,7 +473,7 @@ public class TreeCutter
             breakBlock(pos, world);
         }
 
-        return leaves.isEmpty() ? Operation.CLEARING_LOGS:  Operation.CLEARING_LEAVES;
+        return leaves.isEmpty() ? prepareLogs():  Operation.CLEARING_LEAVES;
     }
 
     private Operation doLogClearing(World world) {
@@ -441,22 +482,23 @@ public class TreeCutter
         final BlockState state = world.getBlockState(pos);
         final Block block = state.getBlock();
 
-        if(block.matches(BlockTags.LOGS)) {
+        if(block == startBlock) {
             breakBlock(pos, world);
         }
 
-        return this.logs.isEmpty() ? Operation.COMPLETE:  Operation.CLEARING_LOGS;
+        return this.logs.isEmpty() ? Operation.COMPLETE :  Operation.CLEARING_LOGS;
     }
-    
+
     private void breakBlock(BlockPos pos, World world) {
         BlockState blockState = world.getBlockState(pos);
-        if (blockState.isAir()) {
+        Block block = blockState.getBlock();
+        if (block != startBlock && block != leafBlock) {
             return;
         }
         final FluidState fluidState = world.getFluidState(pos);
-        final BlockEntity blockEntity = blockState.getBlock().hasBlockEntity() ? world.getBlockEntity(pos) : null;
+        final BlockEntity blockEntity = startBlock.hasBlockEntity() ? world.getBlockEntity(pos) : null;
+                
         doDrops(blockState, world, pos, blockEntity);
-
         world.setBlockState(pos, fluidState.getBlockState(), 3);
 
         final EffectLevel fxLevel = Configurator.effectLevel;
@@ -465,7 +507,58 @@ public class TreeCutter
             needsFirstEffect = false;
         }
     }
-    
+
+    private Operation prepareLogs() {
+        if(logs.isEmpty()) {
+            return Operation.COMPLETE;
+        }
+        if(Configurator.fallingBlocks) {
+            final double div = logs.size();
+            final double xCenterOfMass = xStart + xSum / div;
+            final double zCenterOfMass = zStart + zSum / div;
+            final Random r = ThreadLocalRandom.current();
+            
+            xVelocity = xCenterOfMass - xStart; 
+            if(xVelocity == 0) {
+                xVelocity = r.nextGaussian();
+            } else 
+            
+            zVelocity = zCenterOfMass - zStart; 
+            if(zVelocity == 0) {
+                zVelocity = r.nextGaussian();
+            }
+            
+            // normalize
+            double len = Math.sqrt(xVelocity * xVelocity + zVelocity * zVelocity);
+            xVelocity /= len;
+            zVelocity /= len;
+                    
+            while(!logs.isEmpty()) {
+                fallingLogs.add(logs.dequeueLastLong());
+            }
+            // note inverse order so we can peel off the tail of the list vs the head
+            fallingLogs.sort((l0, l1) -> Integer.compare(PackedBlockPos.getY(l1), PackedBlockPos.getY(l0)));
+            
+            return fallingLogs.isEmpty() ? Operation.COMPLETE : Operation.DROPPING_LOGS;
+        } else {
+            return Operation.CLEARING_LOGS;
+        }
+    }
+
+    private Operation doLogDropping(World world) {
+        if(fallingLogs.isEmpty()) {
+            return Operation.COMPLETE;
+        }
+        final long packedPos = fallingLogs.popLong();
+        final BlockPos pos = PackedBlockPos.unpackTo(packedPos, searchPos);
+        FallingLogEntity entity = new FallingLogEntity(world, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, startState.cycle(LogBlock.AXIS));
+        double height = Math.sqrt(Math.max(0, pos.getY() - PackedBlockPos.getY(startPos))) * 0.2;
+        entity.addVelocity(xVelocity * height, 0, zVelocity * height);
+        world.spawnEntity(entity);
+        
+        return fallingLogs.isEmpty() ? Operation.COMPLETE :  Operation.DROPPING_LOGS;
+    }
+
     private void doDrops(BlockState blockState, World world, BlockPos pos, BlockEntity blockEntity) {
         if(Configurator.stackDrops) {
             Block.getDroppedStacks(blockState, (ServerWorld)world, pos, blockEntity).forEach(s -> consolidateDrops(world, s));

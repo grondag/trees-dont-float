@@ -19,9 +19,11 @@ package grondag.tdnf;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.client.render.EntityRendererRegistry;
 
-public class TreesDoNotFloat implements ModInitializer {
+public class TreesDoNotFloat implements ModInitializer, ClientModInitializer {
     @Override
     public void onInitialize() {
         Dispatcher.init();
@@ -31,4 +33,9 @@ public class TreesDoNotFloat implements ModInitializer {
     public static final String MODID = "trees-do-not-float";
     
     public static final Logger LOG = LogManager.getLogger("trees-do-not-float");
+
+    @Override
+    public void onInitializeClient() {
+        EntityRendererRegistry.INSTANCE.register(FallingLogEntity.class, (entityRenderDispatcher, context) -> new FallingLogEntityRenderer(entityRenderDispatcher));        
+    }
 }

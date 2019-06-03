@@ -46,8 +46,18 @@ public class Configurator {
         ALL
     }
     
+    
     @SuppressWarnings("hiding")
     static class ConfigData {
+        @Comment("Log blocks move to the ground instead of dropping as items.")
+        boolean keepLogsIntact = true;
+        
+        @Comment("Log blocks that move are treat as falling block vs moving directly. Can be laggy.")
+        boolean fallingBlocks = false;
+        
+        @Comment("Log blocks that would suffocate an entity drop as items. (If logs stay intact.)")
+        boolean preventSuffocation = true;
+        
         @Comment("Consolidate item drops into stacks to prevent lag.")
         boolean stackDrops = true;
         
@@ -68,11 +78,15 @@ public class Configurator {
     private static final Gson GSON = new GsonBuilder().create();
     private static final Jankson JANKSON = Jankson.builder().build();
     
+    static boolean keepLogsIntact = DEFAULTS.keepLogsIntact;
+    static boolean fallingBlocks = DEFAULTS.fallingBlocks;
+    static boolean preventSuffocation = DEFAULTS.preventSuffocation;
     public static boolean stackDrops = DEFAULTS.stackDrops;
     public static EffectLevel effectLevel = DEFAULTS.effectLevel;
     public static int maxBreaksPerTick = DEFAULTS.maxBreaksPerTick;
     public static int breakCooldownTicks = DEFAULTS.breakCooldownTicks;
     public static int maxSearchPosPerTick = DEFAULTS.maxSearchPosPerTick;
+    
     
     /** use to stash parent screen during display */
     private static Screen screenIn;
@@ -98,6 +112,9 @@ public class Configurator {
             e.printStackTrace();
             TreesDoNotFloat.LOG.error("Unable to load config. Using default values.");
         }
+        keepLogsIntact = config.keepLogsIntact;
+        fallingBlocks = config.fallingBlocks;
+        preventSuffocation = config.preventSuffocation;
         stackDrops = config.stackDrops;
         effectLevel = config.effectLevel;
         maxBreaksPerTick = config.maxBreaksPerTick;
@@ -108,6 +125,9 @@ public class Configurator {
 
     private static void saveConfig() {
         ConfigData config = new ConfigData();
+        config.keepLogsIntact = keepLogsIntact;
+        config.fallingBlocks = fallingBlocks;
+        config.preventSuffocation = preventSuffocation;
         config.stackDrops = stackDrops;
         config.effectLevel = effectLevel;
         config.maxBreaksPerTick = maxBreaksPerTick;
@@ -140,6 +160,18 @@ public class Configurator {
         
         // FEATURES
         ConfigScreenBuilder.CategoryBuilder features = builder.addCategory("config.tdnf.category.features");
+        
+        features.addOption(new BooleanListEntry("config.tdnf.value.keep_logs_intact", keepLogsIntact, "config.tdnf.reset", 
+                () -> DEFAULTS.keepLogsIntact, b -> keepLogsIntact = b, 
+                () -> Optional.of(I18n.translate("config.tdnf.help.keep_logs_intact").split(";"))));
+        
+        features.addOption(new BooleanListEntry("config.tdnf.value.falling_blocks", fallingBlocks, "config.tdnf.reset", 
+                () -> DEFAULTS.fallingBlocks, b -> fallingBlocks = b, 
+                () -> Optional.of(I18n.translate("config.tdnf.help.falling_blocks").split(";"))));
+        
+        features.addOption(new BooleanListEntry("config.tdnf.value.prevent_suffocation", preventSuffocation, "config.tdnf.reset", 
+                () -> DEFAULTS.preventSuffocation, b -> preventSuffocation = b, 
+                () -> Optional.of(I18n.translate("config.tdnf.help.prevent_suffocation").split(";"))));
         
         features.addOption(new BooleanListEntry("config.tdnf.value.consolidate_drops", stackDrops, "config.tdnf.reset", 
                 () -> DEFAULTS.stackDrops, b -> stackDrops = b, 
