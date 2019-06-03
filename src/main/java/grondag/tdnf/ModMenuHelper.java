@@ -16,8 +16,7 @@
 
 package grondag.tdnf;
 
-import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import io.github.prospector.modmenu.api.ModMenuApi;
 import net.fabricmc.api.EnvType;
@@ -27,8 +26,8 @@ import net.minecraft.client.gui.screen.Screen;
 @Environment(EnvType.CLIENT)
 public class ModMenuHelper implements ModMenuApi {
     @Override
-    public Optional<Supplier<Screen>> getConfigScreen(Screen screen) {
-        return Configurator.getConfigScreen(screen);
+    public Function<Screen, ? extends Screen> getConfigScreenFactory() {
+        return Configurator::getScreen;
     }
     
     @Override
