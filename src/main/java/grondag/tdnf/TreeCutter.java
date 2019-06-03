@@ -78,9 +78,10 @@ public class TreeCutter
     /** packed positions that have received a valid visit */
     private final Long2ByteOpenHashMap visited = new Long2ByteOpenHashMap();
 
-    /** logs to be cleared - populated during pre-clearing */
+    /** packed positions of logs to be cleared - populated during pre-clearing */
     private final LongArrayFIFOQueue logs = new LongArrayFIFOQueue();
 
+    /** packed positions of logs to fall - sorted by Y - needed cuz can't sort FIFO Queue */
     private final LongArrayList fallingLogs = new LongArrayList();
 
     /** leaves to be cleared - populated during pre-clearing */
@@ -110,22 +111,22 @@ public class TreeCutter
     /** cooldown timer if configured */
     private int cooldownTicks = 0;
     
+    // all below are used for center-of-mass and fall velocity handling
     private int xStart = 0;
     private int zStart = 0;
-    
     private int xSum = 0;
     private int zSum = 0;
-    
     private double xVelocity = 0;
     private double zVelocity = 0;
 
+    // all below are for compact representation of search space
     private static final byte POS_TYPE_LOG_FROM_ABOVE = 0;
     private static final byte POS_TYPE_LOG = 1;
     private static final byte POS_TYPE_LOG_FROM_DIAGONAL = 2;
     private static final byte POS_TYPE_LEAF = 3;
     private static final byte POS_TYPE_IGNORE = 4;
 
-    //wtf java? why?
+    // avoids littering code with (byte)0
     private static final byte ZERO_BYTE = 0;
 
     private class Visit {

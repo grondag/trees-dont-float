@@ -60,13 +60,13 @@ import net.minecraft.world.World;
  * Hacked-up variant of FallingBlock
  */
 public class FallingLogEntity extends Entity {
-    
+
     public static final EntityType<? extends FallingLogEntity> FALLING_LOG =
             Registry.register(
-                Registry.ENTITY_TYPE,
-                new Identifier("trees-do-not-float", "falling-log"),
-                FabricEntityTypeBuilder.<FallingLogEntity>create(EntityCategory.MISC, FallingLogEntity::new).size(EntitySize.constant(1, 1)).build()
-            );
+                    Registry.ENTITY_TYPE,
+                    new Identifier("trees-do-not-float", "falling-log"),
+                    FabricEntityTypeBuilder.<FallingLogEntity>create(EntityCategory.MISC, FallingLogEntity::new).size(EntitySize.constant(1, 1)).build()
+                    );
 
     public FallingLogEntity(World world, double x, double y, double z, BlockState state) {
         this(FALLING_LOG, world);
@@ -79,14 +79,14 @@ public class FallingLogEntity extends Entity {
         this.prevZ = z;
         this.setFallingBlockPos(new BlockPos(this));
     }
-    
+
     public FallingLogEntity(EntityType<? extends FallingLogEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
         this.block = Blocks.OAK_LOG.getDefaultState();
         this.dropItem = true;
         this.fallHurtMax = 40;
         this.fallHurtAmount = 2.0F;
-     }
+    }
 
     private BlockState block;
     public int timeFalling;
@@ -99,205 +99,205 @@ public class FallingLogEntity extends Entity {
 
     @Override
     public boolean canPlayerAttack() {
-       return false;
+        return false;
     }
 
     public void setFallingBlockPos(BlockPos blockPos_1) {
-       this.dataTracker.set(BLOCK_POS, blockPos_1);
+        this.dataTracker.set(BLOCK_POS, blockPos_1);
     }
 
     @Environment(EnvType.CLIENT)
     public BlockPos getFallingBlockPos() {
-       return (BlockPos)this.dataTracker.get(BLOCK_POS);
+        return (BlockPos)this.dataTracker.get(BLOCK_POS);
     }
 
     @Override
     protected boolean canClimb() {
-       return false;
+        return false;
     }
 
     @Override
     protected void initDataTracker() {
-       this.dataTracker.startTracking(BLOCK_POS, BlockPos.ORIGIN);
+        this.dataTracker.startTracking(BLOCK_POS, BlockPos.ORIGIN);
     }
 
     @Override
     public boolean collides() {
-       return !this.removed;
+        return !this.removed;
     }
 
     @Override
     public void tick() {
-       if (this.block.isAir()) {
-          this.remove();
-       } else {
-          this.prevX = this.x;
-          this.prevY = this.y;
-          this.prevZ = this.z;
-          Block block_1 = this.block.getBlock();
-          BlockPos myPos;
-          if (this.timeFalling++ == 0) {
-             myPos = new BlockPos(this);
-             if (this.world.getBlockState(myPos).getBlock() == block_1) {
-                this.world.clearBlockState(myPos, false);
-             } else if (!this.world.isClient) {
-                this.remove();
-                return;
-             }
-          }
-
-          if (!this.hasNoGravity()) {
-             this.setVelocity(this.getVelocity().add(0.0D, -0.04D, 0.0D));
-          }
-
-          this.move(MovementType.SELF, this.getVelocity());
-              // PERF: mutable?
-             myPos = new BlockPos(this);
-
-         if (!this.onGround) {
-            if (!this.world.isClient && (this.timeFalling > 100 && (myPos.getY() < 1 || myPos.getY() > 256) || this.timeFalling > 600)) {
-               if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
-                  this.dropItem(block_1);
-               }
-
-               this.remove();
-            }
-         } else {
-            BlockState localBlockState = this.world.getBlockState(myPos);
-            this.setVelocity(this.getVelocity().multiply(0.7D, -0.5D, 0.7D));
-            if (localBlockState.getBlock() != Blocks.MOVING_PISTON) {
-                
-                // if block below can be replaced then keep falling
-                BlockPos downPos = myPos.down();
-                BlockState downBlockState = this.world.getBlockState(downPos);
-                if(downBlockState.canReplace(new AutomaticItemPlacementContext(this.world, downPos, Direction.DOWN, ItemStack.EMPTY, Direction.UP)) && this.block.canPlaceAt(this.world, downPos)) {
-                    this.setPosition(myPos.getX() + 0.5, this.y, myPos.getZ() + 0.5);
-                    this.setVelocity(0, this.getVelocity().y, 0);
-                    this.onGround = false;
-                    this.collided = false;
-                } else {
-                   this.remove();
-                   if(!this.world.isClient) {
-                       if (!this.destroyedOnLanding) {
-                          if (localBlockState.canReplace(new AutomaticItemPlacementContext(this.world, myPos, Direction.DOWN, ItemStack.EMPTY, Direction.UP)) && this.block.canPlaceAt(this.world, myPos)) {
-                             if (this.block.contains(Properties.WATERLOGGED) && this.world.getFluidState(myPos).getFluid() == Fluids.WATER) {
-                                this.block = (BlockState)this.block.with(Properties.WATERLOGGED, true);
-                             }
-        
-                             if (this.world.setBlockState(myPos, this.block, 3)) {
-                                 // noop
-                             } else if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
-                                this.dropItem(block_1);
-                             }
-                          } else if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
-                             this.dropItem(block_1);
-                          }
-                       }
-                   }
+        if (this.block.isAir()) {
+            this.remove();
+        } else {
+            this.prevX = this.x;
+            this.prevY = this.y;
+            this.prevZ = this.z;
+            Block block_1 = this.block.getBlock();
+            BlockPos myPos;
+            if (this.timeFalling++ == 0) {
+                myPos = new BlockPos(this);
+                if (this.world.getBlockState(myPos).getBlock() == block_1) {
+                    this.world.clearBlockState(myPos, false);
+                } else if (!this.world.isClient) {
+                    this.remove();
+                    return;
                 }
             }
-         }
 
-          this.setVelocity(this.getVelocity().multiply(0.98D));
-       }
+            if (!this.hasNoGravity()) {
+                this.setVelocity(this.getVelocity().add(0.0D, -0.04D, 0.0D));
+            }
+
+            this.move(MovementType.SELF, this.getVelocity());
+            // PERF: mutable?
+            myPos = new BlockPos(this);
+
+            if (!this.onGround) {
+                if (!this.world.isClient && (this.timeFalling > 100 && (myPos.getY() < 1 || myPos.getY() > 256) || this.timeFalling > 600)) {
+                    if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
+                        this.dropItem(block_1);
+                    }
+
+                    this.remove();
+                }
+            } else {
+                BlockState localBlockState = this.world.getBlockState(myPos);
+                this.setVelocity(this.getVelocity().multiply(0.7D, -0.5D, 0.7D));
+                if (localBlockState.getBlock() != Blocks.MOVING_PISTON) {
+
+                    // if block below can be replaced then keep falling
+                    BlockPos downPos = myPos.down();
+                    BlockState downBlockState = this.world.getBlockState(downPos);
+                    if(downBlockState.canReplace(new AutomaticItemPlacementContext(this.world, downPos, Direction.DOWN, ItemStack.EMPTY, Direction.UP)) && this.block.canPlaceAt(this.world, downPos)) {
+                        this.setPosition(myPos.getX() + 0.5, this.y, myPos.getZ() + 0.5);
+                        this.setVelocity(0, this.getVelocity().y, 0);
+                        this.onGround = false;
+                        this.collided = false;
+                    } else {
+                        this.remove();
+                        if(!this.world.isClient) {
+                            if (!this.destroyedOnLanding) {
+                                if (localBlockState.canReplace(new AutomaticItemPlacementContext(this.world, myPos, Direction.DOWN, ItemStack.EMPTY, Direction.UP)) && this.block.canPlaceAt(this.world, myPos)) {
+                                    if (this.block.contains(Properties.WATERLOGGED) && this.world.getFluidState(myPos).getFluid() == Fluids.WATER) {
+                                        this.block = (BlockState)this.block.with(Properties.WATERLOGGED, true);
+                                    }
+
+                                    if (this.world.setBlockState(myPos, this.block, 3)) {
+                                        // noop
+                                    } else if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
+                                        this.dropItem(block_1);
+                                    }
+                                } else if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
+                                    this.dropItem(block_1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            this.setVelocity(this.getVelocity().multiply(0.98D));
+        }
     }
 
     @Override
     public void handleFallDamage(float float_1, float float_2) {
-       if (this.hurtEntities) {
-          int int_1 = MathHelper.ceil(float_1 - 1.0F);
-          if (int_1 > 0) {
-             List<Entity> list_1 = Lists.newArrayList(this.world.getEntities(this, this.getBoundingBox()));
-             boolean boolean_1 = this.block.matches(BlockTags.ANVIL);
-             DamageSource damageSource_1 = boolean_1 ? DamageSource.ANVIL : DamageSource.FALLING_BLOCK;
-             Iterator<Entity> var7 = list_1.iterator();
+        if (this.hurtEntities) {
+            int int_1 = MathHelper.ceil(float_1 - 1.0F);
+            if (int_1 > 0) {
+                List<Entity> list_1 = Lists.newArrayList(this.world.getEntities(this, this.getBoundingBox()));
+                boolean boolean_1 = this.block.matches(BlockTags.ANVIL);
+                DamageSource damageSource_1 = boolean_1 ? DamageSource.ANVIL : DamageSource.FALLING_BLOCK;
+                Iterator<Entity> var7 = list_1.iterator();
 
-             while(var7.hasNext()) {
-                Entity entity_1 = (Entity)var7.next();
-                entity_1.damage(damageSource_1, (float)Math.min(MathHelper.floor((float)int_1 * this.fallHurtAmount), this.fallHurtMax));
-             }
-
-             if (boolean_1 && (double)this.random.nextFloat() < 0.05000000074505806D + (double)int_1 * 0.05D) {
-                BlockState blockState_1 = AnvilBlock.getLandingState(this.block);
-                if (blockState_1 == null) {
-                   this.destroyedOnLanding = true;
-                } else {
-                   this.block = blockState_1;
+                while(var7.hasNext()) {
+                    Entity entity_1 = (Entity)var7.next();
+                    entity_1.damage(damageSource_1, (float)Math.min(MathHelper.floor((float)int_1 * this.fallHurtAmount), this.fallHurtMax));
                 }
-             }
-          }
-       }
+
+                if (boolean_1 && (double)this.random.nextFloat() < 0.05000000074505806D + (double)int_1 * 0.05D) {
+                    BlockState blockState_1 = AnvilBlock.getLandingState(this.block);
+                    if (blockState_1 == null) {
+                        this.destroyedOnLanding = true;
+                    } else {
+                        this.block = blockState_1;
+                    }
+                }
+            }
+        }
 
     }
 
     @Override
     protected void writeCustomDataToTag(CompoundTag compoundTag_1) {
-       compoundTag_1.put("BlockState", TagHelper.serializeBlockState(this.block));
-       compoundTag_1.putInt("Time", this.timeFalling);
-       compoundTag_1.putBoolean("DropItem", this.dropItem);
-       compoundTag_1.putBoolean("HurtEntities", this.hurtEntities);
-       compoundTag_1.putFloat("FallHurtAmount", this.fallHurtAmount);
-       compoundTag_1.putInt("FallHurtMax", this.fallHurtMax);
+        compoundTag_1.put("BlockState", TagHelper.serializeBlockState(this.block));
+        compoundTag_1.putInt("Time", this.timeFalling);
+        compoundTag_1.putBoolean("DropItem", this.dropItem);
+        compoundTag_1.putBoolean("HurtEntities", this.hurtEntities);
+        compoundTag_1.putFloat("FallHurtAmount", this.fallHurtAmount);
+        compoundTag_1.putInt("FallHurtMax", this.fallHurtMax);
     }
 
     @Override
     protected void readCustomDataFromTag(CompoundTag compoundTag_1) {
-       this.block = TagHelper.deserializeBlockState(compoundTag_1.getCompound("BlockState"));
-       this.timeFalling = compoundTag_1.getInt("Time");
-       if (compoundTag_1.containsKey("HurtEntities", 99)) {
-          this.hurtEntities = compoundTag_1.getBoolean("HurtEntities");
-          this.fallHurtAmount = compoundTag_1.getFloat("FallHurtAmount");
-          this.fallHurtMax = compoundTag_1.getInt("FallHurtMax");
-       } else if (this.block.matches(BlockTags.ANVIL)) {
-          this.hurtEntities = true;
-       }
+        this.block = TagHelper.deserializeBlockState(compoundTag_1.getCompound("BlockState"));
+        this.timeFalling = compoundTag_1.getInt("Time");
+        if (compoundTag_1.containsKey("HurtEntities", 99)) {
+            this.hurtEntities = compoundTag_1.getBoolean("HurtEntities");
+            this.fallHurtAmount = compoundTag_1.getFloat("FallHurtAmount");
+            this.fallHurtMax = compoundTag_1.getInt("FallHurtMax");
+        } else if (this.block.matches(BlockTags.ANVIL)) {
+            this.hurtEntities = true;
+        }
 
-       if (compoundTag_1.containsKey("DropItem", 99)) {
-          this.dropItem = compoundTag_1.getBoolean("DropItem");
-       }
+        if (compoundTag_1.containsKey("DropItem", 99)) {
+            this.dropItem = compoundTag_1.getBoolean("DropItem");
+        }
 
-       if (this.block.isAir()) {
-          this.block = Blocks.OAK_LOG.getDefaultState();
-       }
+        if (this.block.isAir()) {
+            this.block = Blocks.OAK_LOG.getDefaultState();
+        }
 
     }
 
     @Environment(EnvType.CLIENT)
     public World getWorldClient() {
-       return this.world;
+        return this.world;
     }
 
     public void setHurtEntities(boolean boolean_1) {
-       this.hurtEntities = boolean_1;
+        this.hurtEntities = boolean_1;
     }
 
     @Override
     @Environment(EnvType.CLIENT)
     public boolean doesRenderOnFire() {
-       return false;
+        return false;
     }
 
     @Override
     public void populateCrashReport(CrashReportSection crashReportSection_1) {
-       super.populateCrashReport(crashReportSection_1);
-       crashReportSection_1.add("Immitating BlockState", (Object)this.block.toString());
+        super.populateCrashReport(crashReportSection_1);
+        crashReportSection_1.add("Immitating BlockState", (Object)this.block.toString());
     }
 
     public BlockState getBlockState() {
-       return this.block;
+        return this.block;
     }
 
     @Override
     public boolean entityDataRequiresOperator() {
-       return true;
+        return true;
     }
 
     @Override
     public Packet<?> createSpawnPacket() {
-       return new EntitySpawnS2CPacket(this, Block.getRawIdFromState(this.getBlockState()));
+        return new EntitySpawnS2CPacket(this, Block.getRawIdFromState(this.getBlockState()));
     }
 
     static {
-       BLOCK_POS = DataTracker.registerData(FallingBlockEntity.class, TrackedDataHandlerRegistry.BLOCK_POS);
+        BLOCK_POS = DataTracker.registerData(FallingBlockEntity.class, TrackedDataHandlerRegistry.BLOCK_POS);
     }
 }
