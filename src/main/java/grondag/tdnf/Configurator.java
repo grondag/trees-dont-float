@@ -19,7 +19,6 @@ package grondag.tdnf;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -73,9 +72,6 @@ public class Configurator {
     public static int maxBreaksPerTick = DEFAULTS.maxBreaksPerTick;
     public static int breakCooldownTicks = DEFAULTS.breakCooldownTicks;
     public static int maxSearchPosPerTick = DEFAULTS.maxSearchPosPerTick;
-    
-    /** use to stash parent screen during display */
-    private static Screen screenIn;
     
     private static File configFile;
     
@@ -134,9 +130,9 @@ public class Configurator {
     }
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private static Screen display() {
+    static Screen getScreen(Screen parent) {
         
-        ConfigScreenBuilder builder = ConfigScreenBuilder.create(screenIn, "config.tdnf.title", Configurator::saveUserInput);
+        ConfigScreenBuilder builder = ConfigScreenBuilder.create(parent, "config.tdnf.title", Configurator::saveUserInput);
         
         // FEATURES
         ConfigScreenBuilder.CategoryBuilder features = builder.addCategory("config.tdnf.category.features");
@@ -170,16 +166,6 @@ public class Configurator {
         builder.setDoesConfirmSave(false);
         
         return builder.build();
-    }
-    
-    public static Optional<Supplier<Screen>> getConfigScreen(Screen screen) {
-        screenIn = screen;
-        return Optional.of(Configurator::display);
-    }
-    
-    public static Screen getRawConfigScreen(Screen screen) {
-        screenIn = screen;
-        return display();
     }
     
     private static void saveUserInput(SavedConfig config) {
