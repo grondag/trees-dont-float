@@ -14,25 +14,20 @@
  * the License.
  ******************************************************************************/
 
-package grondag.tdnf;
+package grondag.tdnf.client;
 
-import java.util.function.Function;
-
-import io.github.prospector.modmenu.api.ModMenuApi;
+import grondag.tdnf.FallingLogEntity;
+import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.gui.screen.Screen;
+import net.fabricmc.fabric.api.client.render.EntityRendererRegistry;
+import net.fabricmc.fabric.api.network.ClientSidePacketRegistry;
 
 @Environment(EnvType.CLIENT)
-public class ModMenuHelper implements ModMenuApi {
+public class ClientInitializer implements ClientModInitializer  {
     @Override
-    public Function<Screen, ? extends Screen> getConfigScreenFactory() {
-        return Configurator::getScreen;
+    public void onInitializeClient() {
+        ClientSidePacketRegistry.INSTANCE.register(FallingLogEntity.IDENTIFIER, FallingLogNetworkHandler::accept);
+        EntityRendererRegistry.INSTANCE.register(FallingLogEntity.class, (entityRenderDispatcher, context) -> new FallingLogEntityRenderer(entityRenderDispatcher));        
     }
-    
-    @Override
-    public String getModId() {
-        return TreesDoNotFloat.MODID;
-    }
-
 }

@@ -18,7 +18,6 @@ package grondag.tdnf;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.Optional;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -26,18 +25,8 @@ import com.google.gson.GsonBuilder;
 import grondag.fermion.shadow.jankson.Comment;
 import grondag.fermion.shadow.jankson.Jankson;
 import grondag.fermion.shadow.jankson.JsonObject;
-import me.shedaniel.cloth.api.ConfigScreenBuilder;
-import me.shedaniel.cloth.api.ConfigScreenBuilder.SavedConfig;
-import me.shedaniel.cloth.gui.entries.BooleanListEntry;
-import me.shedaniel.cloth.gui.entries.EnumListEntry;
-import me.shedaniel.cloth.gui.entries.IntegerSliderEntry;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.resource.language.I18n;
 
-@Environment(EnvType.CLIENT)
 public class Configurator {
     public static enum EffectLevel {
         SOME,
@@ -45,41 +34,40 @@ public class Configurator {
         ALL
     }
     
-    
     @SuppressWarnings("hiding")
-    static class ConfigData {
+    public static class ConfigData {
         @Comment("Log blocks move to the ground instead of dropping as items.")
-        boolean keepLogsIntact = true;
+        public boolean keepLogsIntact = true;
         
         @Comment("Log blocks that move are treat as falling block vs moving directly. Can be laggy.")
-        boolean fallingBlocks = false;
+        public boolean fallingBlocks = false;
         
         @Comment("Log blocks that would suffocate an entity drop as items. (If logs stay intact.)")
-        boolean preventSuffocation = true;
+        public boolean preventSuffocation = true;
         
         @Comment("Consolidate item drops into stacks to prevent lag.")
-        boolean stackDrops = true;
+        public boolean stackDrops = true;
         
         @Comment("Play particles and sounds? Choises are SOME, NONE, and ALL.")
-        EffectLevel effectLevel = EffectLevel.SOME;
+        public EffectLevel effectLevel = EffectLevel.SOME;
         
         @Comment("Max log/leaf blocks to break per tick. 1 - 128")
-        int maxBreaksPerTick = 32;
+        public int maxBreaksPerTick = 32;
         
         @Comment("Ticks to wait between breaking blocks. 0 - 40")
-        int breakCooldownTicks = 0;
+        public int breakCooldownTicks = 0;
         
         @Comment("Max blocks checked per tick when searching for logs/leaves. 1 - 512")
-        int maxSearchPosPerTick = 128;
+        public int maxSearchPosPerTick = 128;
     }
     
-    static final ConfigData DEFAULTS = new ConfigData();
+    public static final ConfigData DEFAULTS = new ConfigData();
     private static final Gson GSON = new GsonBuilder().create();
     private static final Jankson JANKSON = Jankson.builder().build();
     
-    static boolean keepLogsIntact = DEFAULTS.keepLogsIntact;
-    static boolean fallingBlocks = DEFAULTS.fallingBlocks;
-    static boolean preventSuffocation = DEFAULTS.preventSuffocation;
+    public static boolean keepLogsIntact = DEFAULTS.keepLogsIntact;
+    public static boolean fallingBlocks = DEFAULTS.fallingBlocks;
+    public static boolean preventSuffocation = DEFAULTS.preventSuffocation;
     public static boolean stackDrops = DEFAULTS.stackDrops;
     public static EffectLevel effectLevel = DEFAULTS.effectLevel;
     public static int maxBreaksPerTick = DEFAULTS.maxBreaksPerTick;
@@ -115,10 +103,9 @@ public class Configurator {
         maxBreaksPerTick = config.maxBreaksPerTick;
         breakCooldownTicks = config.breakCooldownTicks;
         maxSearchPosPerTick = config.maxSearchPosPerTick;
-        
     }
 
-    private static void saveConfig() {
+    public static void saveConfig() {
         ConfigData config = new ConfigData();
         config.keepLogsIntact = keepLogsIntact;
         config.fallingBlocks = fallingBlocks;
@@ -146,60 +133,5 @@ public class Configurator {
             TreesDoNotFloat.LOG.error("Unable to save config.");
             return;
         }
-    }
-    
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    static Screen getScreen(Screen parent) {
-        
-        ConfigScreenBuilder builder = ConfigScreenBuilder.create(parent, "config.tdnf.title", Configurator::saveUserInput);
-        
-        // FEATURES
-        ConfigScreenBuilder.CategoryBuilder features = builder.addCategory("config.tdnf.category.features");
-        
-        features.addOption(new BooleanListEntry("config.tdnf.value.keep_logs_intact", keepLogsIntact, "config.tdnf.reset", 
-                () -> DEFAULTS.keepLogsIntact, b -> keepLogsIntact = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.keep_logs_intact").split(";"))));
-        
-        features.addOption(new BooleanListEntry("config.tdnf.value.falling_blocks", fallingBlocks, "config.tdnf.reset", 
-                () -> DEFAULTS.fallingBlocks, b -> fallingBlocks = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.falling_blocks").split(";"))));
-        
-        features.addOption(new BooleanListEntry("config.tdnf.value.prevent_suffocation", preventSuffocation, "config.tdnf.reset", 
-                () -> DEFAULTS.preventSuffocation, b -> preventSuffocation = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.prevent_suffocation").split(";"))));
-        
-        features.addOption(new BooleanListEntry("config.tdnf.value.consolidate_drops", stackDrops, "config.tdnf.reset", 
-                () -> DEFAULTS.stackDrops, b -> stackDrops = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.consolidate_drops").split(";"))));
-        
-        features.addOption(new EnumListEntry(
-                "config.tdnf.value.effect_level", 
-                EffectLevel.class, 
-                effectLevel, 
-                "config.tdnf.reset", 
-                () -> DEFAULTS.effectLevel, 
-                (b) -> effectLevel = (EffectLevel) b,
-                a -> a.toString(),
-                () -> Optional.of(I18n.translate("config.tdnf.help.effect_level").split(";"))));
-        
-        features.addOption(new IntegerSliderEntry("config.tdnf.value.max_breaks_per_tick", 1, 128, maxBreaksPerTick, "config.tdnf.reset", 
-                () -> DEFAULTS.maxBreaksPerTick, b -> maxBreaksPerTick = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.max_breaks_per_tick").split(";"))));
-        
-        features.addOption(new IntegerSliderEntry("config.tdnf.value.break_cooldown_ticks", 0, 40, breakCooldownTicks, "config.tdnf.reset", 
-                () -> DEFAULTS.breakCooldownTicks, b -> breakCooldownTicks = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.break_cooldown_ticks").split(";"))));
-        
-        features.addOption(new IntegerSliderEntry("config.tdnf.value.max_search_pos_per_tick", 1, 512, maxSearchPosPerTick, "config.tdnf.reset", 
-                () -> DEFAULTS.maxSearchPosPerTick, b -> maxSearchPosPerTick = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.max_search_pos_per_tick").split(";"))));
-        
-        builder.setDoesConfirmSave(false);
-        
-        return builder.build();
-    }
-    
-    private static void saveUserInput(SavedConfig config) {
-        saveConfig();
     }
 }

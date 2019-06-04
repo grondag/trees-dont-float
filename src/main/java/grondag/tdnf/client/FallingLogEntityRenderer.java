@@ -14,9 +14,12 @@
  * the License.
  ******************************************************************************/
 
-package grondag.tdnf;
+package grondag.tdnf.client;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+
+import grondag.tdnf.FallingLogEntity;
+
 import java.util.Random;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;

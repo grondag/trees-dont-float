@@ -14,21 +14,26 @@
  * the License.
  ******************************************************************************/
 
-package grondag.tdnf;
+package grondag.tdnf.client;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.function.Function;
 
-import net.fabricmc.api.ModInitializer;
+import grondag.tdnf.TreesDoNotFloat;
+import io.github.prospector.modmenu.api.ModMenuApi;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.gui.screen.Screen;
 
-public class TreesDoNotFloat implements ModInitializer{
+@Environment(EnvType.CLIENT)
+public class ModMenuHelper implements ModMenuApi {
     @Override
-    public void onInitialize() {
-        Dispatcher.init();
-        Configurator.init();
+    public Function<Screen, ? extends Screen> getConfigScreenFactory() {
+        return ConfigScreen::getScreen;
     }
     
-    public static final String MODID = "trees-do-not-float";
-    
-    public static final Logger LOG = LogManager.getLogger("trees-do-not-float");
+    @Override
+    public String getModId() {
+        return TreesDoNotFloat.MODID;
+    }
+
 }

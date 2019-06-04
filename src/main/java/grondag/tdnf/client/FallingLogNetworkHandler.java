@@ -14,8 +14,9 @@
  * the License.
  ******************************************************************************/
 
-package grondag.tdnf;
+package grondag.tdnf.client;
 
+import grondag.tdnf.FallingLogEntity;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.network.PacketContext;

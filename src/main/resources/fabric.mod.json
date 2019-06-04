@@ -17,8 +17,8 @@
   "environment": "*",
   "entrypoints": {
     "main": [ "grondag.tdnf.TreesDoNotFloat" ],
-    "client": [ "grondag.tdnf.TreesDoNotFloat" ],
-    "modmenu": [ "grondag.tdnf.ModMenuHelper" ]
+    "client": [ "grondag.tdnf.client.ClientInitializer" ],
+    "modmenu": [ "grondag.tdnf.client.ModMenuHelper" ]
   },
   
   "mixins": [
