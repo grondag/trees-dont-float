@@ -21,14 +21,15 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 
+import io.netty.buffer.Unpooled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.entity.FabricEntityTypeBuilder;
+import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
 import net.minecraft.block.AnvilBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.client.network.packet.EntitySpawnS2CPacket;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCategory;
 import net.minecraft.entity.EntitySize;
@@ -47,6 +48,7 @@ import net.minecraft.network.Packet;
 import net.minecraft.state.property.Properties;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.PacketByteBuf;
 import net.minecraft.util.TagHelper;
 import net.minecraft.util.crash.CrashReportSection;
 import net.minecraft.util.math.BlockPos;
@@ -61,10 +63,12 @@ import net.minecraft.world.World;
  */
 public class FallingLogEntity extends Entity {
 
+    public static Identifier IDENTIFIER = new Identifier(TreesDoNotFloat.MODID, "falling_log");
+    
     public static final EntityType<? extends FallingLogEntity> FALLING_LOG =
             Registry.register(
                     Registry.ENTITY_TYPE,
-                    new Identifier("trees-do-not-float", "falling-log"),
+                    IDENTIFIER,
                     FabricEntityTypeBuilder.<FallingLogEntity>create(EntityCategory.MISC, FallingLogEntity::new).size(EntitySize.constant(1, 1)).build()
                     );
 
@@ -80,8 +84,8 @@ public class FallingLogEntity extends Entity {
         this.setFallingBlockPos(new BlockPos(this));
     }
 
-    public FallingLogEntity(EntityType<? extends FallingLogEntity> entityType_1, World world_1) {
-        super(entityType_1, world_1);
+    public FallingLogEntity(EntityType<?> entityType, World world_1) {
+        super(entityType, world_1);
         this.block = Blocks.OAK_LOG.getDefaultState();
         this.dropItem = true;
         this.fallHurtMax = 40;
@@ -294,7 +298,38 @@ public class FallingLogEntity extends Entity {
 
     @Override
     public Packet<?> createSpawnPacket() {
-        return new EntitySpawnS2CPacket(this, Block.getRawIdFromState(this.getBlockState()));
+        final PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
+        toBuffer(buf);
+        return ServerSidePacketRegistry.INSTANCE.toPacket(IDENTIFIER, buf);
+    }
+    
+    public void toBuffer(PacketByteBuf buf) {
+        buf.writeVarInt(this.getEntityId());
+        buf.writeUuid(this.uuid);
+        buf.writeDouble(this.x);
+        buf.writeDouble(this.y);
+        buf.writeDouble(this.z);
+        buf.writeByte(MathHelper.floor(this.pitch * 256.0F / 360.0F));
+        buf.writeByte(MathHelper.floor(this.yaw * 256.0F / 360.0F));
+        final Vec3d velocity = this.getVelocity();
+        buf.writeShort((int)(MathHelper.clamp(velocity.x, -3.9D, 3.9D) * 8000.0D));
+        buf.writeShort((int)(MathHelper.clamp(velocity.y, -3.9D, 3.9D) * 8000.0D));
+        buf.writeShort((int)(MathHelper.clamp(velocity.z, -3.9D, 3.9D) * 8000.0D));
+    }
+    
+    public void fromBuffer(PacketByteBuf buf) {
+        this.setEntityId(buf.readVarInt());
+        this.uuid = buf.readUuid();
+        this.x = buf.readDouble();
+        this.y = buf.readDouble();
+        this.z = buf.readDouble();
+        method_18003(x, y, z);
+        this.pitch = (float)(buf.readByte() * 360) / 256.0F;
+        this.yaw = buf.readByte();
+        final double vx = (double)buf.readShort() / 8000.0D;
+        final double vy = (double)buf.readShort() / 8000.0D;
+        final double vz = (double)buf.readShort() / 8000.0D;
+        this.setVelocity(vx, vy, vz);
     }
 
     static {

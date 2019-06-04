@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.render.EntityRendererRegistry;
+import net.fabricmc.fabric.api.network.ClientSidePacketRegistry;
 
 public class TreesDoNotFloat implements ModInitializer, ClientModInitializer {
     @Override
@@ -36,6 +37,7 @@ public class TreesDoNotFloat implements ModInitializer, ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        ClientSidePacketRegistry.INSTANCE.register(FallingLogEntity.IDENTIFIER, FallingLogNetworkHandler::accept);
         EntityRendererRegistry.INSTANCE.register(FallingLogEntity.class, (entityRenderDispatcher, context) -> new FallingLogEntityRenderer(entityRenderDispatcher));        
     }
 }

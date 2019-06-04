@@ -27,6 +27,7 @@ import net.minecraft.block.PillarBlock;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+//TODO:  add neighbor check and also drop if supporting block is removed - make configurable
 @Mixin(LogBlock.class)
 public abstract class MixinLogBlock extends PillarBlock {
     
