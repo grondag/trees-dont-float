@@ -23,6 +23,5 @@ public enum Operation
     PRECLEARING,
     CLEARING_LEAVES,
     CLEARING_LOGS,
-    DROPPING_LOGS,
     COMPLETE
 }

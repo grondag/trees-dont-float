@@ -19,6 +19,7 @@ package grondag.tdnf;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.function.Function;
 
 import grondag.fermion.world.PackedBlockPos;
 import grondag.tdnf.Configurator.EffectLevel;
@@ -84,6 +85,9 @@ public class TreeCutter
     /** packed positions of logs to fall - sorted by Y - needed cuz can't sort FIFO Queue */
     private final LongArrayList fallingLogs = new LongArrayList();
 
+    /** Used to iterate {@link #fallingLogs} */
+    private int fallingLogIndex = 0;
+    
     /** leaves to be cleared - populated during pre-clearing */
     private final LongArrayFIFOQueue leaves = new LongArrayFIFOQueue();
 
@@ -111,7 +115,13 @@ public class TreeCutter
     /** cooldown timer if configured */
     private int cooldownTicks = 0;
     
+    private static final Function<World, Operation> DUMMY_LOG_HANDLER = w -> Operation.COMPLETE;
+    
+    /** method reference to selected log handler (clear or drop) */
+    private Function<World, Operation> logHandler = DUMMY_LOG_HANDLER;
+    
     // all below are used for center-of-mass and fall velocity handling
+    private int LOG_FACTOR = 5; // logs worth this much more than leaves
     private int xStart = 0;
     private int zStart = 0;
     private int xSum = 0;
@@ -160,6 +170,7 @@ public class TreeCutter
         this.startPos = startPos;
         operation = Operation.STARTING;
         needsFirstEffect = true;
+        fallingLogIndex = 0;
     }
 
     public boolean tick(World world) {
@@ -212,18 +223,7 @@ public class TreeCutter
             Operation op = Operation.CLEARING_LOGS;
             int budget = Configurator.maxBreaksPerTick;
             while(budget-- > 0 && op == Operation.CLEARING_LOGS) {
-                op = doLogClearing(world);
-            }
-            this.cooldownTicks = Configurator.breakCooldownTicks;
-            this.operation = op;
-            break;
-        }
-
-        case DROPPING_LOGS: {
-            Operation op = Operation.DROPPING_LOGS;
-            int budget = Configurator.maxBreaksPerTick;
-            while(budget-- > 0 && op == Operation.DROPPING_LOGS) {
-                op = doLogDropping(world);
+                op = logHandler.apply(world);
             }
             this.cooldownTicks = Configurator.breakCooldownTicks;
             this.operation = op;
@@ -441,26 +441,24 @@ public class TreeCutter
             Entry e = prepIt.next();
             final byte type = e.getByteValue();
             if(type != POS_TYPE_IGNORE) {
+                final long pos = e.getLongKey();
                 if(type == POS_TYPE_LEAF) {
-                    leaves.enqueue(e.getLongKey());
-                } else {
-                    long pos = e.getLongKey();
                     if(Configurator.fallingBlocks) {
-                        xSum += PackedBlockPos.getX(pos) - xStart;
-                        zSum += PackedBlockPos.getZ(pos) - zStart;
+                        xSum += (PackedBlockPos.getX(pos) - xStart);
+                        zSum += (PackedBlockPos.getZ(pos) - zStart);
+                    }
+                    leaves.enqueue(pos);
+                } else {
+                    if(Configurator.fallingBlocks) {
+                        xSum += (PackedBlockPos.getX(pos) - xStart) * LOG_FACTOR;
+                        zSum += (PackedBlockPos.getZ(pos) - zStart) * LOG_FACTOR;
                     }
                     logs.enqueue(pos);
                 }
             }
             return Operation.PRECLEARING;
         } else {
-            if(!leaves.isEmpty() && leafBlock != null) {
-                return Operation.CLEARING_LEAVES;
-            } else if(!logs.isEmpty()) {
-                return Operation.CLEARING_LOGS;
-            } else {
-                return Operation.COMPLETE;
-            }
+            return prepareLogs();
         }
     }
 
@@ -474,7 +472,7 @@ public class TreeCutter
             breakBlock(pos, world);
         }
 
-        return leaves.isEmpty() ? prepareLogs():  Operation.CLEARING_LEAVES;
+        return leaves.isEmpty() ? Operation.CLEARING_LOGS :  Operation.CLEARING_LEAVES;
     }
 
     private Operation doLogClearing(World world) {
@@ -508,26 +506,23 @@ public class TreeCutter
             needsFirstEffect = false;
         }
     }
-
+    
     private Operation prepareLogs() {
         if(logs.isEmpty()) {
-            return Operation.COMPLETE;
-        }
-        if(Configurator.fallingBlocks) {
-            final double div = logs.size();
+            logHandler = DUMMY_LOG_HANDLER;
+        } else if(Configurator.fallingBlocks) {
+            logHandler = this::doLogDropping1;
+            final double div = logs.size() * LOG_FACTOR + leaves.size();
             final double xCenterOfMass = xStart + xSum / div;
             final double zCenterOfMass = zStart + zSum / div;
             final Random r = ThreadLocalRandom.current();
             
             xVelocity = xCenterOfMass - xStart; 
-            if(xVelocity == 0) {
-                xVelocity = r.nextGaussian();
-            } else 
-            
             zVelocity = zCenterOfMass - zStart; 
-            if(zVelocity == 0) {
+            if(xVelocity == 0 && zVelocity == 0) {
+                xVelocity = r.nextGaussian();
                 zVelocity = r.nextGaussian();
-            }
+            } 
             
             // normalize
             double len = Math.sqrt(xVelocity * xVelocity + zVelocity * zVelocity);
@@ -537,27 +532,56 @@ public class TreeCutter
             while(!logs.isEmpty()) {
                 fallingLogs.add(logs.dequeueLastLong());
             }
-            // note inverse order so we can peel off the tail of the list vs the head
             fallingLogs.sort((l0, l1) -> Integer.compare(PackedBlockPos.getY(l1), PackedBlockPos.getY(l0)));
-            
-            return fallingLogs.isEmpty() ? Operation.COMPLETE : Operation.DROPPING_LOGS;
+        } else {
+            logHandler = this::doLogClearing;
+        }
+        
+        if(!leaves.isEmpty() && leafBlock != null) {
+            return Operation.CLEARING_LEAVES;
+        } else if(logHandler == DUMMY_LOG_HANDLER) {
+            return Operation.COMPLETE;
         } else {
             return Operation.CLEARING_LOGS;
         }
     }
-
-    private Operation doLogDropping(World world) {
-        if(fallingLogs.isEmpty()) {
+    
+    private Operation doLogDropping1(World world) {
+        final int limit = fallingLogs.size();
+        if(limit == 0) {
             return Operation.COMPLETE;
         }
-        final long packedPos = fallingLogs.popLong();
+        
+        final int i = fallingLogIndex++;
+        if(i >= limit) {
+            logHandler = this::doLogDropping2;
+            fallingLogIndex = 0;
+            return Operation.CLEARING_LOGS;
+        }
+        
+        final long packedPos = fallingLogs.getLong(i);
+        final BlockPos pos = PackedBlockPos.unpackTo(packedPos, searchPos);
+        world.setBlockState(pos, Blocks.AIR.getDefaultState());
+        return Operation.CLEARING_LOGS;
+    }
+
+    private Operation doLogDropping2(World world) {
+        final int limit = fallingLogs.size();
+        if(limit == 0) {
+            return Operation.COMPLETE;
+        }
+        
+        final int i = fallingLogIndex++;
+        if(i >= limit) {
+            return Operation.COMPLETE;
+        }
+        final long packedPos = fallingLogs.getLong(i);
         final BlockPos pos = PackedBlockPos.unpackTo(packedPos, searchPos);
         FallingLogEntity entity = new FallingLogEntity(world, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, startState.cycle(LogBlock.AXIS));
         double height = Math.sqrt(Math.max(0, pos.getY() - PackedBlockPos.getY(startPos))) * 0.2;
         entity.addVelocity(xVelocity * height, 0, zVelocity * height);
         world.spawnEntity(entity);
-        
-        return fallingLogs.isEmpty() ? Operation.COMPLETE :  Operation.DROPPING_LOGS;
+        return Operation.CLEARING_LOGS;
     }
 
     private void doDrops(BlockState blockState, World world, BlockPos pos, BlockEntity blockEntity) {

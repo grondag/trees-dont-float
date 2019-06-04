@@ -140,15 +140,7 @@ public class FallingLogEntity extends Entity {
             this.prevZ = this.z;
             Block block_1 = this.block.getBlock();
             BlockPos myPos;
-            if (this.timeFalling++ == 0) {
-                myPos = new BlockPos(this);
-                if (this.world.getBlockState(myPos).getBlock() == block_1) {
-                    this.world.clearBlockState(myPos, false);
-                } else if (!this.world.isClient) {
-                    this.remove();
-                    return;
-                }
-            }
+            this.timeFalling++;
 
             if (!this.hasNoGravity()) {
                 this.setVelocity(this.getVelocity().add(0.0D, -0.04D, 0.0D));
