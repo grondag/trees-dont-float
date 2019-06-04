@@ -37,11 +37,11 @@ public class Configurator {
         ALL
     }
 
-    public static enum SupportSurface {
-        BOTTOM,
-        BOTTOM_OR_ALL_SIDES,
-        BOTTOM_OR_ANY_SIDE
-    }
+//    public static enum SupportSurface {
+//        BOTTOM,
+//        BOTTOM_OR_ALL_SIDES,
+//        BOTTOM_OR_ANY_SIDE
+//    }
 
     @SuppressWarnings("hiding")
     public static class ConfigData {
@@ -60,8 +60,8 @@ public class Configurator {
         @Comment("Consolidate item drops into stacks to prevent lag.")
         public boolean stackDrops = true;
 
-        @Comment("What counts as support for logs? BOTTOM, BOTTOM_OR_ALL_SIDE, or BOTTOM_OR_ANY_SIDE")
-        public SupportSurface minimumSupportSurface;
+//        @Comment("What counts as support for logs? BOTTOM, BOTTOM_OR_ALL_SIDE, or BOTTOM_OR_ANY_SIDE")
+//        public SupportSurface minimumSupportSurface;
 
         @Comment("If true, structures only checked when logs are broken. (Not other block types.)")
         public boolean requireLogBreak = false;
@@ -88,8 +88,9 @@ public class Configurator {
     public static boolean fallingLogsBreakPlants = DEFAULTS.fallingLogsBreakPlants;
     public static boolean fallingLogsBreakFragile = DEFAULTS.fallingLogsBreakFragile;
     
-    //TODO: implement
-    public static SupportSurface logSupportSurface = DEFAULTS.minimumSupportSurface;
+//    //TODO: implement
+//    public static SupportSurface logSupportSurface = DEFAULTS.minimumSupportSurface;
+    
     //TODO: implement
     public static boolean requireLogBreak = DEFAULTS.requireLogBreak;
 
@@ -128,7 +129,7 @@ public class Configurator {
         renderFallingLogs = config.renderFallingLogs;
         fallingLogsBreakPlants = config.fallingLogsBreakPlants;
         fallingLogsBreakFragile = config.fallingLogsBreakFragile;
-        logSupportSurface = config.minimumSupportSurface;
+//        logSupportSurface = config.minimumSupportSurface;
         requireLogBreak = config.requireLogBreak;
         stackDrops = config.stackDrops;
         effectLevel = config.effectLevel;
@@ -164,7 +165,7 @@ public class Configurator {
         config.renderFallingLogs = renderFallingLogs;
         config.fallingLogsBreakPlants = fallingLogsBreakPlants;
         config.fallingLogsBreakFragile = fallingLogsBreakFragile;
-        config.minimumSupportSurface = logSupportSurface;
+//        config.minimumSupportSurface = logSupportSurface;
         config.requireLogBreak = requireLogBreak;
         config.stackDrops = stackDrops;
         config.effectLevel = effectLevel;

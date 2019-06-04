@@ -25,7 +25,7 @@ import static grondag.tdnf.Configurator.maxSearchPosPerTick;
 import static grondag.tdnf.Configurator.renderFallingLogs;
 import static grondag.tdnf.Configurator.fallingLogsBreakPlants;
 import static grondag.tdnf.Configurator.fallingLogsBreakFragile;
-import static grondag.tdnf.Configurator.logSupportSurface;
+//import static grondag.tdnf.Configurator.logSupportSurface;
 import static grondag.tdnf.Configurator.requireLogBreak;
 import static grondag.tdnf.Configurator.stackDrops;
 
@@ -33,7 +33,7 @@ import java.util.Optional;
 
 import grondag.tdnf.Configurator;
 import grondag.tdnf.Configurator.EffectLevel;
-import grondag.tdnf.Configurator.SupportSurface;
+//import grondag.tdnf.Configurator.SupportSurface;
 import me.shedaniel.cloth.api.ConfigScreenBuilder;
 import me.shedaniel.cloth.api.ConfigScreenBuilder.SavedConfig;
 import me.shedaniel.cloth.gui.entries.BooleanListEntry;
@@ -74,15 +74,15 @@ public class ConfigScreen {
                 () -> DEFAULTS.requireLogBreak, b -> requireLogBreak = b, 
                 () -> Optional.of(I18n.translate("config.tdnf.help.require_log_break").split(";"))));
         
-        features.addOption(new EnumListEntry(
-                "config.tdnf.value.support_surface", 
-                SupportSurface.class, 
-                logSupportSurface, 
-                "config.tdnf.reset", 
-                () -> DEFAULTS.minimumSupportSurface, 
-                (b) -> logSupportSurface = (SupportSurface) b,
-                a -> a.toString(),
-                () -> Optional.of(I18n.translate("config.tdnf.help.support_surface").split(";"))));
+//        features.addOption(new EnumListEntry(
+//                "config.tdnf.value.support_surface", 
+//                SupportSurface.class, 
+//                logSupportSurface, 
+//                "config.tdnf.reset", 
+//                () -> DEFAULTS.minimumSupportSurface, 
+//                (b) -> logSupportSurface = (SupportSurface) b,
+//                a -> a.toString(),
+//                () -> Optional.of(I18n.translate("config.tdnf.help.support_surface").split(";"))));
         
         // PERFORMANCE
         ConfigScreenBuilder.CategoryBuilder performance = builder.addCategory("config.tdnf.category.performance");
