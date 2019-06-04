@@ -18,16 +18,19 @@ package grondag.tdnf.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
 
+import grondag.tdnf.Configurator;
 import grondag.tdnf.Dispatcher;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LogBlock;
 import net.minecraft.block.MaterialColor;
 import net.minecraft.block.PillarBlock;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 
-//TODO:  add neighbor check and also drop if supporting block is removed - make configurable
 @Mixin(LogBlock.class)
 public abstract class MixinLogBlock extends PillarBlock {
     
@@ -42,4 +45,14 @@ public abstract class MixinLogBlock extends PillarBlock {
        }
        super.onBlockRemoved(oldState, world, blockPos, newState, notify);
     }
+    
+    
+    @Override
+    public BlockState getStateForNeighborUpdate(BlockState myState, Direction direction, BlockState otherState, IWorld world, BlockPos myPos, BlockPos otherPos) {
+        if(!Configurator.requireLogBreak && direction == Direction.DOWN && world instanceof ServerWorld) {
+            Dispatcher.enqueCheck((World) world, otherPos);
+        }
+        return super.getStateForNeighborUpdate(myState, direction, otherState, world, myPos, otherPos);
+     }
+    
 }

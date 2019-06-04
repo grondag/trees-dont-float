@@ -91,9 +91,7 @@ public class Configurator {
 //    //TODO: implement
 //    public static SupportSurface logSupportSurface = DEFAULTS.minimumSupportSurface;
     
-    //TODO: implement
     public static boolean requireLogBreak = DEFAULTS.requireLogBreak;
-
     public static boolean stackDrops = DEFAULTS.stackDrops;
     public static EffectLevel effectLevel = DEFAULTS.effectLevel;
     public static int maxBreaksPerTick = DEFAULTS.maxBreaksPerTick;
