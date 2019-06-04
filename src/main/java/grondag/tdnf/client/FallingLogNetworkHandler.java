@@ -16,6 +16,7 @@
 
 package grondag.tdnf.client;
 
+import grondag.tdnf.Configurator;
 import grondag.tdnf.FallingLogEntity;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -26,18 +27,19 @@ import net.minecraft.util.PacketByteBuf;
 
 @Environment(EnvType.CLIENT)
 public class FallingLogNetworkHandler {
-
     public static void accept(PacketContext context, PacketByteBuf buffer) {
-        final MinecraftClient client = MinecraftClient.getInstance();
-        FallingLogEntity entity = new FallingLogEntity(FallingLogEntity.FALLING_LOG, client.world);
-       entity.fromBuffer(buffer);
-       if(client.isOnThread()) {
-           spawn(client, entity);
-       } else {
-           client.execute(() -> spawn(client, entity));
-       }
+        if(Configurator.renderFallingLogs) {
+            final MinecraftClient client = MinecraftClient.getInstance();
+            FallingLogEntity entity = new FallingLogEntity(FallingLogEntity.FALLING_LOG, client.world);
+            entity.fromBuffer(buffer);
+            if(client.isOnThread()) {
+                spawn(client, entity);
+            } else {
+                client.execute(() -> spawn(client, entity));
+            }
+        }
     }
-    
+
     private static void spawn(MinecraftClient client, FallingLogEntity entity) {
         final ClientWorld world = client.world;
         if(world == null) {

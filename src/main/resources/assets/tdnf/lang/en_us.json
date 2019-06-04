@@ -20,7 +20,7 @@
 	"config.tdnf.help.break_fragile" : "Falling logs break glass and other fragile blocks.",
 	
 	"config.tdnf.value.render_falling" : "Render Falling",
-	"config.tdnf.help.render_falling" : "Render falling logs? On server, controls sending.;On client, controls rendering. Can be laggy.",
+	"config.tdnf.help.render_falling" : "Render falling logs? (Affects client side only.) Can be laggy.",
 	
 	"config.tdnf.category.performance" : "Performance",
 	

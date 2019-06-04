@@ -46,7 +46,7 @@ public class Configurator {
         @Comment("Log blocks move to the ground instead of dropping as items. Can be laggy.")
         public boolean keepLogsIntact = true;
 
-        @Comment("Render falling logs? On server, controls sending. On client, controls rendering. Can be laggy.")
+        @Comment("Render falling logs? (Affects client side only.) Can be laggy.")
         public boolean renderFallingLogs = true;
 
         @Comment("Falling logs break leaves on the way down.")
@@ -80,11 +80,10 @@ public class Configurator {
     public static final ConfigData DEFAULTS = new ConfigData();
     private static final Gson GSON = new GsonBuilder().create();
     private static final Jankson JANKSON = Jankson.builder().build();
-
+    
     public static boolean keepLogsIntact = DEFAULTS.keepLogsIntact;
-
-    //TODO: implement
     public static boolean renderFallingLogs = DEFAULTS.renderFallingLogs;
+    
     //TODO: implement
     public static boolean fallingLogsBreakLeaves = DEFAULTS.fallingLogsBreakLeaves;
     //TODO: implement
