@@ -44,6 +44,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.world.World;
 
 /**
@@ -129,6 +130,8 @@ public class TreeCutter
     private double xVelocity = 0;
     private double zVelocity = 0;
 
+    private Axis fallAxis = Axis.X;
+    
     // all below are for compact representation of search space
     private static final byte POS_TYPE_LOG_FROM_ABOVE = 0;
     private static final byte POS_TYPE_LOG = 1;
@@ -528,7 +531,9 @@ public class TreeCutter
             double len = Math.sqrt(xVelocity * xVelocity + zVelocity * zVelocity);
             xVelocity /= len;
             zVelocity /= len;
-                    
+            
+            fallAxis = Math.abs(xVelocity) > Math.abs(zVelocity) ? Axis.X : Axis.Z;
+            
             while(!logs.isEmpty()) {
                 fallingLogs.add(logs.dequeueLastLong());
             }
@@ -577,7 +582,7 @@ public class TreeCutter
         }
         final long packedPos = fallingLogs.getLong(i);
         final BlockPos pos = PackedBlockPos.unpackTo(packedPos, searchPos);
-        FallingLogEntity entity = new FallingLogEntity(world, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, startState.cycle(LogBlock.AXIS));
+        FallingLogEntity entity = new FallingLogEntity(world, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, startState.with(LogBlock.AXIS, fallAxis));
         double height = Math.sqrt(Math.max(0, pos.getY() - PackedBlockPos.getY(startPos))) * 0.2;
         entity.addVelocity(xVelocity * height, 0, zVelocity * height);
         world.spawnEntity(entity);
