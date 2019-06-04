@@ -13,8 +13,8 @@
 	"config.tdnf.value.require_log_break" : "Require Log Break",
 	"config.tdnf.help.require_log_break" : "If true, structures only checked when logs are;broken. (Not other block types.)",
 	
-	"config.tdnf.value.break_leaves" : "Break Leaves",
-	"config.tdnf.help.break_leaves" : "Falling logs break leaves on the way down.",
+	"config.tdnf.value.break_leaves" : "Break Plants",
+	"config.tdnf.help.break_leaves" : "Falling logs break leaves and other plants;on the way down.",
 	
 	"config.tdnf.value.break_fragile" : "Break Fragiles",
 	"config.tdnf.help.break_fragile" : "Falling logs break glass and other fragile blocks.",

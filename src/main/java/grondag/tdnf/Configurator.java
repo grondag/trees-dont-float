@@ -25,7 +25,9 @@ import com.google.gson.GsonBuilder;
 import grondag.fermion.shadow.jankson.Comment;
 import grondag.fermion.shadow.jankson.Jankson;
 import grondag.fermion.shadow.jankson.JsonObject;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.block.Material;
 import net.minecraft.util.math.MathHelper;
 
 public class Configurator {
@@ -49,8 +51,8 @@ public class Configurator {
         @Comment("Render falling logs? (Affects client side only.) Can be laggy.")
         public boolean renderFallingLogs = true;
 
-        @Comment("Falling logs break leaves on the way down.")
-        public boolean fallingLogsBreakLeaves = true;
+        @Comment("Falling logs break leaves and other plants on the way down.")
+        public boolean fallingLogsBreakPlants = true;
 
         @Comment("Falling logs break glass and other fragile blocks.")
         public boolean fallingLogsBreakFragile = false;
@@ -83,11 +85,9 @@ public class Configurator {
     
     public static boolean keepLogsIntact = DEFAULTS.keepLogsIntact;
     public static boolean renderFallingLogs = DEFAULTS.renderFallingLogs;
-    
-    //TODO: implement
-    public static boolean fallingLogsBreakLeaves = DEFAULTS.fallingLogsBreakLeaves;
-    //TODO: implement
+    public static boolean fallingLogsBreakPlants = DEFAULTS.fallingLogsBreakPlants;
     public static boolean fallingLogsBreakFragile = DEFAULTS.fallingLogsBreakFragile;
+    
     //TODO: implement
     public static SupportSurface logSupportSurface = DEFAULTS.minimumSupportSurface;
     //TODO: implement
@@ -99,6 +99,10 @@ public class Configurator {
     public static int breakCooldownTicks = DEFAULTS.breakCooldownTicks;
     public static int maxSearchPosPerTick = DEFAULTS.maxSearchPosPerTick;
 
+    public static boolean hasBreaking = fallingLogsBreakPlants || fallingLogsBreakFragile;
+    
+    public static final ObjectOpenHashSet<Material> BREAKABLES = new ObjectOpenHashSet<>();
+    
     private static File configFile;
 
     public static void init() {
@@ -122,7 +126,7 @@ public class Configurator {
         }
         keepLogsIntact = config.keepLogsIntact;
         renderFallingLogs = config.renderFallingLogs;
-        fallingLogsBreakLeaves = config.fallingLogsBreakLeaves;
+        fallingLogsBreakPlants = config.fallingLogsBreakPlants;
         fallingLogsBreakFragile = config.fallingLogsBreakFragile;
         logSupportSurface = config.minimumSupportSurface;
         requireLogBreak = config.requireLogBreak;
@@ -131,13 +135,34 @@ public class Configurator {
         maxBreaksPerTick = MathHelper.clamp(config.maxBreaksPerTick, 1, 128);
         breakCooldownTicks = MathHelper.clamp(config.breakCooldownTicks, 0, 40);
         maxSearchPosPerTick = MathHelper.clamp(config.maxSearchPosPerTick, 1, 512);
+        computeDerived();
     }
 
+    public static void computeDerived() {
+        hasBreaking = fallingLogsBreakPlants || fallingLogsBreakFragile;
+        BREAKABLES.clear();
+        if(fallingLogsBreakPlants) {
+            BREAKABLES.add(Material.BAMBOO);
+            BREAKABLES.add(Material.BAMBOO_SAPLING);
+            BREAKABLES.add(Material.CACTUS);
+            BREAKABLES.add(Material.LEAVES);
+            BREAKABLES.add(Material.PLANT);
+            BREAKABLES.add(Material.PUMPKIN);
+        }
+        
+        if(fallingLogsBreakFragile) {
+            BREAKABLES.add(Material.CARPET);
+            BREAKABLES.add(Material.COBWEB);
+            BREAKABLES.add(Material.GLASS);
+            BREAKABLES.add(Material.PART);
+        }
+    }
+    
     public static void saveConfig() {
         ConfigData config = new ConfigData();
         config.keepLogsIntact = keepLogsIntact;
         config.renderFallingLogs = renderFallingLogs;
-        config.fallingLogsBreakLeaves = fallingLogsBreakLeaves;
+        config.fallingLogsBreakPlants = fallingLogsBreakPlants;
         config.fallingLogsBreakFragile = fallingLogsBreakFragile;
         config.minimumSupportSurface = logSupportSurface;
         config.requireLogBreak = requireLogBreak;

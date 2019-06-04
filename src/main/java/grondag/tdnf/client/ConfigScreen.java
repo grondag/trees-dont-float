@@ -23,7 +23,7 @@ import static grondag.tdnf.Configurator.keepLogsIntact;
 import static grondag.tdnf.Configurator.maxBreaksPerTick;
 import static grondag.tdnf.Configurator.maxSearchPosPerTick;
 import static grondag.tdnf.Configurator.renderFallingLogs;
-import static grondag.tdnf.Configurator.fallingLogsBreakLeaves;
+import static grondag.tdnf.Configurator.fallingLogsBreakPlants;
 import static grondag.tdnf.Configurator.fallingLogsBreakFragile;
 import static grondag.tdnf.Configurator.logSupportSurface;
 import static grondag.tdnf.Configurator.requireLogBreak;
@@ -62,8 +62,8 @@ public class ConfigScreen {
                 () -> DEFAULTS.renderFallingLogs, b -> renderFallingLogs = b, 
                 () -> Optional.of(I18n.translate("config.tdnf.help.render_falling").split(";"))));
         
-        features.addOption(new BooleanListEntry("config.tdnf.value.break_leaves", fallingLogsBreakLeaves, "config.tdnf.reset", 
-                () -> DEFAULTS.fallingLogsBreakLeaves, b -> fallingLogsBreakLeaves = b, 
+        features.addOption(new BooleanListEntry("config.tdnf.value.break_leaves", fallingLogsBreakPlants, "config.tdnf.reset", 
+                () -> DEFAULTS.fallingLogsBreakPlants, b -> fallingLogsBreakPlants = b, 
                 () -> Optional.of(I18n.translate("config.tdnf.help.break_leaves").split(";"))));
         
         features.addOption(new BooleanListEntry("config.tdnf.value.break_fragile", fallingLogsBreakFragile, "config.tdnf.reset", 
@@ -71,7 +71,7 @@ public class ConfigScreen {
                 () -> Optional.of(I18n.translate("config.tdnf.help.break_fragile").split(";"))));
         
         features.addOption(new BooleanListEntry("config.tdnf.value.require_log_break", requireLogBreak, "config.tdnf.reset", 
-                () -> DEFAULTS.requireLogBreak, b -> renderFallingLogs = b, 
+                () -> DEFAULTS.requireLogBreak, b -> requireLogBreak = b, 
                 () -> Optional.of(I18n.translate("config.tdnf.help.require_log_break").split(";"))));
         
         features.addOption(new EnumListEntry(
@@ -119,6 +119,7 @@ public class ConfigScreen {
     }
     
     private static void saveUserInput(SavedConfig config) {
+        Configurator.computeDerived();
         Configurator.saveConfig();
     }
 }

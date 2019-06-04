@@ -69,7 +69,7 @@ public class FallingLogEntity extends Entity {
             Registry.register(
                     Registry.ENTITY_TYPE,
                     IDENTIFIER,
-                    FabricEntityTypeBuilder.<FallingLogEntity>create(EntityCategory.MISC, FallingLogEntity::new).size(EntitySize.constant(1, 1)).build()
+                    FabricEntityTypeBuilder.<FallingLogEntity>create(EntityCategory.MISC, FallingLogEntity::new).size(EntitySize.constant(0.9f, 0.9f)).build()
                     );
 
     public FallingLogEntity(World world, double x, double y, double z, BlockState state) {
@@ -293,6 +293,40 @@ public class FallingLogEntity extends Entity {
         final PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
         toBuffer(buf);
         return ServerSidePacketRegistry.INSTANCE.toPacket(IDENTIFIER, buf);
+    }
+    
+    
+    
+    
+    @Override
+    public void move(MovementType movementType, Vec3d vec) {
+        destroyCollidingDisplaceableBlocks();
+        super.move(movementType, vec);
+    }
+
+    private void destroyCollidingDisplaceableBlocks() {
+        if(Configurator.hasBreaking) {
+            final int i = MathHelper.floor(x - 0.5);
+            final int j = MathHelper.ceil(x + 0.5);
+            final int k = MathHelper.floor(y - 0.5);
+            final int l = MathHelper.ceil(y + 0.5);
+            final int i1 = MathHelper.floor(z - 0.5);
+            final int j1 = MathHelper.ceil(z + 0.5);
+            BlockPos.PooledMutable searchPos = BlockPos.PooledMutable.get();
+            
+            for (int k1 = i; k1 < j; ++k1) {
+                for (int l1 = k; l1 < l; ++l1) {
+                    for (int i2 = i1; i2 < j1; ++i2) {
+                        searchPos.set(k1, l1, i2);
+                        BlockState state = world.getBlockState(searchPos);
+                        if(Configurator.BREAKABLES.contains(state.getMaterial())) {
+                            world.breakBlock(searchPos.toImmutable(), true);
+                        }
+                    }
+                }
+            }
+            searchPos.close();
+        }
     }
     
     public void toBuffer(PacketByteBuf buf) {
