@@ -2,14 +2,36 @@
 	"config.tdnf.title" : "Trees Do Not Float",
 	"config.tdnf.reset" : "Reset",
 	
+	"config.tdnf.category.features" : "Features",
+	
+	"config.tdnf.value.keep_logs_intact" : "Keep Logs Intact",
+	"config.tdnf.help.keep_logs_intact" : "Log blocks fall to the ground instead of dropping;as items. Can be laggy.",
+	
+	"config.tdnf.value.support_surface" : "Minimum Support Surface",
+	"config.tdnf.help.support_surface" : "What counts as support for logs?",
+	
+	"config.tdnf.value.require_log_break" : "Require Log Break",
+	"config.tdnf.help.require_log_break" : "If true, structures only checked when logs are;broken. (Not other block types.)",
+	
+	"config.tdnf.value.break_leaves" : "Break Leaves",
+	"config.tdnf.help.break_leaves" : "Falling logs break leaves on the way down.",
+	
+	"config.tdnf.value.break_fragile" : "Break Fragiles",
+	"config.tdnf.help.break_fragile" : "Falling logs break glass and other fragile blocks.",
+	
+	"config.tdnf.value.render_falling" : "Render Falling",
+	"config.tdnf.help.render_falling" : "Render falling logs? On server, controls sending.;On client, controls rendering. Can be laggy.",
+	
+	"config.tdnf.category.performance" : "Performance",
+	
 	"config.tdnf.value.consolidate_drops" : "Combine Stacks",
-	"config.tdnf.help.consolidate_drops" : "Consolidate item drops;into stacks to prevent lag",
+	"config.tdnf.help.consolidate_drops" : "Consolidate item drops into stacks to prevent lag",
 	"config.tdnf.value.effect_level" : "Effect Level",
 	"config.tdnf.help.effect_level" : "Spawn breaking particles and play sounds?",
 	"config.tdnf.value.max_breaks_per_tick" : "Max Breaks per Tick",
-	"config.tdnf.help.max_breaks_per_tick" : "Max log & leaf blocks;to break per tick",
+	"config.tdnf.help.max_breaks_per_tick" : "Max log & leaf blocks to break per tick",
 	"config.tdnf.value.break_cooldown_ticks" : "Cooldown Ticks",
-	"config.tdnf.help.break_cooldown_ticks" : "Ticks to wait between;breaking blocks",
+	"config.tdnf.help.break_cooldown_ticks" : "Ticks to wait between breaking blocks",
 	"config.tdnf.value.max_search_pos_per_tick" : "Max Searches Per Tick",
-	"config.tdnf.help.max_search_pos_per_tick" : "Max blocks checked per tick;when searching for logs & leaves"
+	"config.tdnf.help.max_search_pos_per_tick" : "Max blocks checked per tick when searching;for logs & leaves"
 }

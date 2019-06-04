@@ -443,13 +443,13 @@ public class TreeCutter
             if(type != POS_TYPE_IGNORE) {
                 final long pos = e.getLongKey();
                 if(type == POS_TYPE_LEAF) {
-                    if(Configurator.fallingBlocks) {
+                    if(Configurator.keepLogsIntact) {
                         xSum += (PackedBlockPos.getX(pos) - xStart);
                         zSum += (PackedBlockPos.getZ(pos) - zStart);
                     }
                     leaves.enqueue(pos);
                 } else {
-                    if(Configurator.fallingBlocks) {
+                    if(Configurator.keepLogsIntact) {
                         xSum += (PackedBlockPos.getX(pos) - xStart) * LOG_FACTOR;
                         zSum += (PackedBlockPos.getZ(pos) - zStart) * LOG_FACTOR;
                     }
@@ -510,7 +510,7 @@ public class TreeCutter
     private Operation prepareLogs() {
         if(logs.isEmpty()) {
             logHandler = DUMMY_LOG_HANDLER;
-        } else if(Configurator.fallingBlocks) {
+        } else if(Configurator.keepLogsIntact) {
             logHandler = this::doLogDropping1;
             final double div = logs.size() * LOG_FACTOR + leaves.size();
             final double xCenterOfMass = xStart + xSum / div;
