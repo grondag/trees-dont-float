@@ -24,7 +24,7 @@ ext.getVersionCode = { ->
 
 archivesBaseName = "tdnf"
 group = "grondag"
-version = version = "1.1.0+build." + project.getVersionCode();
+version = version = "1.1.1+build." + project.getVersionCode();
 
 minecraft {
 }
@@ -96,13 +96,8 @@ dependencies {
 	
 	compile "com.google.code.findbugs:jsr305:3.0.2"
 
-//	modCompile "roughly-enough-items:RoughlyEnoughItems:2.7.11.97"
-//	modCompile "cloth:ClothEvents:0.3.1.23"
-    
     modCompile "grondag:fermion:0.6.+"
     include "grondag:fermion:0.6.+"
-	
-//	compile "org.joml:joml:1.9.14"
 }
 
 publishing {

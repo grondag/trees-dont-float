@@ -57,6 +57,9 @@ public class Configurator {
         @Comment("Falling logs break glass and other fragile blocks.")
         public boolean fallingLogsBreakFragile = false;
 
+        @Comment("Protect logs placed by players.")
+        public boolean protectPlayerLogs = true;
+        
         @Comment("Consolidate item drops into stacks to prevent lag.")
         public boolean stackDrops = true;
 
@@ -87,6 +90,7 @@ public class Configurator {
     public static boolean renderFallingLogs = DEFAULTS.renderFallingLogs;
     public static boolean fallingLogsBreakPlants = DEFAULTS.fallingLogsBreakPlants;
     public static boolean fallingLogsBreakFragile = DEFAULTS.fallingLogsBreakFragile;
+    public static boolean protectPlayerLogs = DEFAULTS.protectPlayerLogs;
     
 //    //TODO: implement
 //    public static SupportSurface logSupportSurface = DEFAULTS.minimumSupportSurface;
@@ -127,6 +131,8 @@ public class Configurator {
         renderFallingLogs = config.renderFallingLogs;
         fallingLogsBreakPlants = config.fallingLogsBreakPlants;
         fallingLogsBreakFragile = config.fallingLogsBreakFragile;
+        protectPlayerLogs = config.protectPlayerLogs;
+        
 //        logSupportSurface = config.minimumSupportSurface;
         requireLogBreak = config.requireLogBreak;
         stackDrops = config.stackDrops;
@@ -163,6 +169,8 @@ public class Configurator {
         config.renderFallingLogs = renderFallingLogs;
         config.fallingLogsBreakPlants = fallingLogsBreakPlants;
         config.fallingLogsBreakFragile = fallingLogsBreakFragile;
+        config.protectPlayerLogs = protectPlayerLogs;
+        
 //        config.minimumSupportSurface = logSupportSurface;
         config.requireLogBreak = requireLogBreak;
         config.stackDrops = stackDrops;

@@ -13,6 +13,10 @@
 	"config.tdnf.value.require_log_break" : "Require Log Break",
 	"config.tdnf.help.require_log_break" : "If true, structures only checked when logs are;broken. (Not other block types.)",
 	
+	"config.tdnf.value.protect_player_logs" : "Protect Player Logs",
+	"config.tdnf.help.protect_player_logs" : "Logs placed by players are allowed to float.",
+	
+	
 	"config.tdnf.value.break_leaves" : "Break Plants",
 	"config.tdnf.help.break_leaves" : "Falling logs break leaves and other plants;on the way down.",
 	

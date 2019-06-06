@@ -25,6 +25,7 @@ import static grondag.tdnf.Configurator.maxSearchPosPerTick;
 import static grondag.tdnf.Configurator.renderFallingLogs;
 import static grondag.tdnf.Configurator.fallingLogsBreakPlants;
 import static grondag.tdnf.Configurator.fallingLogsBreakFragile;
+import static grondag.tdnf.Configurator.protectPlayerLogs;
 //import static grondag.tdnf.Configurator.logSupportSurface;
 import static grondag.tdnf.Configurator.requireLogBreak;
 import static grondag.tdnf.Configurator.stackDrops;
@@ -73,6 +74,10 @@ public class ConfigScreen {
         features.addOption(new BooleanListEntry("config.tdnf.value.require_log_break", requireLogBreak, "config.tdnf.reset", 
                 () -> DEFAULTS.requireLogBreak, b -> requireLogBreak = b, 
                 () -> Optional.of(I18n.translate("config.tdnf.help.require_log_break").split(";"))));
+        
+        features.addOption(new BooleanListEntry("config.tdnf.value.protect_player_logs", protectPlayerLogs, "config.tdnf.reset", 
+                () -> DEFAULTS.protectPlayerLogs, b -> protectPlayerLogs = b, 
+                () -> Optional.of(I18n.translate("config.tdnf.help.protect_player_logs").split(";"))));
         
 //        features.addOption(new EnumListEntry(
 //                "config.tdnf.value.support_surface", 
