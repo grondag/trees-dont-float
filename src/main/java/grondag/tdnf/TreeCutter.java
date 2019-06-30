@@ -41,7 +41,6 @@ import net.minecraft.entity.EntityContext;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.state.property.Properties;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -256,7 +255,7 @@ public class TreeCutter
 
         BlockState state = world.getBlockState(searchPos);
 
-        if(state.getBlock().matches(BlockTags.LOGS) && !(Configurator.protectPlayerLogs && state.get(Properties.PERSISTENT))) {
+        if(state.getBlock().matches(BlockTags.LOGS) && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
             this.startState = state;
             this.startBlock = state.getBlock();
 
@@ -368,7 +367,7 @@ public class TreeCutter
             }
             else if(fromType != POS_TYPE_LEAF) {
                 // visiting from wood (ignore type never added to queue)
-                if(block == this.startState.getBlock() && !(Configurator.protectPlayerLogs && state.get(Properties.PERSISTENT))) {
+                if(block == this.startState.getBlock() && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
                     this.visited.put(packedPos, POS_TYPE_LOG);
 
                     enqueIfViable(PackedBlockPos.down(packedPos), POS_TYPE_LOG_FROM_ABOVE, newDepth);
