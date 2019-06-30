@@ -1,12 +1,10 @@
 plugins {
-	id 'fabric-loom' version '0.2.2-SNAPSHOT'
-	id 'java'
-	id 'maven'
+	id 'fabric-loom' version '0.2.4-SNAPSHOT'
 	id 'maven-publish'
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 
 ext.getVersionCode = { ->
     try {
@@ -24,13 +22,13 @@ ext.getVersionCode = { ->
 
 archivesBaseName = "tdnf"
 group = "grondag"
-version = version = "1.1.1+build." + project.getVersionCode();
+version = version = "1.2.0+build." + project.getVersionCode();
 
 minecraft {
 }
 
 repositories {
-	mavenLocal()
+	//mavenLocal()
     //flatDir {
     //    dirs '../fabric/build/libs'
     //}
@@ -53,9 +51,14 @@ repositories {
 
 processResources {
 	inputs.property "version", version
+	
 	from(sourceSets.main.resources.srcDirs) {
 		include "fabric.mod.json"
 		expand "version": version
+	}
+	
+	from(sourceSets.main.resources.srcDirs) {
+		exclude "fabric.mod.json"
 	}
 }
 
@@ -65,6 +68,17 @@ processResources {
 task sourcesJar(type: Jar, dependsOn: classes) {
 	classifier = "sources"
 	from sourceSets.main.allSource
+}
+
+// ensure that the encoding is set to UTF-8, no matter what the system default is
+// this fixes some edge cases with special characters not displaying correctly
+// see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
+tasks.withType(JavaCompile) {
+	options.encoding = "UTF-8"
+}
+
+jar {
+	from "LICENSE"
 }
 
 sourceSets {
@@ -86,18 +100,26 @@ sourceSets {
     }
 }
 
-def mcVersion = "1.14.2"
+def mcVersion = "1.14.3"
 
 dependencies {
 	minecraft "com.mojang:minecraft:$mcVersion"
-	mappings "net.fabricmc:yarn:$mcVersion+build.2"
-    modCompile "net.fabricmc:fabric-loader:0.4.8+build.154"
-    modCompile "net.fabricmc.fabric-api:fabric-api:0.3.0+build.175"
+	mappings "net.fabricmc:yarn:$mcVersion+build.1"
+    modImplementation "net.fabricmc:fabric-loader:0.4.8+build.155"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:0.3.0+build.187"
 	
-	compile "com.google.code.findbugs:jsr305:3.0.2"
-
-    modCompile "grondag:fermion:0.6.+"
-    include "grondag:fermion:0.6.+"
+    modImplementation "grondag:fermion:0.6.3+build.37"
+    include "grondag:fermion:0.6.3+build.37"
+    
+	modImplementation "cloth-config:ClothConfig2:0.2.0"
+    include "cloth-config:ClothConfig2:0.2.0"
+    
+	// For dev env testing 
+	modRuntime "com.jamieswhiteshirt:developer-mode:1.0.11"
+	modImplementation "io.github.prospector.modmenu:ModMenu:1.6.2-92"
+	
+	implementation "org.apiguardian:apiguardian-api:1.0.0"
+	implementation "com.google.code.findbugs:jsr305:3.0.2"
 }
 
 publishing {

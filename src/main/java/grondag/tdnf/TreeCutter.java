@@ -604,29 +604,29 @@ public class TreeCutter
         }
         stack = stack.copy();
 
-        if(!stack.canStack()) {
+        if(!stack.isStackable()) {
             Block.dropStack(world, PackedBlockPos.unpackTo(startPos, searchPos), stack);
             return;
         }
 
         final ObjectArrayList<ItemStack> drops = this.drops;
 
-        if(drops.isEmpty() || !stack.canStack()) {
+        if(drops.isEmpty() || !stack.isStackable()) {
             drops.add(stack);
         } else {
             final int limit = drops.size();
             for(int i = 0; i < limit; i++) {
                 ItemStack existing = drops.get(i);
-                final int capacity = existing.getMaxAmount() - existing.getAmount();
+                final int capacity = existing.getMaxCount() - existing.getCount();
                 if(capacity > 0 && stack.getItem() == existing.getItem() 
                         && ItemStack.areTagsEqual(stack, existing)) {
-                    int amt = Math.min(stack.getAmount(), capacity);
+                    int amt = Math.min(stack.getCount(), capacity);
                     if(amt > 0) {
-                        stack.subtractAmount(amt);
-                        existing.addAmount(amt);
+                        stack.decrement(amt);
+                        existing.increment(amt);
                     }
 
-                    if(existing.getAmount() == existing.getMaxAmount()) {
+                    if(existing.getCount() == existing.getMaxCount()) {
                         Block.dropStack(world, PackedBlockPos.unpackTo(startPos, searchPos), existing);
                         drops.remove(i);
                         break;

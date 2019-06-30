@@ -32,7 +32,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCategory;
-import net.minecraft.entity.EntitySize;
+import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.entity.MovementType;
@@ -56,6 +56,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
 /**
@@ -69,7 +70,7 @@ public class FallingLogEntity extends Entity {
             Registry.register(
                     Registry.ENTITY_TYPE,
                     IDENTIFIER,
-                    FabricEntityTypeBuilder.<FallingLogEntity>create(EntityCategory.MISC, FallingLogEntity::new).size(EntitySize.constant(0.9f, 0.9f)).build()
+                    FabricEntityTypeBuilder.<FallingLogEntity>create(EntityCategory.MISC, FallingLogEntity::new).size(EntityDimensions.fixed(0.9f, 0.9f)).build()
                     );
 
     public FallingLogEntity(World world, double x, double y, double z, BlockState state) {
@@ -152,7 +153,7 @@ public class FallingLogEntity extends Entity {
 
             if (!this.onGround) {
                 if (!this.world.isClient && (this.timeFalling > 100 && (myPos.getY() < 1 || myPos.getY() > 256) || this.timeFalling > 600)) {
-                    if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
+                    if (this.dropItem && this.world.getGameRules().getBoolean(GameRules.DO_ENTITY_DROPS)) {
                         this.dropItem(block_1);
                     }
 
@@ -182,10 +183,10 @@ public class FallingLogEntity extends Entity {
 
                                     if (this.world.setBlockState(myPos, this.block, 3)) {
                                         // noop
-                                    } else if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
+                                    } else if (this.dropItem && this.world.getGameRules().getBoolean(GameRules.DO_ENTITY_DROPS)) {
                                         this.dropItem(block_1);
                                     }
-                                } else if (this.dropItem && this.world.getGameRules().getBoolean("doEntityDrops")) {
+                                } else if (this.dropItem && this.world.getGameRules().getBoolean(GameRules.DO_ENTITY_DROPS)) {
                                     this.dropItem(block_1);
                                 }
                             }
