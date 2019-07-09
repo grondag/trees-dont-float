@@ -18,7 +18,6 @@ package grondag.tdnf;
 
 import java.util.IdentityHashMap;
 
-import grondag.fermion.world.PackedBlockPos;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import net.fabricmc.fabric.api.event.world.WorldTickCallback;
 import net.minecraft.util.math.BlockPos;
@@ -87,6 +86,6 @@ public class Dispatcher {
             worldJobs.put(world, jobs);
         }
         
-        jobs.jobList.enqueue(PackedBlockPos.pack(pos.getX(), pos.getY() + 1, pos.getZ()));
+        jobs.jobList.enqueue(BlockPos.asLong(pos.getX(), pos.getY() + 1, pos.getZ()));
     }
 }

@@ -22,9 +22,9 @@ import java.io.FileOutputStream;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import grondag.fermion.shadow.jankson.Comment;
-import grondag.fermion.shadow.jankson.Jankson;
-import grondag.fermion.shadow.jankson.JsonObject;
+import blue.endless.jankson.Comment;
+import blue.endless.jankson.Jankson;
+import blue.endless.jankson.JsonObject;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Material;

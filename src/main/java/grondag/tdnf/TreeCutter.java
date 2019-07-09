@@ -21,7 +21,6 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.function.Function;
 
-import grondag.fermion.world.PackedBlockPos;
 import grondag.tdnf.Configurator.EffectLevel;
 import io.netty.util.internal.ThreadLocalRandom;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
@@ -164,8 +163,8 @@ public class TreeCutter
         leafCounts.clear();
         xSum = 0;
         zSum = 0;
-        xStart = PackedBlockPos.getX(startPos);
-        zStart = PackedBlockPos.getZ(startPos);
+        xStart = BlockPos.unpackLongX(startPos);
+        zStart = BlockPos.unpackLongZ(startPos);
         prepIt = null;
         leafBlock = null;
         startState = Blocks.AIR.getDefaultState();
@@ -251,7 +250,7 @@ public class TreeCutter
 
     private Operation startSearch(World world) {
         final long packedPos = this.startPos;
-        PackedBlockPos.unpackTo(packedPos, searchPos);
+        searchPos.setFromLong(packedPos);
 
         BlockState state = world.getBlockState(searchPos);
 
@@ -263,27 +262,27 @@ public class TreeCutter
 
             // shoudln't really be necessary, but reflect the
             // reason we are doing this is the block below is (or was) hot lava
-            this.visited.put(PackedBlockPos.down(packedPos), POS_TYPE_IGNORE);
+            this.visited.put(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_IGNORE);
 
-            enqueIfViable(PackedBlockPos.east(packedPos), POS_TYPE_LOG, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.west(packedPos), POS_TYPE_LOG, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.north(packedPos), POS_TYPE_LOG, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.south(packedPos), POS_TYPE_LOG, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.up(packedPos), POS_TYPE_LOG, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LOG, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LOG, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LOG, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LOG, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LOG, ZERO_BYTE);
 
-            enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
 
-            enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
             return Operation.SEARCHING;
         }
         else return Operation.COMPLETE;
@@ -295,7 +294,7 @@ public class TreeCutter
 
         final long packedPos = toVisit.packedBlockPos;
 
-        PackedBlockPos.unpackTo(packedPos, searchPos);
+        searchPos.setFromLong(packedPos);
 
         final byte fromType = toVisit.type;
 
@@ -334,35 +333,35 @@ public class TreeCutter
                 }
 
                 if(validVisit) {
-                    enqueIfViable(PackedBlockPos.up(packedPos), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.east(packedPos), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.west(packedPos), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.north(packedPos), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.south(packedPos), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.down(packedPos), POS_TYPE_LEAF, newDepth);
+                	enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LEAF, newDepth);
+                    
+                    enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LEAF, newDepth);
 
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LEAF, newDepth);
 
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LEAF, newDepth);
-
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, -1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, 0), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, 1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 0, -1, -1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 0, -1, 1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, -1, -1), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, -1, 0), POS_TYPE_LEAF, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, -1, 1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, -1, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, -1, 0), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, -1, 1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, -1, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, -1, 1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, -1, -1), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, -1, 0), POS_TYPE_LEAF, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, -1, 1), POS_TYPE_LEAF, newDepth);
                 }
             }
             else if(fromType != POS_TYPE_LEAF) {
@@ -370,26 +369,26 @@ public class TreeCutter
                 if(block == this.startState.getBlock() && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
                     this.visited.put(packedPos, POS_TYPE_LOG);
 
-                    enqueIfViable(PackedBlockPos.down(packedPos), POS_TYPE_LOG_FROM_ABOVE, newDepth);
-                    enqueIfViable(PackedBlockPos.east(packedPos), POS_TYPE_LOG, newDepth);
-                    enqueIfViable(PackedBlockPos.west(packedPos), POS_TYPE_LOG, newDepth);
-                    enqueIfViable(PackedBlockPos.north(packedPos), POS_TYPE_LOG, newDepth);
-                    enqueIfViable(PackedBlockPos.south(packedPos), POS_TYPE_LOG, newDepth);
-                    enqueIfViable(PackedBlockPos.up(packedPos), POS_TYPE_LOG, newDepth);
+                	enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LOG_FROM_ABOVE, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LOG, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LOG, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LOG, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LOG, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LOG, newDepth);
+                    
+                    enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
 
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
                 }
                 else {
                     if(fromType == POS_TYPE_LOG_FROM_ABOVE) {
@@ -445,14 +444,14 @@ public class TreeCutter
                 final long pos = e.getLongKey();
                 if(type == POS_TYPE_LEAF) {
                     if(Configurator.keepLogsIntact) {
-                        xSum += (PackedBlockPos.getX(pos) - xStart);
-                        zSum += (PackedBlockPos.getZ(pos) - zStart);
+                        xSum += (BlockPos.unpackLongX(pos) - xStart);
+                        zSum += (BlockPos.unpackLongZ(pos) - zStart);
                     }
                     leaves.enqueue(pos);
                 } else {
                     if(Configurator.keepLogsIntact) {
-                        xSum += (PackedBlockPos.getX(pos) - xStart) * LOG_FACTOR;
-                        zSum += (PackedBlockPos.getZ(pos) - zStart) * LOG_FACTOR;
+                        xSum += (BlockPos.unpackLongX(pos) - xStart) * LOG_FACTOR;
+                        zSum += (BlockPos.unpackLongZ(pos) - zStart) * LOG_FACTOR;
                     }
                     logs.enqueue(pos);
                 }
@@ -465,7 +464,7 @@ public class TreeCutter
 
     private Operation doLeafClearing(World world) {
         long packedPos = leaves.dequeueLong();
-        BlockPos pos = PackedBlockPos.unpackTo(packedPos, searchPos);
+        BlockPos pos = searchPos.setFromLong(packedPos);
         BlockState state = world.getBlockState(pos);
         Block block = state.getBlock();
 
@@ -478,7 +477,7 @@ public class TreeCutter
 
     private Operation doLogClearing(World world) {
         final long packedPos = logs.dequeueLong();
-        final BlockPos pos = PackedBlockPos.unpackTo(packedPos, searchPos);
+        final BlockPos pos = searchPos.setFromLong(packedPos);
         final BlockState state = world.getBlockState(pos);
         final Block block = state.getBlock();
 
@@ -535,7 +534,7 @@ public class TreeCutter
             while(!logs.isEmpty()) {
                 fallingLogs.add(logs.dequeueLastLong());
             }
-            fallingLogs.sort((l0, l1) -> Integer.compare(PackedBlockPos.getY(l1), PackedBlockPos.getY(l0)));
+            fallingLogs.sort((l0, l1) -> Integer.compare(BlockPos.unpackLongY(l1), BlockPos.unpackLongY(l0)));
         } else {
             logHandler = this::doLogClearing;
         }
@@ -563,7 +562,7 @@ public class TreeCutter
         }
         
         final long packedPos = fallingLogs.getLong(i);
-        final BlockPos pos = PackedBlockPos.unpackTo(packedPos, searchPos);
+        final BlockPos pos = searchPos.setFromLong(packedPos);
         world.setBlockState(pos, Blocks.AIR.getDefaultState());
         return Operation.CLEARING_LOGS;
     }
@@ -579,9 +578,9 @@ public class TreeCutter
             return Operation.COMPLETE;
         }
         final long packedPos = fallingLogs.getLong(i);
-        final BlockPos pos = PackedBlockPos.unpackTo(packedPos, searchPos);
+        final BlockPos pos = searchPos.setFromLong(packedPos);
         FallingLogEntity entity = new FallingLogEntity(world, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, startState.with(LogBlock.AXIS, fallAxis));
-        double height = Math.sqrt(Math.max(0, pos.getY() - PackedBlockPos.getY(startPos))) * 0.2;
+        double height = Math.sqrt(Math.max(0, pos.getY() - BlockPos.unpackLongY(startPos))) * 0.2;
         entity.addVelocity(xVelocity * height, 0, zVelocity * height);
         world.spawnEntity(entity);
         return Operation.CLEARING_LOGS;
@@ -604,7 +603,7 @@ public class TreeCutter
         stack = stack.copy();
 
         if(!stack.isStackable()) {
-            Block.dropStack(world, PackedBlockPos.unpackTo(startPos, searchPos), stack);
+            Block.dropStack(world, searchPos.setFromLong(startPos), stack);
             return;
         }
 
@@ -626,7 +625,7 @@ public class TreeCutter
                     }
 
                     if(existing.getCount() == existing.getMaxCount()) {
-                        Block.dropStack(world, PackedBlockPos.unpackTo(startPos, searchPos), existing);
+                        Block.dropStack(world, searchPos.setFromLong(startPos), existing);
                         drops.remove(i);
                         break;
                     }
@@ -644,7 +643,7 @@ public class TreeCutter
 
     private void spawnDrops(World world) {
         if(!drops.isEmpty()) {
-            BlockPos pos = PackedBlockPos.unpackTo(startPos, searchPos);
+            BlockPos pos = searchPos.setFromLong(startPos);
             final int limit = drops.size();
             for(int i = 0; i < limit; i++) {
                 Block.dropStack(world, pos, drops.get(i));

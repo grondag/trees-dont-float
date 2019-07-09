@@ -22,7 +22,7 @@ ext.getVersionCode = { ->
 
 archivesBaseName = "tdnf"
 group = "grondag"
-version = version = "1.2.0+build." + project.getVersionCode();
+version = version = "1.3.0+build." + project.getVersionCode();
 
 minecraft {
 }
@@ -106,11 +106,11 @@ dependencies {
 	minecraft "com.mojang:minecraft:$mcVersion"
 	mappings "net.fabricmc:yarn:$mcVersion+build.1"
     modImplementation "net.fabricmc:fabric-loader:0.4.8+build.155"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:0.3.0+build.187"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:0.3.0+build.191"
 	
-    modImplementation "grondag:fermion:0.6.3+build.37"
-    include "grondag:fermion:0.6.3+build.37"
-    
+	modImplementation "blue.endless:jankson:1.1.2"
+	include "blue.endless:jankson:1.1.2" //{ transitive = false }
+	
 	modImplementation "cloth-config:ClothConfig2:0.2.0"
     include "cloth-config:ClothConfig2:0.2.0"
     
@@ -125,9 +125,16 @@ dependencies {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-			artifact(jar) {
+			artifact ("${project.buildDir.absolutePath}/libs/${archivesBaseName}-${project.version}.jar") { 
+				classifier null
 				builtBy remapJar
 			}
+
+			artifact ("${project.buildDir.absolutePath}/libs/${archivesBaseName}-${project.version}-dev.jar") { 
+				classifier "dev"
+				builtBy remapJar
+			}
+			
 			artifact(sourcesJar) {
 				builtBy remapSourcesJar
 			}
