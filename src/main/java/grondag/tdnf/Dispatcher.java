@@ -25,6 +25,8 @@ import net.minecraft.world.World;
 
 public class Dispatcher {
     
+	private static boolean suspended = false;
+	
     private static final long NO_JOB = -1L;
     
     public static void init() {
@@ -76,7 +78,7 @@ public class Dispatcher {
     }
     
     public static void enqueCheck(World world, BlockPos pos) {
-        if(world.isClient) {
+        if(world.isClient || suspended) {
             return;
         }
         
@@ -87,5 +89,13 @@ public class Dispatcher {
         }
         
         jobs.jobList.enqueue(BlockPos.asLong(pos.getX(), pos.getY() + 1, pos.getZ()));
+    }
+    
+    public static void suspend() {
+    	suspended = true;
+    }
+    
+    public static void resume() {
+    	suspended = false;
     }
 }
