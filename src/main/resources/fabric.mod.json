@@ -25,7 +25,7 @@
     "tdnf.server.json"
   ],
   
-  "requires": {
+  "depends": {
     "fabricloader": ">=0.4.8",
     "fabric": ">=0.3.0"
   },
