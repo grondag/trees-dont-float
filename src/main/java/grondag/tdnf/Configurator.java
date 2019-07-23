@@ -32,9 +32,7 @@ import net.minecraft.util.math.MathHelper;
 
 public class Configurator {
     public static enum EffectLevel {
-        SOME,
-        NONE,
-        ALL
+        SOME, NONE, ALL
     }
 
 //    public static enum SupportSurface {
@@ -59,7 +57,7 @@ public class Configurator {
 
         @Comment("Protect logs placed by players.")
         public boolean protectPlayerLogs = true;
-        
+
         @Comment("Consolidate item drops into stacks to prevent lag.")
         public boolean stackDrops = true;
 
@@ -85,16 +83,16 @@ public class Configurator {
     public static final ConfigData DEFAULTS = new ConfigData();
     private static final Gson GSON = new GsonBuilder().create();
     private static final Jankson JANKSON = Jankson.builder().build();
-    
+
     public static boolean keepLogsIntact = DEFAULTS.keepLogsIntact;
     public static boolean renderFallingLogs = DEFAULTS.renderFallingLogs;
     public static boolean fallingLogsBreakPlants = DEFAULTS.fallingLogsBreakPlants;
     public static boolean fallingLogsBreakFragile = DEFAULTS.fallingLogsBreakFragile;
     public static boolean protectPlayerLogs = DEFAULTS.protectPlayerLogs;
-    
+
 //    //TODO: implement
 //    public static SupportSurface logSupportSurface = DEFAULTS.minimumSupportSurface;
-    
+
     public static boolean requireLogBreak = DEFAULTS.requireLogBreak;
     public static boolean stackDrops = DEFAULTS.stackDrops;
     public static EffectLevel effectLevel = DEFAULTS.effectLevel;
@@ -103,14 +101,14 @@ public class Configurator {
     public static int maxSearchPosPerTick = DEFAULTS.maxSearchPosPerTick;
 
     public static boolean hasBreaking = fallingLogsBreakPlants || fallingLogsBreakFragile;
-    
+
     public static final ObjectOpenHashSet<Material> BREAKABLES = new ObjectOpenHashSet<>();
-    
+
     private static File configFile;
 
     public static void init() {
         configFile = new File(FabricLoader.getInstance().getConfigDirectory(), "trees-do-not-float.json5");
-        if(configFile.exists()) {
+        if (configFile.exists()) {
             loadConfig();
         } else {
             saveConfig();
@@ -132,7 +130,7 @@ public class Configurator {
         fallingLogsBreakPlants = config.fallingLogsBreakPlants;
         fallingLogsBreakFragile = config.fallingLogsBreakFragile;
         protectPlayerLogs = config.protectPlayerLogs;
-        
+
 //        logSupportSurface = config.minimumSupportSurface;
         requireLogBreak = config.requireLogBreak;
         stackDrops = config.stackDrops;
@@ -146,7 +144,7 @@ public class Configurator {
     public static void computeDerived() {
         hasBreaking = fallingLogsBreakPlants || fallingLogsBreakFragile;
         BREAKABLES.clear();
-        if(fallingLogsBreakPlants) {
+        if (fallingLogsBreakPlants) {
             BREAKABLES.add(Material.BAMBOO);
             BREAKABLES.add(Material.BAMBOO_SAPLING);
             BREAKABLES.add(Material.CACTUS);
@@ -154,15 +152,15 @@ public class Configurator {
             BREAKABLES.add(Material.PLANT);
             BREAKABLES.add(Material.PUMPKIN);
         }
-        
-        if(fallingLogsBreakFragile) {
+
+        if (fallingLogsBreakFragile) {
             BREAKABLES.add(Material.CARPET);
             BREAKABLES.add(Material.COBWEB);
             BREAKABLES.add(Material.GLASS);
             BREAKABLES.add(Material.PART);
         }
     }
-    
+
     public static void saveConfig() {
         ConfigData config = new ConfigData();
         config.keepLogsIntact = keepLogsIntact;
@@ -170,7 +168,7 @@ public class Configurator {
         config.fallingLogsBreakPlants = fallingLogsBreakPlants;
         config.fallingLogsBreakFragile = fallingLogsBreakFragile;
         config.protectPlayerLogs = protectPlayerLogs;
-        
+
 //        config.minimumSupportSurface = logSupportSurface;
         config.requireLogBreak = requireLogBreak;
         config.stackDrops = stackDrops;
@@ -184,9 +182,7 @@ public class Configurator {
             if (!configFile.exists())
                 configFile.createNewFile();
 
-            try(
-                    FileOutputStream out = new FileOutputStream(configFile, false);
-                    ) {
+            try (FileOutputStream out = new FileOutputStream(configFile, false);) {
                 out.write(result.getBytes());
                 out.flush();
                 out.close();

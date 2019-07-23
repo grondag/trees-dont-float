@@ -14,7 +14,7 @@
  * the License.
  ******************************************************************************/
 
-package grondag.tdnf;
+package grondag.tdnf.world;
 
 import java.util.IdentityHashMap;
 
@@ -24,23 +24,23 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class Dispatcher {
-    
-	private static boolean suspended = false;
-	
+
+    private static boolean suspended = false;
+
     private static final long NO_JOB = -1L;
-    
+
     public static void init() {
         WorldTickCallback.EVENT.register(Dispatcher::routeTick);
     }
-    
+
     private static class WorldJobs {
         private final LongArrayFIFOQueue jobList = new LongArrayFIFOQueue();
         private TreeCutter cutter = null;
         private long currentJob = NO_JOB;
-        
+
         TreeCutter cutter() {
             TreeCutter result = cutter;
-            if(result == null) {
+            if (result == null) {
                 result = new TreeCutter();
                 cutter = result;
             }
@@ -49,53 +49,55 @@ public class Dispatcher {
 
         public void run(World world) {
             long result = currentJob;
-            if(result == NO_JOB & !jobList.isEmpty()) {
+            if (result == NO_JOB & !jobList.isEmpty()) {
                 result = jobList.dequeueLong();
                 currentJob = result;
                 cutter().reset(result);
             }
-            
-            if(result != NO_JOB) {
-                if(cutter.tick(world)) {
+
+            if (result != NO_JOB) {
+                if (cutter.tick(world)) {
                     currentJob = NO_JOB;
-                };
+                }
+                ;
             }
         }
     }
-    
+
     private static final IdentityHashMap<World, WorldJobs> worldJobs = new IdentityHashMap<>();
-    
+
     public static void routeTick(World world) {
-        if(world.isClient) {
+        if (world.isClient) {
             return;
-        };
-        
+        }
+        ;
+
         WorldJobs jobs = worldJobs.get(world);
-        if(jobs == null) {
+        if (jobs == null) {
             return;
         }
         jobs.run(world);
     }
-    
+
     public static void enqueCheck(World world, BlockPos pos) {
-        if(world.isClient || suspended) {
+        if (world.isClient || suspended) {
             return;
         }
-        
+
         WorldJobs jobs = worldJobs.get(world);
-        if(jobs == null) {
+        if (jobs == null) {
             jobs = new WorldJobs();
             worldJobs.put(world, jobs);
         }
-        
+
         jobs.jobList.enqueue(BlockPos.asLong(pos.getX(), pos.getY() + 1, pos.getZ()));
     }
-    
+
     public static void suspend() {
-    	suspended = true;
+        suspended = true;
     }
-    
+
     public static void resume() {
-    	suspended = false;
+        suspended = false;
     }
 }

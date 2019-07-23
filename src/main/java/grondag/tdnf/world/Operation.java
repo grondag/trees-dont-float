@@ -14,19 +14,8 @@
  * the License.
  ******************************************************************************/
 
-package grondag.tdnf;
+package grondag.tdnf.world;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.state.property.Properties;
-
-/**
- * Null-safe helper for persistence property inspection
- */
-public class Persistence {
-    private Persistence() {}
-    
-    public static boolean get(BlockState state) {
-        Boolean result = (Boolean) state.getEntries().get(Properties.PERSISTENT);
-        return result == null ? false : result;
-    }
+public enum Operation {
+    STARTING, SEARCHING, PRECLEARING, CLEARING_LEAVES, CLEARING_LOGS, COMPLETE
 }

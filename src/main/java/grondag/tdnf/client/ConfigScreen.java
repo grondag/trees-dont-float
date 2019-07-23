@@ -49,37 +49,33 @@ import net.minecraft.client.resource.language.I18n;
 public class ConfigScreen {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     static Screen getScreen(Screen parent) {
-        
-        ConfigBuilder builder = ConfigBuilder.create().setParentScreen(parent)
-                .setTitle("config.tdnf.title").setSavingRunnable(ConfigScreen::saveUserInput);
-        
+
+        ConfigBuilder builder = ConfigBuilder.create().setParentScreen(parent).setTitle("config.tdnf.title").setSavingRunnable(ConfigScreen::saveUserInput);
+
         // FEATURES
         ConfigCategory features = builder.getOrCreateCategory("config.tdnf.category.features");
-        
-        features.addEntry(new BooleanListEntry("config.tdnf.value.keep_logs_intact", keepLogsIntact, "config.tdnf.reset", 
-                () -> DEFAULTS.keepLogsIntact, b -> keepLogsIntact = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.keep_logs_intact").split(";"))));
-        
-        features.addEntry(new BooleanListEntry("config.tdnf.value.render_falling", renderFallingLogs, "config.tdnf.reset", 
-                () -> DEFAULTS.renderFallingLogs, b -> renderFallingLogs = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.render_falling").split(";"))));
-        
-        features.addEntry(new BooleanListEntry("config.tdnf.value.break_leaves", fallingLogsBreakPlants, "config.tdnf.reset", 
-                () -> DEFAULTS.fallingLogsBreakPlants, b -> fallingLogsBreakPlants = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.break_leaves").split(";"))));
-        
-        features.addEntry(new BooleanListEntry("config.tdnf.value.break_fragile", fallingLogsBreakFragile, "config.tdnf.reset", 
-                () -> DEFAULTS.fallingLogsBreakFragile, b -> fallingLogsBreakFragile = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.break_fragile").split(";"))));
-        
-        features.addEntry(new BooleanListEntry("config.tdnf.value.require_log_break", requireLogBreak, "config.tdnf.reset", 
-                () -> DEFAULTS.requireLogBreak, b -> requireLogBreak = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.require_log_break").split(";"))));
-        
-        features.addEntry(new BooleanListEntry("config.tdnf.value.protect_player_logs", protectPlayerLogs, "config.tdnf.reset", 
-                () -> DEFAULTS.protectPlayerLogs, b -> protectPlayerLogs = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.protect_player_logs").split(";"))));
-        
+
+        features.addEntry(new BooleanListEntry("config.tdnf.value.keep_logs_intact", keepLogsIntact, "config.tdnf.reset", () -> DEFAULTS.keepLogsIntact,
+                b -> keepLogsIntact = b, () -> Optional.of(I18n.translate("config.tdnf.help.keep_logs_intact").split(";"))));
+
+        features.addEntry(new BooleanListEntry("config.tdnf.value.render_falling", renderFallingLogs, "config.tdnf.reset", () -> DEFAULTS.renderFallingLogs,
+                b -> renderFallingLogs = b, () -> Optional.of(I18n.translate("config.tdnf.help.render_falling").split(";"))));
+
+        features.addEntry(
+                new BooleanListEntry("config.tdnf.value.break_leaves", fallingLogsBreakPlants, "config.tdnf.reset", () -> DEFAULTS.fallingLogsBreakPlants,
+                        b -> fallingLogsBreakPlants = b, () -> Optional.of(I18n.translate("config.tdnf.help.break_leaves").split(";"))));
+
+        features.addEntry(
+                new BooleanListEntry("config.tdnf.value.break_fragile", fallingLogsBreakFragile, "config.tdnf.reset", () -> DEFAULTS.fallingLogsBreakFragile,
+                        b -> fallingLogsBreakFragile = b, () -> Optional.of(I18n.translate("config.tdnf.help.break_fragile").split(";"))));
+
+        features.addEntry(new BooleanListEntry("config.tdnf.value.require_log_break", requireLogBreak, "config.tdnf.reset", () -> DEFAULTS.requireLogBreak,
+                b -> requireLogBreak = b, () -> Optional.of(I18n.translate("config.tdnf.help.require_log_break").split(";"))));
+
+        features.addEntry(
+                new BooleanListEntry("config.tdnf.value.protect_player_logs", protectPlayerLogs, "config.tdnf.reset", () -> DEFAULTS.protectPlayerLogs,
+                        b -> protectPlayerLogs = b, () -> Optional.of(I18n.translate("config.tdnf.help.protect_player_logs").split(";"))));
+
 //        features.addEntry(new EnumListEntry(
 //                "config.tdnf.value.support_surface", 
 //                SupportSurface.class, 
@@ -89,41 +85,34 @@ public class ConfigScreen {
 //                (b) -> logSupportSurface = (SupportSurface) b,
 //                a -> a.toString(),
 //                () -> Optional.of(I18n.translate("config.tdnf.help.support_surface").split(";"))));
-        
+
         // PERFORMANCE
         ConfigCategory performance = builder.getOrCreateCategory("config.tdnf.category.performance");
-        
-        performance.addEntry(new BooleanListEntry("config.tdnf.value.consolidate_drops", stackDrops, "config.tdnf.reset", 
-                () -> DEFAULTS.stackDrops, b -> stackDrops = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.consolidate_drops").split(";"))));
-        
-        performance.addEntry(new EnumListEntry(
-                "config.tdnf.value.effect_level", 
-                EffectLevel.class, 
-                effectLevel, 
-                "config.tdnf.reset", 
-                () -> DEFAULTS.effectLevel, 
-                (b) -> effectLevel = (EffectLevel) b,
-                a -> a.toString(),
+
+        performance.addEntry(new BooleanListEntry("config.tdnf.value.consolidate_drops", stackDrops, "config.tdnf.reset", () -> DEFAULTS.stackDrops,
+                b -> stackDrops = b, () -> Optional.of(I18n.translate("config.tdnf.help.consolidate_drops").split(";"))));
+
+        performance.addEntry(new EnumListEntry("config.tdnf.value.effect_level", EffectLevel.class, effectLevel, "config.tdnf.reset",
+                () -> DEFAULTS.effectLevel, (b) -> effectLevel = (EffectLevel) b, a -> a.toString(),
                 () -> Optional.of(I18n.translate("config.tdnf.help.effect_level").split(";"))));
-        
-        performance.addEntry(new IntegerSliderEntry("config.tdnf.value.max_breaks_per_tick", 1, 128, maxBreaksPerTick, "config.tdnf.reset", 
-                () -> DEFAULTS.maxBreaksPerTick, b -> maxBreaksPerTick = b, 
-                () -> Optional.of(I18n.translate("config.tdnf.help.max_breaks_per_tick").split(";"))));
-        
-        performance.addEntry(new IntegerSliderEntry("config.tdnf.value.break_cooldown_ticks", 0, 40, breakCooldownTicks, "config.tdnf.reset", 
-                () -> DEFAULTS.breakCooldownTicks, b -> breakCooldownTicks = b, 
+
+        performance.addEntry(
+                new IntegerSliderEntry("config.tdnf.value.max_breaks_per_tick", 1, 128, maxBreaksPerTick, "config.tdnf.reset", () -> DEFAULTS.maxBreaksPerTick,
+                        b -> maxBreaksPerTick = b, () -> Optional.of(I18n.translate("config.tdnf.help.max_breaks_per_tick").split(";"))));
+
+        performance.addEntry(new IntegerSliderEntry("config.tdnf.value.break_cooldown_ticks", 0, 40, breakCooldownTicks, "config.tdnf.reset",
+                () -> DEFAULTS.breakCooldownTicks, b -> breakCooldownTicks = b,
                 () -> Optional.of(I18n.translate("config.tdnf.help.break_cooldown_ticks").split(";"))));
-        
-        performance.addEntry(new IntegerSliderEntry("config.tdnf.value.max_search_pos_per_tick", 1, 512, maxSearchPosPerTick, "config.tdnf.reset", 
-                () -> DEFAULTS.maxSearchPosPerTick, b -> maxSearchPosPerTick = b, 
+
+        performance.addEntry(new IntegerSliderEntry("config.tdnf.value.max_search_pos_per_tick", 1, 512, maxSearchPosPerTick, "config.tdnf.reset",
+                () -> DEFAULTS.maxSearchPosPerTick, b -> maxSearchPosPerTick = b,
                 () -> Optional.of(I18n.translate("config.tdnf.help.max_search_pos_per_tick").split(";"))));
-        
+
         builder.setDoesConfirmSave(false);
-        
+
         return builder.build();
     }
-    
+
     private static void saveUserInput() {
         Configurator.computeDerived();
         Configurator.saveConfig();

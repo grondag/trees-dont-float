@@ -14,13 +14,15 @@
  * the License.
  ******************************************************************************/
 
-package grondag.tdnf;
+package grondag.tdnf.world;
 
 import java.util.Iterator;
 import java.util.List;
 
 import com.google.common.collect.Lists;
 
+import grondag.tdnf.Configurator;
+import grondag.tdnf.TreesDoNotFloat;
 import io.netty.buffer.Unpooled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -65,19 +67,15 @@ import net.minecraft.world.World;
 public class FallingLogEntity extends Entity {
 
     public static Identifier IDENTIFIER = new Identifier(TreesDoNotFloat.MODID, "falling_log");
-    
-    public static final EntityType<? extends FallingLogEntity> FALLING_LOG =
-            Registry.register(
-                    Registry.ENTITY_TYPE,
-                    IDENTIFIER,
-                    FabricEntityTypeBuilder.<FallingLogEntity>create(EntityCategory.MISC, FallingLogEntity::new).size(EntityDimensions.fixed(0.9f, 0.9f)).build()
-                    );
+
+    public static final EntityType<? extends FallingLogEntity> FALLING_LOG = Registry.register(Registry.ENTITY_TYPE, IDENTIFIER,
+            FabricEntityTypeBuilder.<FallingLogEntity>create(EntityCategory.MISC, FallingLogEntity::new).size(EntityDimensions.fixed(0.9f, 0.9f)).build());
 
     public FallingLogEntity(World world, double x, double y, double z, BlockState state) {
         this(FALLING_LOG, world);
         this.block = state;
         this.field_6033 = true;
-        this.setPosition(x, y + (double)((1.0F - this.getHeight()) / 2.0F), z);
+        this.setPosition(x, y + (double) ((1.0F - this.getHeight()) / 2.0F), z);
         this.setVelocity(Vec3d.ZERO);
         this.prevX = x;
         this.prevY = y;
@@ -113,7 +111,7 @@ public class FallingLogEntity extends Entity {
 
     @Environment(EnvType.CLIENT)
     public BlockPos getFallingBlockPos() {
-        return (BlockPos)this.dataTracker.get(BLOCK_POS);
+        return (BlockPos) this.dataTracker.get(BLOCK_POS);
     }
 
     @Override
@@ -167,18 +165,21 @@ public class FallingLogEntity extends Entity {
                     // if block below can be replaced then keep falling
                     BlockPos downPos = myPos.down();
                     BlockState downBlockState = this.world.getBlockState(downPos);
-                    if(downBlockState.canReplace(new AutomaticItemPlacementContext(this.world, downPos, Direction.DOWN, ItemStack.EMPTY, Direction.UP)) && this.block.canPlaceAt(this.world, downPos)) {
+                    if (downBlockState.canReplace(new AutomaticItemPlacementContext(this.world, downPos, Direction.DOWN, ItemStack.EMPTY, Direction.UP))
+                            && this.block.canPlaceAt(this.world, downPos)) {
                         this.setPosition(myPos.getX() + 0.5, this.y, myPos.getZ() + 0.5);
                         this.setVelocity(0, this.getVelocity().y, 0);
                         this.onGround = false;
                         this.collided = false;
                     } else {
                         this.remove();
-                        if(!this.world.isClient) {
+                        if (!this.world.isClient) {
                             if (!this.destroyedOnLanding) {
-                                if (localBlockState.canReplace(new AutomaticItemPlacementContext(this.world, myPos, Direction.DOWN, ItemStack.EMPTY, Direction.UP)) && this.block.canPlaceAt(this.world, myPos)) {
+                                if (localBlockState
+                                        .canReplace(new AutomaticItemPlacementContext(this.world, myPos, Direction.DOWN, ItemStack.EMPTY, Direction.UP))
+                                        && this.block.canPlaceAt(this.world, myPos)) {
                                     if (this.block.contains(Properties.WATERLOGGED) && this.world.getFluidState(myPos).getFluid() == Fluids.WATER) {
-                                        this.block = (BlockState)this.block.with(Properties.WATERLOGGED, true);
+                                        this.block = (BlockState) this.block.with(Properties.WATERLOGGED, true);
                                     }
 
                                     if (this.world.setBlockState(myPos, this.block, 3)) {
@@ -209,12 +210,12 @@ public class FallingLogEntity extends Entity {
                 DamageSource damageSource_1 = boolean_1 ? DamageSource.ANVIL : DamageSource.FALLING_BLOCK;
                 Iterator<Entity> var7 = list_1.iterator();
 
-                while(var7.hasNext()) {
-                    Entity entity_1 = (Entity)var7.next();
-                    entity_1.damage(damageSource_1, (float)Math.min(MathHelper.floor((float)int_1 * this.fallHurtAmount), this.fallHurtMax));
+                while (var7.hasNext()) {
+                    Entity entity_1 = (Entity) var7.next();
+                    entity_1.damage(damageSource_1, (float) Math.min(MathHelper.floor((float) int_1 * this.fallHurtAmount), this.fallHurtMax));
                 }
 
-                if (boolean_1 && (double)this.random.nextFloat() < 0.05000000074505806D + (double)int_1 * 0.05D) {
+                if (boolean_1 && (double) this.random.nextFloat() < 0.05000000074505806D + (double) int_1 * 0.05D) {
                     BlockState blockState_1 = AnvilBlock.getLandingState(this.block);
                     if (blockState_1 == null) {
                         this.destroyedOnLanding = true;
@@ -277,7 +278,7 @@ public class FallingLogEntity extends Entity {
     @Override
     public void populateCrashReport(CrashReportSection crashReportSection_1) {
         super.populateCrashReport(crashReportSection_1);
-        crashReportSection_1.add("Immitating BlockState", (Object)this.block.toString());
+        crashReportSection_1.add("Immitating BlockState", (Object) this.block.toString());
     }
 
     public BlockState getBlockState() {
@@ -295,10 +296,7 @@ public class FallingLogEntity extends Entity {
         toBuffer(buf);
         return ServerSidePacketRegistry.INSTANCE.toPacket(IDENTIFIER, buf);
     }
-    
-    
-    
-    
+
     @Override
     public void move(MovementType movementType, Vec3d vec) {
         destroyCollidingDisplaceableBlocks();
@@ -306,7 +304,7 @@ public class FallingLogEntity extends Entity {
     }
 
     private void destroyCollidingDisplaceableBlocks() {
-        if(Configurator.hasBreaking) {
+        if (Configurator.hasBreaking) {
             final int i = MathHelper.floor(x - 0.5);
             final int j = MathHelper.ceil(x + 0.5);
             final int k = MathHelper.floor(y - 0.5);
@@ -314,13 +312,13 @@ public class FallingLogEntity extends Entity {
             final int i1 = MathHelper.floor(z - 0.5);
             final int j1 = MathHelper.ceil(z + 0.5);
             BlockPos.PooledMutable searchPos = BlockPos.PooledMutable.get();
-            
+
             for (int k1 = i; k1 < j; ++k1) {
                 for (int l1 = k; l1 < l; ++l1) {
                     for (int i2 = i1; i2 < j1; ++i2) {
                         searchPos.set(k1, l1, i2);
                         BlockState state = world.getBlockState(searchPos);
-                        if(Configurator.BREAKABLES.contains(state.getMaterial())) {
+                        if (Configurator.BREAKABLES.contains(state.getMaterial())) {
                             world.breakBlock(searchPos.toImmutable(), true);
                         }
                     }
@@ -329,7 +327,7 @@ public class FallingLogEntity extends Entity {
             searchPos.close();
         }
     }
-    
+
     public void toBuffer(PacketByteBuf buf) {
         buf.writeVarInt(this.getEntityId());
         buf.writeUuid(this.uuid);
@@ -339,11 +337,11 @@ public class FallingLogEntity extends Entity {
         buf.writeByte(MathHelper.floor(this.pitch * 256.0F / 360.0F));
         buf.writeByte(MathHelper.floor(this.yaw * 256.0F / 360.0F));
         final Vec3d velocity = this.getVelocity();
-        buf.writeShort((int)(MathHelper.clamp(velocity.x, -3.9D, 3.9D) * 8000.0D));
-        buf.writeShort((int)(MathHelper.clamp(velocity.y, -3.9D, 3.9D) * 8000.0D));
-        buf.writeShort((int)(MathHelper.clamp(velocity.z, -3.9D, 3.9D) * 8000.0D));
+        buf.writeShort((int) (MathHelper.clamp(velocity.x, -3.9D, 3.9D) * 8000.0D));
+        buf.writeShort((int) (MathHelper.clamp(velocity.y, -3.9D, 3.9D) * 8000.0D));
+        buf.writeShort((int) (MathHelper.clamp(velocity.z, -3.9D, 3.9D) * 8000.0D));
     }
-    
+
     public void fromBuffer(PacketByteBuf buf) {
         this.setEntityId(buf.readVarInt());
         this.uuid = buf.readUuid();
@@ -351,11 +349,11 @@ public class FallingLogEntity extends Entity {
         this.y = buf.readDouble();
         this.z = buf.readDouble();
         method_18003(x, y, z);
-        this.pitch = (float)(buf.readByte() * 360) / 256.0F;
+        this.pitch = (float) (buf.readByte() * 360) / 256.0F;
         this.yaw = buf.readByte();
-        final double vx = (double)buf.readShort() / 8000.0D;
-        final double vy = (double)buf.readShort() / 8000.0D;
-        final double vz = (double)buf.readShort() / 8000.0D;
+        final double vx = (double) buf.readShort() / 8000.0D;
+        final double vy = (double) buf.readShort() / 8000.0D;
+        final double vz = (double) buf.readShort() / 8000.0D;
         this.setVelocity(vx, vy, vz);
     }
 

@@ -18,7 +18,7 @@ package grondag.tdnf.client;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 
-import grondag.tdnf.FallingLogEntity;
+import grondag.tdnf.world.FallingLogEntity;
 
 import java.util.Random;
 import net.fabricmc.api.EnvType;
@@ -65,9 +65,11 @@ public class FallingLogEntityRenderer extends EntityRenderer<FallingLogEntity> {
 
                 bufferBuilder_1.begin(7, VertexFormats.POSITION_COLOR_UV_LMAP);
                 BlockPos blockPos_1 = new BlockPos(fallingLogEntity.x, fallingLogEntity.getBoundingBox().maxY, fallingLogEntity.z);
-                GlStateManager.translatef((float)(double_1 - (double)blockPos_1.getX() - 0.5D), (float)(double_2 - (double)blockPos_1.getY()), (float)(double_3 - (double)blockPos_1.getZ() - 0.5D));
+                GlStateManager.translatef((float) (double_1 - (double) blockPos_1.getX() - 0.5D), (float) (double_2 - (double) blockPos_1.getY()),
+                        (float) (double_3 - (double) blockPos_1.getZ() - 0.5D));
                 BlockRenderManager blockRenderManager_1 = MinecraftClient.getInstance().getBlockRenderManager();
-                blockRenderManager_1.getModelRenderer().tesselate(world_1, blockRenderManager_1.getModel(blockState_1), blockState_1, blockPos_1, bufferBuilder_1, false, new Random(), blockState_1.getRenderingSeed(fallingLogEntity.getFallingBlockPos()));
+                blockRenderManager_1.getModelRenderer().tesselate(world_1, blockRenderManager_1.getModel(blockState_1), blockState_1, blockPos_1,
+                        bufferBuilder_1, false, new Random(), blockState_1.getRenderingSeed(fallingLogEntity.getFallingBlockPos()));
                 tessellator_1.draw();
                 if (this.renderOutlines) {
                     GlStateManager.tearDownSolidRenderingTextureCombine();

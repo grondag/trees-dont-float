@@ -30,7 +30,7 @@ public class ModMenuHelper implements ModMenuApi {
     public Function<Screen, ? extends Screen> getConfigScreenFactory() {
         return ConfigScreen::getScreen;
     }
-    
+
     @Override
     public String getModId() {
         return TreesDoNotFloat.MODID;

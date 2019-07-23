@@ -14,13 +14,14 @@
  * the License.
  ******************************************************************************/
 
-package grondag.tdnf;
+package grondag.tdnf.world;
 
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.function.Function;
 
+import grondag.tdnf.Configurator;
 import grondag.tdnf.Configurator.EffectLevel;
 import io.netty.util.internal.ThreadLocalRandom;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
@@ -33,7 +34,6 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.LeavesBlock;
 import net.minecraft.block.LogBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.EntityContext;
@@ -47,34 +47,28 @@ import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.world.World;
 
 /**
- * Call when lava is placed beneath a log.  Will check for a tree-like structure
- * starting at the point and if it is not resting on other non-volcanic blocks
- * will destroy the tree. <p>
+ * Call when log neighbors change. Will check for a tree-like structure starting
+ * at the point and if it is not resting on solid blocks will destroy the tree.
+ * <p>
  * 
- * Not thread-safe.  Meant to be called from server thread.<p>
- * 
- * Current implementation is a bit sloppy and seems to miss some leaves/logs
- * and leaf decay isn't immediate as desired / expected.  
+ * Not thread-safe. Meant to be called from server thread.
+ * <p>
  *
  */
-public class TreeCutter
-{
+public class TreeCutter {
     private Operation operation = Operation.STARTING;
 
     /** if search in progress, starting state of search */
-    private BlockState startState = Blocks.AIR.getDefaultState(); 
+    private BlockState startState = Blocks.AIR.getDefaultState();
 
     private Block startBlock;
 
-    private final PriorityQueue<Visit> toVisit = new PriorityQueue<>(
-            new Comparator<Visit>() 
-            {
-                @Override
-                public int compare(Visit o1, Visit o2)
-                {
-                    return Byte.compare(o1.type, o2.type);
-                }
-            });
+    private final PriorityQueue<Visit> toVisit = new PriorityQueue<>(new Comparator<Visit>() {
+        @Override
+        public int compare(Visit o1, Visit o2) {
+            return Byte.compare(o1.type, o2.type);
+        }
+    });
 
     /** packed positions that have received a valid visit */
     private final Long2ByteOpenHashMap visited = new Long2ByteOpenHashMap();
@@ -82,12 +76,15 @@ public class TreeCutter
     /** packed positions of logs to be cleared - populated during pre-clearing */
     private final LongArrayFIFOQueue logs = new LongArrayFIFOQueue();
 
-    /** packed positions of logs to fall - sorted by Y - needed cuz can't sort FIFO Queue */
+    /**
+     * packed positions of logs to fall - sorted by Y - needed cuz can't sort FIFO
+     * Queue
+     */
     private final LongArrayList fallingLogs = new LongArrayList();
 
     /** Used to iterate {@link #fallingLogs} */
     private int fallingLogIndex = 0;
-    
+
     /** leaves to be cleared - populated during pre-clearing */
     private final LongArrayFIFOQueue leaves = new LongArrayFIFOQueue();
 
@@ -100,7 +97,7 @@ public class TreeCutter
     /** holds consolidated drops */
     private final ObjectArrayList<ItemStack> drops = new ObjectArrayList<>();
 
-    /** iterator traversed durnig pre-clearing */
+    /** iterator traversed during pre-clearing */
     private ObjectIterator<Entry> prepIt = null;
 
     /** most common leaf block next to trunk */
@@ -114,12 +111,12 @@ public class TreeCutter
 
     /** cooldown timer if configured */
     private int cooldownTicks = 0;
-    
+
     private static final Function<World, Operation> DUMMY_LOG_HANDLER = w -> Operation.COMPLETE;
-    
+
     /** method reference to selected log handler (clear or drop) */
     private Function<World, Operation> logHandler = DUMMY_LOG_HANDLER;
-    
+
     // all below are used for center-of-mass and fall velocity handling
     private int LOG_FACTOR = 5; // logs worth this much more than leaves
     private int xStart = 0;
@@ -130,7 +127,7 @@ public class TreeCutter
     private double zVelocity = 0;
 
     private Axis fallAxis = Axis.X;
-    
+
     // all below are for compact representation of search space
     private static final byte POS_TYPE_LOG_FROM_ABOVE = 0;
     private static final byte POS_TYPE_LOG = 1;
@@ -176,12 +173,12 @@ public class TreeCutter
     }
 
     public boolean tick(World world) {
-        if(cooldownTicks > 0) {
+        if (cooldownTicks > 0) {
             cooldownTicks--;
             return false;
         }
 
-        switch(this.operation) {
+        switch (this.operation) {
         case STARTING:
             this.operation = startSearch(world);
             break;
@@ -189,7 +186,7 @@ public class TreeCutter
         case SEARCHING: {
             Operation op = Operation.SEARCHING;
             int budget = Configurator.maxSearchPosPerTick;
-            while(budget-- > 0 && op == Operation.SEARCHING) {
+            while (budget-- > 0 && op == Operation.SEARCHING) {
                 op = doSearch(world);
             }
             this.operation = op;
@@ -199,7 +196,7 @@ public class TreeCutter
         case PRECLEARING: {
             Operation op = Operation.PRECLEARING;
             int budget = Configurator.maxSearchPosPerTick;
-            while(budget-- > 0 && op == Operation.PRECLEARING) {
+            while (budget-- > 0 && op == Operation.PRECLEARING) {
                 op = doPreClearing(world);
             }
             this.operation = op;
@@ -209,13 +206,13 @@ public class TreeCutter
         case CLEARING_LEAVES: {
             Operation op = Operation.CLEARING_LEAVES;
             int budget = Configurator.maxBreaksPerTick;
-            while(budget-- > 0 && op == Operation.CLEARING_LEAVES) {
+            while (budget-- > 0 && op == Operation.CLEARING_LEAVES) {
                 op = doLeafClearing(world);
             }
             this.cooldownTicks = Configurator.breakCooldownTicks;
             this.operation = op;
             // drop logs now in case player doesn't want to wait for logs
-            if(op != Operation.CLEARING_LEAVES && Configurator.stackDrops) {
+            if (op != Operation.CLEARING_LEAVES && Configurator.stackDrops) {
                 spawnDrops(world);
             }
             break;
@@ -224,22 +221,22 @@ public class TreeCutter
         case CLEARING_LOGS: {
             Operation op = Operation.CLEARING_LOGS;
             int budget = Configurator.maxBreaksPerTick;
-            while(budget-- > 0 && op == Operation.CLEARING_LOGS) {
+            while (budget-- > 0 && op == Operation.CLEARING_LOGS) {
                 op = logHandler.apply(world);
             }
             this.cooldownTicks = Configurator.breakCooldownTicks;
             this.operation = op;
             break;
         }
-        
+
         default:
             operation = Operation.COMPLETE; // handle WTF
         case COMPLETE:
             break;
         }
 
-        if(operation == Operation.COMPLETE) {
-            if(Configurator.stackDrops) {
+        if (operation == Operation.COMPLETE) {
+            if (Configurator.stackDrops) {
                 spawnDrops(world);
             }
             return true;
@@ -254,14 +251,14 @@ public class TreeCutter
 
         BlockState state = world.getBlockState(searchPos);
 
-        if(state.getBlock().matches(BlockTags.LOGS) && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
+        if (state.getBlock().matches(BlockTags.LOGS) && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
             this.startState = state;
             this.startBlock = state.getBlock();
 
             this.visited.put(packedPos, POS_TYPE_LOG);
 
             // shoudln't really be necessary, but reflect the
-            // reason we are doing this is the block below is (or was) hot lava
+            // reason we are doing this is the block below is (or was) non-supporting
             this.visited.put(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_IGNORE);
 
             enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LOG, ZERO_BYTE);
@@ -284,8 +281,8 @@ public class TreeCutter
             enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
             enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
             return Operation.SEARCHING;
-        }
-        else return Operation.COMPLETE;
+        } else
+            return Operation.COMPLETE;
 
     }
 
@@ -300,17 +297,18 @@ public class TreeCutter
 
         byte newDepth = (byte) (toVisit.depth + 1);
 
-        if(!this.visited.containsKey(packedPos)) {
+        if (!this.visited.containsKey(packedPos)) {
             BlockState state = world.getBlockState(searchPos);
 
             Block block = state.getBlock();
 
-            if(block.matches(BlockTags.LEAVES)) {
+            if (block.matches(BlockTags.LEAVES)) {
                 boolean validVisit = false;
+                final LeafInfo inf = LeafInfo.get(block);
 
-                if(fromType == POS_TYPE_LEAF) {
+                if (fromType == POS_TYPE_LEAF) {
                     // leaf visit only valid from leaves that were one less away than this one
-                    if(state.get(LeavesBlock.DISTANCE) == Math.min(7, newDepth + 1)) {
+                    if (inf.applyAsInt(state) == Math.min(inf.maxDistance, newDepth + 1)) {
                         validVisit = true;
                         this.visited.put(packedPos, POS_TYPE_LEAF);
                     }
@@ -321,7 +319,7 @@ public class TreeCutter
 
                     // leaf visits coming from logs are expected to have distance = 1,
                     // otherwise they must belong to a different tree.
-                    if(state.get(LeavesBlock.DISTANCE) == 1) {
+                    if (inf.applyAsInt(state) == 1) {
                         validVisit = true;
 
                         // restart depth of search when transitioning from log to leaf
@@ -332,14 +330,14 @@ public class TreeCutter
                     }
                 }
 
-                if(validVisit) {
-                	enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LEAF, newDepth);
+                if (validVisit) {
+                    enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LEAF, newDepth);
-                    
+
                     enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LEAF, newDepth);
@@ -363,19 +361,18 @@ public class TreeCutter
                     enqueIfViable(BlockPos.add(packedPos, 1, -1, 0), POS_TYPE_LEAF, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 1, -1, 1), POS_TYPE_LEAF, newDepth);
                 }
-            }
-            else if(fromType != POS_TYPE_LEAF) {
+            } else if (fromType != POS_TYPE_LEAF) {
                 // visiting from wood (ignore type never added to queue)
-                if(block == this.startState.getBlock() && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
+                if (block == this.startState.getBlock() && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
                     this.visited.put(packedPos, POS_TYPE_LOG);
 
-                	enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LOG_FROM_ABOVE, newDepth);
+                    enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LOG_FROM_ABOVE, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LOG, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LOG, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LOG, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LOG, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LOG, newDepth);
-                    
+
                     enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
@@ -389,12 +386,11 @@ public class TreeCutter
                     enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
                     enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                }
-                else {
-                    if(fromType == POS_TYPE_LOG_FROM_ABOVE) {
+                } else {
+                    if (fromType == POS_TYPE_LOG_FROM_ABOVE) {
                         // if found a supporting block for a connected log
-                        // then tree remains stanging
-                        if(Block.isFaceFullSquare(state.getCollisionShape(world, searchPos, EntityContext.absent()), Direction.UP)) {
+                        // then tree remains standing
+                        if (Block.isFaceFullSquare(state.getCollisionShape(world, searchPos, EntityContext.absent()), Direction.UP)) {
                             return Operation.COMPLETE;
                         }
                     }
@@ -404,16 +400,16 @@ public class TreeCutter
             }
         }
 
-        if(this.toVisit.isEmpty()) {
+        if (this.toVisit.isEmpty()) {
             prepIt = this.visited.long2ByteEntrySet().iterator();
 
             // id most common leaf type next to trunk - will use it for breaking
-            if(!leafCounts.isEmpty()) {
+            if (!leafCounts.isEmpty()) {
                 int max = 0;
                 ObjectIterator<it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<Block>> it = leafCounts.object2IntEntrySet().iterator();
-                while(it.hasNext()) {
+                while (it.hasNext()) {
                     it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<Block> e = it.next();
-                    if(e.getIntValue() > max) {
+                    if (e.getIntValue() > max) {
                         max = e.getIntValue();
                         leafBlock = e.getKey();
                     }
@@ -427,9 +423,11 @@ public class TreeCutter
     }
 
     private void enqueIfViable(long packedPos, byte type, byte depth) {
-        if(this.visited.containsKey(packedPos)) return;
+        if (this.visited.containsKey(packedPos))
+            return;
 
-        if(depth == Byte.MAX_VALUE || depth < 0) return;
+        if (depth == Byte.MAX_VALUE || depth < 0)
+            return;
 
         this.toVisit.offer(new Visit(packedPos, type, depth));
     }
@@ -437,19 +435,19 @@ public class TreeCutter
     private Operation doPreClearing(World world) {
         final ObjectIterator<Entry> prepIt = this.prepIt;
 
-        if(prepIt.hasNext()) {
+        if (prepIt.hasNext()) {
             Entry e = prepIt.next();
             final byte type = e.getByteValue();
-            if(type != POS_TYPE_IGNORE) {
+            if (type != POS_TYPE_IGNORE) {
                 final long pos = e.getLongKey();
-                if(type == POS_TYPE_LEAF) {
-                    if(Configurator.keepLogsIntact) {
+                if (type == POS_TYPE_LEAF) {
+                    if (Configurator.keepLogsIntact) {
                         xSum += (BlockPos.unpackLongX(pos) - xStart);
                         zSum += (BlockPos.unpackLongZ(pos) - zStart);
                     }
                     leaves.enqueue(pos);
                 } else {
-                    if(Configurator.keepLogsIntact) {
+                    if (Configurator.keepLogsIntact) {
                         xSum += (BlockPos.unpackLongX(pos) - xStart) * LOG_FACTOR;
                         zSum += (BlockPos.unpackLongZ(pos) - zStart) * LOG_FACTOR;
                     }
@@ -468,11 +466,11 @@ public class TreeCutter
         BlockState state = world.getBlockState(pos);
         Block block = state.getBlock();
 
-        if(block == leafBlock) {
+        if (block == leafBlock) {
             breakBlock(pos, world);
         }
 
-        return leaves.isEmpty() ? Operation.CLEARING_LOGS :  Operation.CLEARING_LEAVES;
+        return leaves.isEmpty() ? Operation.CLEARING_LOGS : Operation.CLEARING_LEAVES;
     }
 
     private Operation doLogClearing(World world) {
@@ -481,11 +479,11 @@ public class TreeCutter
         final BlockState state = world.getBlockState(pos);
         final Block block = state.getBlock();
 
-        if(block == startBlock) {
+        if (block == startBlock) {
             breakBlock(pos, world);
         }
 
-        return this.logs.isEmpty() ? Operation.COMPLETE :  Operation.CLEARING_LOGS;
+        return this.logs.isEmpty() ? Operation.COMPLETE : Operation.CLEARING_LOGS;
     }
 
     private void breakBlock(BlockPos pos, World world) {
@@ -496,71 +494,71 @@ public class TreeCutter
         }
         final FluidState fluidState = world.getFluidState(pos);
         final BlockEntity blockEntity = startBlock.hasBlockEntity() ? world.getBlockEntity(pos) : null;
-                
+
         doDrops(blockState, world, pos, blockEntity);
         world.setBlockState(pos, fluidState.getBlockState(), 3);
 
         final EffectLevel fxLevel = Configurator.effectLevel;
-        if(fxLevel == EffectLevel.ALL || (fxLevel == EffectLevel.SOME && (needsFirstEffect || ThreadLocalRandom.current().nextInt(4) == 0))) {
+        if (fxLevel == EffectLevel.ALL || (fxLevel == EffectLevel.SOME && (needsFirstEffect || ThreadLocalRandom.current().nextInt(4) == 0))) {
             world.playLevelEvent(2001, pos, Block.getRawIdFromState(blockState));
             needsFirstEffect = false;
         }
     }
-    
+
     private Operation prepareLogs() {
-        if(logs.isEmpty()) {
+        if (logs.isEmpty()) {
             logHandler = DUMMY_LOG_HANDLER;
-        } else if(Configurator.keepLogsIntact) {
+        } else if (Configurator.keepLogsIntact) {
             logHandler = this::doLogDropping1;
             final double div = logs.size() * LOG_FACTOR + leaves.size();
             final double xCenterOfMass = xStart + xSum / div;
             final double zCenterOfMass = zStart + zSum / div;
             final Random r = ThreadLocalRandom.current();
-            
-            xVelocity = xCenterOfMass - xStart; 
-            zVelocity = zCenterOfMass - zStart; 
-            if(xVelocity == 0 && zVelocity == 0) {
+
+            xVelocity = xCenterOfMass - xStart;
+            zVelocity = zCenterOfMass - zStart;
+            if (xVelocity == 0 && zVelocity == 0) {
                 xVelocity = r.nextGaussian();
                 zVelocity = r.nextGaussian();
-            } 
-            
+            }
+
             // normalize
             double len = Math.sqrt(xVelocity * xVelocity + zVelocity * zVelocity);
             xVelocity /= len;
             zVelocity /= len;
-            
+
             fallAxis = Math.abs(xVelocity) > Math.abs(zVelocity) ? Axis.X : Axis.Z;
-            
-            while(!logs.isEmpty()) {
+
+            while (!logs.isEmpty()) {
                 fallingLogs.add(logs.dequeueLastLong());
             }
             fallingLogs.sort((l0, l1) -> Integer.compare(BlockPos.unpackLongY(l1), BlockPos.unpackLongY(l0)));
         } else {
             logHandler = this::doLogClearing;
         }
-        
-        if(!leaves.isEmpty() && leafBlock != null) {
+
+        if (!leaves.isEmpty() && leafBlock != null) {
             return Operation.CLEARING_LEAVES;
-        } else if(logHandler == DUMMY_LOG_HANDLER) {
+        } else if (logHandler == DUMMY_LOG_HANDLER) {
             return Operation.COMPLETE;
         } else {
             return Operation.CLEARING_LOGS;
         }
     }
-    
+
     private Operation doLogDropping1(World world) {
         final int limit = fallingLogs.size();
-        if(limit == 0) {
+        if (limit == 0) {
             return Operation.COMPLETE;
         }
-        
+
         final int i = fallingLogIndex++;
-        if(i >= limit) {
+        if (i >= limit) {
             logHandler = this::doLogDropping2;
             fallingLogIndex = 0;
             return Operation.CLEARING_LOGS;
         }
-        
+
         final long packedPos = fallingLogs.getLong(i);
         final BlockPos pos = searchPos.setFromLong(packedPos);
         world.setBlockState(pos, Blocks.AIR.getDefaultState());
@@ -569,12 +567,12 @@ public class TreeCutter
 
     private Operation doLogDropping2(World world) {
         final int limit = fallingLogs.size();
-        if(limit == 0) {
+        if (limit == 0) {
             return Operation.COMPLETE;
         }
-        
+
         final int i = fallingLogIndex++;
-        if(i >= limit) {
+        if (i >= limit) {
             return Operation.COMPLETE;
         }
         final long packedPos = fallingLogs.getLong(i);
@@ -587,9 +585,9 @@ public class TreeCutter
     }
 
     private void doDrops(BlockState blockState, World world, BlockPos pos, BlockEntity blockEntity) {
-        if(Configurator.stackDrops) {
-            Block.getDroppedStacks(blockState, (ServerWorld)world, pos, blockEntity).forEach(s -> consolidateDrops(world, s));
-            //XP, etc. - probably not needed for logs but just in case
+        if (Configurator.stackDrops) {
+            Block.getDroppedStacks(blockState, (ServerWorld) world, pos, blockEntity).forEach(s -> consolidateDrops(world, s));
+            // XP, etc. - probably not needed for logs but just in case
             blockState.onStacksDropped(world, pos, ItemStack.EMPTY);
         } else {
             Block.dropStacks(blockState, world, pos, blockEntity);
@@ -597,55 +595,54 @@ public class TreeCutter
     }
 
     private void consolidateDrops(World world, ItemStack stack) {
-        if(stack == null || stack.isEmpty()) {
+        if (stack == null || stack.isEmpty()) {
             return;
         }
         stack = stack.copy();
 
-        if(!stack.isStackable()) {
+        if (!stack.isStackable()) {
             Block.dropStack(world, searchPos.setFromLong(startPos), stack);
             return;
         }
 
         final ObjectArrayList<ItemStack> drops = this.drops;
 
-        if(drops.isEmpty() || !stack.isStackable()) {
+        if (drops.isEmpty() || !stack.isStackable()) {
             drops.add(stack);
         } else {
             final int limit = drops.size();
-            for(int i = 0; i < limit; i++) {
+            for (int i = 0; i < limit; i++) {
                 ItemStack existing = drops.get(i);
                 final int capacity = existing.getMaxCount() - existing.getCount();
-                if(capacity > 0 && stack.getItem() == existing.getItem() 
-                        && ItemStack.areTagsEqual(stack, existing)) {
+                if (capacity > 0 && stack.getItem() == existing.getItem() && ItemStack.areTagsEqual(stack, existing)) {
                     int amt = Math.min(stack.getCount(), capacity);
-                    if(amt > 0) {
+                    if (amt > 0) {
                         stack.decrement(amt);
                         existing.increment(amt);
                     }
 
-                    if(existing.getCount() == existing.getMaxCount()) {
+                    if (existing.getCount() == existing.getMaxCount()) {
                         Block.dropStack(world, searchPos.setFromLong(startPos), existing);
                         drops.remove(i);
                         break;
                     }
 
-                    if(stack.isEmpty()) {
+                    if (stack.isEmpty()) {
                         return;
                     }
                 }
             }
-            if(!stack.isEmpty()) {
+            if (!stack.isEmpty()) {
                 drops.add(stack);
             }
         }
     }
 
     private void spawnDrops(World world) {
-        if(!drops.isEmpty()) {
+        if (!drops.isEmpty()) {
             BlockPos pos = searchPos.setFromLong(startPos);
             final int limit = drops.size();
-            for(int i = 0; i < limit; i++) {
+            for (int i = 0; i < limit; i++) {
                 Block.dropStack(world, pos, drops.get(i));
             }
             drops.clear();

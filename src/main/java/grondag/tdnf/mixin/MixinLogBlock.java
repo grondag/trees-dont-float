@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import grondag.tdnf.Configurator;
-import grondag.tdnf.Dispatcher;
+import grondag.tdnf.world.Dispatcher;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LogBlock;
@@ -53,9 +53,10 @@ public abstract class MixinLogBlock extends PillarBlock {
     }
 
     @Override
-    public BlockState getStateForNeighborUpdate(BlockState myState, Direction direction, BlockState otherState, IWorld world, BlockPos myPos, BlockPos otherPos) {
+    public BlockState getStateForNeighborUpdate(BlockState myState, Direction direction, BlockState otherState, IWorld world, BlockPos myPos,
+            BlockPos otherPos) {
         if (!Configurator.requireLogBreak && direction == Direction.DOWN && world instanceof ServerWorld) {
-            if(!Block.isFaceFullSquare(otherState.getCollisionShape(world, otherPos, EntityContext.absent()), Direction.UP)) {
+            if (!Block.isFaceFullSquare(otherState.getCollisionShape(world, otherPos, EntityContext.absent()), Direction.UP)) {
                 Dispatcher.enqueCheck((World) world, otherPos);
             }
         }
@@ -71,14 +72,14 @@ public abstract class MixinLogBlock extends PillarBlock {
     protected void appendProperties(StateFactory.Builder<Block, BlockState> builder) {
         super.appendProperties(builder);
         builder.add(Properties.PERSISTENT);
-     }
+    }
 
     @Override
     public BlockState getPlacementState(ItemPlacementContext context) {
         BlockState result = super.getPlacementState(context);
-        if(context.getPlayer() != null && result.getBlock() == (Block)(Object)(this)) {
+        if (context.getPlayer() != null && result.getBlock() == (Block) (Object) (this)) {
             result = result.with(Properties.PERSISTENT, true);
         }
         return result;
-     }
+    }
 }
