@@ -163,6 +163,13 @@ public class TreeCutter {
 
     /** return true when complete */
     public boolean tick(World world) {
+        if(job.isCancelled(world)) {
+            if (Configurator.stackDrops) {
+                dropHandler.spawnDrops(world);
+            }
+            return true;
+        }
+        
         fx.tick();
         breakBudget = Configurator.maxBreaksPerTick;
         
@@ -185,9 +192,6 @@ public class TreeCutter {
         } else {
             return breakBudget > 0;
         }
-        
-        //TODO: if configured to use held item, abort if stack has changed
-       
     }
 
     private Operation startSearch(World world) {
@@ -525,6 +529,8 @@ public class TreeCutter {
         final int i = fallingLogIndex++;
         if (i >= limit) {
             fallingLogIndex = 0;
+            // logs are all removed so should not stop after this
+            job.forceCompletion();
             return this::doLogDropping2;
         }
 

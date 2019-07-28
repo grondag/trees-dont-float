@@ -130,7 +130,6 @@ public class Configurator {
 
     public static boolean hasBreaking = fallingLogsBreakPlants || fallingLogsBreakFragile;
 
-    // //TODO: implement
 //    public static SupportSurface logSupportSurface = DEFAULTS.minimumSupportSurface;
 
     public static final ObjectOpenHashSet<Material> BREAKABLES = new ObjectOpenHashSet<>();

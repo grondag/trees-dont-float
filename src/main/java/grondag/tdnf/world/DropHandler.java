@@ -57,7 +57,6 @@ public class DropHandler {
     
     public void doDrops(BlockState blockState, World world, BlockPos pos, BlockEntity blockEntity) {
         if (Configurator.stackDrops) {
-            //TODO: check for tool still in hand
             if (job.hasAxe() && Configurator.applyFortune) {
                 Block.getDroppedStacks(blockState, (ServerWorld) world, pos, blockEntity, job.player(), job.stack()).forEach(s -> consolidateDrops(world, s));
                 // XP, etc. - probably not needed for logs but just in case

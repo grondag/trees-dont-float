@@ -18,8 +18,12 @@ package grondag.tdnf.world;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
+import grondag.tdnf.Configurator;
+import grondag.tdnf.Configurator.FallCondition;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 public class TreeJob {
     private TreeJob() {}
@@ -28,6 +32,7 @@ public class TreeJob {
     private ServerPlayerEntity player;
     private ItemStack stack;
     private boolean hasAxe;
+    private boolean canCancel = true;
     
     /** packed staring pos */
     public long startPos() {
@@ -45,13 +50,40 @@ public class TreeJob {
     }
     
     public boolean hasAxe() {
-        return hasAxe;
+        return hasAxe && player.getMainHandStack() == stack;
+    }
+    
+    /** Call when when changing tool or player status can no longer affect the outcome */
+    public void forceCompletion() {
+        canCancel = false;
     }
     
     public void release() {
         this.player = null;
         this.stack = null;
         POOL.offer(this);
+    }
+    
+    /** 
+     * True when: <br>
+     * <li>Player starts with an axe
+     * <li>Tool-dependent effects are in play
+     * <li>Player switches away from the tool they had at start.
+     */
+    public boolean isCancelled(World world) {
+        return canCancel 
+             & (player == null 
+             || player.getMainHandStack() != stack
+             || player.notInAnyWorld 
+             || player.world != world
+             || !closeEnough(player.getBlockPos()));
+    }
+    
+    private final boolean closeEnough(BlockPos pos) {
+        final int dx = pos.getX() - BlockPos.unpackLongX(startPos);
+        final int dy = pos.getY() - BlockPos.unpackLongY(startPos);
+        final int dz = pos.getZ() - BlockPos.unpackLongZ(startPos);
+        return dx * dx + dy * dy + dz * dz < 32 * 32;
     }
     
     private static final ArrayBlockingQueue<TreeJob> POOL = new ArrayBlockingQueue<>(512);
@@ -65,6 +97,7 @@ public class TreeJob {
         result.player = player;
         result.stack = stack;
         result.hasAxe = DropHandler.hasAxe(player, stack);
+        result.canCancel = result.hasAxe && Configurator.fallCondition == FallCondition.USE_TOOL;
         return result;
     }
 }
