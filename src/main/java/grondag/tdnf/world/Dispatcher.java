@@ -18,8 +18,10 @@ package grondag.tdnf.world;
 
 import java.util.IdentityHashMap;
 
-import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
 import net.fabricmc.fabric.api.event.world.WorldTickCallback;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -27,16 +29,16 @@ public class Dispatcher {
 
     private static boolean suspended = false;
 
-    private static final long NO_JOB = -1L;
-
     public static void init() {
         WorldTickCallback.EVENT.register(Dispatcher::routeTick);
     }
 
     private static class WorldJobs {
-        private final LongArrayFIFOQueue jobList = new LongArrayFIFOQueue();
+        private final ObjectArrayFIFOQueue<TreeJob> jobList = new ObjectArrayFIFOQueue<>();
+        private final LongOpenHashSet queuedPositions = new LongOpenHashSet();
+        
         private TreeCutter cutter = null;
-        private long currentJob = NO_JOB;
+        private TreeJob currentJob = null;
 
         TreeCutter cutter() {
             TreeCutter result = cutter;
@@ -48,18 +50,30 @@ public class Dispatcher {
         }
 
         public void run(World world) {
-            long result = currentJob;
-            if (result == NO_JOB & !jobList.isEmpty()) {
-                result = jobList.dequeueLong();
+            TreeJob result = currentJob;
+            if (result == null & !jobList.isEmpty()) {
+                result = jobList.dequeue();
                 currentJob = result;
                 cutter().reset(result);
             }
 
-            if (result != NO_JOB) {
+            if (result != null) {
                 if (cutter.tick(world)) {
-                    currentJob = NO_JOB;
+                    queuedPositions.remove(result.startPos());
+                    result.release();
+                    currentJob = null;
                 }
-                ;
+            }
+            assert queuedPositions.isEmpty() == (jobList.isEmpty() && currentJob == null);
+        }
+
+        // only add the first report - earlier reports are more reliable/valuable
+        // in particular, break block comes first and includes player
+        public void enqueue(long packedPosition, ServerPlayerEntity player) {
+            if(queuedPositions.add(packedPosition)) {
+//                System.out.println("Enqueing: " + BlockPos.fromLong(packedPosition).toString() + " player = " +
+//                        (player == null ? "NULL" : player.toString()));
+                jobList.enqueue(TreeJob.claim(packedPosition, player, player == null ? null : player.getMainHandStack()));
             }
         }
     }
@@ -79,7 +93,7 @@ public class Dispatcher {
         jobs.run(world);
     }
 
-    public static void enqueCheck(World world, BlockPos pos) {
+    public static void enqueCheck(World world, BlockPos pos, ServerPlayerEntity player) {
         if (world.isClient || suspended) {
             return;
         }
@@ -90,7 +104,7 @@ public class Dispatcher {
             worldJobs.put(world, jobs);
         }
 
-        jobs.jobList.enqueue(BlockPos.asLong(pos.getX(), pos.getY() + 1, pos.getZ()));
+        jobs.enqueue(BlockPos.asLong(pos.getX(), pos.getY() + 1, pos.getZ()), player);
     }
 
     public static void suspend() {

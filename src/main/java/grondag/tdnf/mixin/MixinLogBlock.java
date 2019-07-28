@@ -29,13 +29,14 @@ import net.minecraft.block.LogBlock;
 import net.minecraft.block.MaterialColor;
 import net.minecraft.block.PillarBlock;
 import net.minecraft.entity.EntityContext;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateFactory;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 
 @Mixin(LogBlock.class)
@@ -45,22 +46,34 @@ public abstract class MixinLogBlock extends PillarBlock {
     }
 
     @Override
-    public void onBlockRemoved(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify) {
-        if (oldState.getBlock() != newState.getBlock()) {
-            Dispatcher.enqueCheck(world, blockPos);
+    public void neighborUpdate(BlockState blockState, World world, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify) {
+        super.neighborUpdate(blockState, world, blockPos, otherBlock, otherPos, notify);
+        
+        if (!Configurator.requireLogBreak && otherPos.getY() == blockPos.getY() - 1 && world instanceof ServerWorld) {
+//            System.out.println("neighborUpdate notify = " + notify);
+            BlockState otherState = world.getBlockState(otherPos);
+            if (!Block.isFaceFullSquare(otherState.getCollisionShape(world, otherPos, EntityContext.absent()), Direction.UP)) {
+                Dispatcher.enqueCheck((World) world, otherPos, null);
+            }
         }
-        super.onBlockRemoved(oldState, world, blockPos, newState, notify);
     }
 
     @Override
-    public BlockState getStateForNeighborUpdate(BlockState myState, Direction direction, BlockState otherState, IWorld world, BlockPos myPos,
-            BlockPos otherPos) {
-        if (!Configurator.requireLogBreak && direction == Direction.DOWN && world instanceof ServerWorld) {
-            if (!Block.isFaceFullSquare(otherState.getCollisionShape(world, otherPos, EntityContext.absent()), Direction.UP)) {
-                Dispatcher.enqueCheck((World) world, otherPos);
-            }
+    public void onBreak(World world, BlockPos blockPos, BlockState blockState, PlayerEntity playerEntity) {
+        if(!world.isClient && playerEntity != null) {
+//            System.out.println("onBreak playerEntity = " + (playerEntity == null ? "NULL" : playerEntity.toString()));
+            Dispatcher.enqueCheck(world, blockPos, (ServerPlayerEntity)playerEntity);
         }
-        return super.getStateForNeighborUpdate(myState, direction, otherState, world, myPos, otherPos);
+        super.onBreak(world, blockPos, blockState, playerEntity);
+    }
+
+    @Override
+    public void onBlockRemoved(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify) {
+        if (oldState.getBlock() != newState.getBlock()) {
+//            System.out.println("onBlockRemoved notify = " + notify);
+            Dispatcher.enqueCheck(world, blockPos, null);
+        }
+        super.onBlockRemoved(oldState, world, blockPos, newState, notify);
     }
 
     @Inject(at = @At("RETURN"), method = "<init>")

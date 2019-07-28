@@ -26,6 +26,7 @@ import static grondag.tdnf.Configurator.renderFallingLogs;
 import static grondag.tdnf.Configurator.fallingLogsBreakPlants;
 import static grondag.tdnf.Configurator.fallingLogsBreakFragile;
 import static grondag.tdnf.Configurator.protectPlayerLogs;
+import static grondag.tdnf.Configurator.directDeposit;
 //import static grondag.tdnf.Configurator.logSupportSurface;
 import static grondag.tdnf.Configurator.requireLogBreak;
 import static grondag.tdnf.Configurator.stackDrops;
@@ -75,6 +76,10 @@ public class ConfigScreen {
         features.addEntry(
                 new BooleanListEntry("config.tdnf.value.protect_player_logs", protectPlayerLogs, "config.tdnf.reset", () -> DEFAULTS.protectPlayerLogs,
                         b -> protectPlayerLogs = b, () -> Optional.of(I18n.translate("config.tdnf.help.protect_player_logs").split(";"))));
+
+        features.addEntry(
+                new BooleanListEntry("config.tdnf.value.direct_deposit", directDeposit, "config.tdnf.reset", () -> DEFAULTS.directDeposit,
+                        b -> directDeposit = b, () -> Optional.of(I18n.translate("config.tdnf.help.direct_deposit").split(";"))));
 
 //        features.addEntry(new EnumListEntry(
 //                "config.tdnf.value.support_surface", 

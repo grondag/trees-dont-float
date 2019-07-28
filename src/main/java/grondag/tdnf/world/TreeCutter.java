@@ -29,7 +29,6 @@ import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -38,8 +37,6 @@ import net.minecraft.block.LogBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.EntityContext;
 import net.minecraft.fluid.FluidState;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -94,18 +91,16 @@ public class TreeCutter {
     /** general purpose mutable pos */
     private final BlockPos.Mutable searchPos = new BlockPos.Mutable();
 
-    /** holds consolidated drops */
-    private final ObjectArrayList<ItemStack> drops = new ObjectArrayList<>();
-
     /** iterator traversed during pre-clearing */
     private ObjectIterator<Entry> prepIt = null;
 
     /** most common leaf block next to trunk */
     private Block leafBlock = null;
 
-    /** packed staring pos */
-    private long startPos;
-
+    private TreeJob job = null;
+    
+    private final DropHandler dropHandler = new DropHandler();
+    
     /** true when limiting particles, etc. - ensures we do at least one */
     private boolean needsFirstEffect = true;
 
@@ -150,23 +145,23 @@ public class TreeCutter {
         }
     }
 
-    public void reset(long startPos) {
+    public void reset(TreeJob job) {
+        this.job = job;
+        dropHandler.reset(job);
         visited.clear();
         toVisit.clear();
         logs.clear();
         fallingLogs.clear();
         leaves.clear();
-        drops.clear();
         leafCounts.clear();
         xSum = 0;
         zSum = 0;
-        xStart = BlockPos.unpackLongX(startPos);
-        zStart = BlockPos.unpackLongZ(startPos);
+        xStart = BlockPos.unpackLongX(job.startPos());
+        zStart = BlockPos.unpackLongZ(job.startPos());
         prepIt = null;
         leafBlock = null;
         startState = Blocks.AIR.getDefaultState();
         startBlock = Blocks.AIR;
-        this.startPos = startPos;
         operation = Operation.STARTING;
         needsFirstEffect = true;
         fallingLogIndex = 0;
@@ -178,6 +173,8 @@ public class TreeCutter {
             return false;
         }
 
+        //TODO: if configured to use held item, abort if stack has changed
+        
         switch (this.operation) {
         case STARTING:
             this.operation = startSearch(world);
@@ -213,7 +210,7 @@ public class TreeCutter {
             this.operation = op;
             // drop logs now in case player doesn't want to wait for logs
             if (op != Operation.CLEARING_LEAVES && Configurator.stackDrops) {
-                spawnDrops(world);
+                dropHandler.spawnDrops(world);
             }
             break;
         }
@@ -237,7 +234,7 @@ public class TreeCutter {
 
         if (operation == Operation.COMPLETE) {
             if (Configurator.stackDrops) {
-                spawnDrops(world);
+                dropHandler.spawnDrops(world);
             }
             return true;
         } else {
@@ -246,7 +243,7 @@ public class TreeCutter {
     }
 
     private Operation startSearch(World world) {
-        final long packedPos = this.startPos;
+        final long packedPos = job.startPos();
         searchPos.setFromLong(packedPos);
 
         BlockState state = world.getBlockState(searchPos);
@@ -495,14 +492,20 @@ public class TreeCutter {
         final FluidState fluidState = world.getFluidState(pos);
         final BlockEntity blockEntity = startBlock.hasBlockEntity() ? world.getBlockEntity(pos) : null;
 
-        doDrops(blockState, world, pos, blockEntity);
+        dropHandler.doDrops(blockState, world, pos, blockEntity);
+        Dispatcher.suspend();
         world.setBlockState(pos, fluidState.getBlockState(), 3);
-
+        Dispatcher.resume();
+        
         final EffectLevel fxLevel = Configurator.effectLevel;
         if (fxLevel == EffectLevel.ALL || (fxLevel == EffectLevel.SOME && (needsFirstEffect || ThreadLocalRandom.current().nextInt(4) == 0))) {
             world.playLevelEvent(2001, pos, Block.getRawIdFromState(blockState));
             needsFirstEffect = false;
         }
+        
+        //TODO: handle these
+//        playerEntity_1.incrementStat(Stats.MINED.getOrCreateStat(this));
+//        playerEntity_1.addExhaustion(0.005F);
     }
 
     private Operation prepareLogs() {
@@ -578,75 +581,9 @@ public class TreeCutter {
         final long packedPos = fallingLogs.getLong(i);
         final BlockPos pos = searchPos.setFromLong(packedPos);
         FallingLogEntity entity = new FallingLogEntity(world, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, startState.with(LogBlock.AXIS, fallAxis));
-        double height = Math.sqrt(Math.max(0, pos.getY() - BlockPos.unpackLongY(startPos))) * 0.2;
+        double height = Math.sqrt(Math.max(0, pos.getY() - BlockPos.unpackLongY(job.startPos()))) * 0.2;
         entity.addVelocity(xVelocity * height, 0, zVelocity * height);
         world.spawnEntity(entity);
         return Operation.CLEARING_LOGS;
-    }
-
-    private void doDrops(BlockState blockState, World world, BlockPos pos, BlockEntity blockEntity) {
-        if (Configurator.stackDrops) {
-            Block.getDroppedStacks(blockState, (ServerWorld) world, pos, blockEntity).forEach(s -> consolidateDrops(world, s));
-            // XP, etc. - probably not needed for logs but just in case
-            blockState.onStacksDropped(world, pos, ItemStack.EMPTY);
-        } else {
-            Block.dropStacks(blockState, world, pos, blockEntity);
-        }
-    }
-
-    private void consolidateDrops(World world, ItemStack stack) {
-        if (stack == null || stack.isEmpty()) {
-            return;
-        }
-        stack = stack.copy();
-
-        if (!stack.isStackable()) {
-            Block.dropStack(world, searchPos.setFromLong(startPos), stack);
-            return;
-        }
-
-        final ObjectArrayList<ItemStack> drops = this.drops;
-
-        if (drops.isEmpty() || !stack.isStackable()) {
-            drops.add(stack);
-        } else {
-            final int limit = drops.size();
-            for (int i = 0; i < limit; i++) {
-                ItemStack existing = drops.get(i);
-                final int capacity = existing.getMaxCount() - existing.getCount();
-                if (capacity > 0 && stack.getItem() == existing.getItem() && ItemStack.areTagsEqual(stack, existing)) {
-                    int amt = Math.min(stack.getCount(), capacity);
-                    if (amt > 0) {
-                        stack.decrement(amt);
-                        existing.increment(amt);
-                    }
-
-                    if (existing.getCount() == existing.getMaxCount()) {
-                        Block.dropStack(world, searchPos.setFromLong(startPos), existing);
-                        drops.remove(i);
-                        break;
-                    }
-
-                    if (stack.isEmpty()) {
-                        return;
-                    }
-                }
-            }
-            if (!stack.isEmpty()) {
-                drops.add(stack);
-            }
-        }
-    }
-
-    private void spawnDrops(World world) {
-        if (!drops.isEmpty()) {
-            BlockPos pos = searchPos.setFromLong(startPos);
-            final int limit = drops.size();
-            for (int i = 0; i < limit; i++) {
-                Block.dropStack(world, pos, drops.get(i));
-            }
-            drops.clear();
-        }
-
     }
 }

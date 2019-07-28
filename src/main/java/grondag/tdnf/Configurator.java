@@ -41,7 +41,6 @@ public class Configurator {
 //        BOTTOM_OR_ANY_SIDE
 //    }
 
-    @SuppressWarnings("hiding")
     public static class ConfigData {
         @Comment("Log blocks move to the ground instead of dropping as items. Can be laggy.")
         public boolean keepLogsIntact = true;
@@ -60,6 +59,9 @@ public class Configurator {
 
         @Comment("Consolidate item drops into stacks to prevent lag.")
         public boolean stackDrops = true;
+        
+        @Comment("Place dropped items directly into player inventory. (Good for skyblock)")
+        public boolean directDeposit = false;
 
 //        @Comment("What counts as support for logs? BOTTOM, BOTTOM_OR_ALL_SIDE, or BOTTOM_OR_ANY_SIDE")
 //        public SupportSurface minimumSupportSurface;
@@ -89,6 +91,8 @@ public class Configurator {
     public static boolean fallingLogsBreakPlants = DEFAULTS.fallingLogsBreakPlants;
     public static boolean fallingLogsBreakFragile = DEFAULTS.fallingLogsBreakFragile;
     public static boolean protectPlayerLogs = DEFAULTS.protectPlayerLogs;
+    
+    public static boolean directDeposit = DEFAULTS.directDeposit;
 
 //    //TODO: implement
 //    public static SupportSurface logSupportSurface = DEFAULTS.minimumSupportSurface;
@@ -130,7 +134,8 @@ public class Configurator {
         fallingLogsBreakPlants = config.fallingLogsBreakPlants;
         fallingLogsBreakFragile = config.fallingLogsBreakFragile;
         protectPlayerLogs = config.protectPlayerLogs;
-
+        directDeposit = config.directDeposit;
+        
 //        logSupportSurface = config.minimumSupportSurface;
         requireLogBreak = config.requireLogBreak;
         stackDrops = config.stackDrops;
@@ -168,6 +173,7 @@ public class Configurator {
         config.fallingLogsBreakPlants = fallingLogsBreakPlants;
         config.fallingLogsBreakFragile = fallingLogsBreakFragile;
         config.protectPlayerLogs = protectPlayerLogs;
+        config.directDeposit = directDeposit;
 
 //        config.minimumSupportSurface = logSupportSurface;
         config.requireLogBreak = requireLogBreak;
