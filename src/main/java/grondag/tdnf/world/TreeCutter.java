@@ -104,8 +104,8 @@ public class TreeCutter {
     /** true when limiting particles, etc. - ensures we do at least one */
     private boolean needsFirstEffect = true;
 
-    /** cooldown timer if configured */
-    private int cooldownTicks = 0;
+    /** Counter for enforcing configured per-tick break max */
+    private int breakBudget = 0;
 
     private static final Function<World, Operation> DUMMY_LOG_HANDLER = w -> Operation.COMPLETE;
 
@@ -167,12 +167,19 @@ public class TreeCutter {
         fallingLogIndex = 0;
     }
 
+    /** return true when complete */
     public boolean tick(World world) {
-        if (cooldownTicks > 0) {
-            cooldownTicks--;
-            return false;
-        }
-
+        breakBudget = Configurator.maxBreaksPerTick;
+        
+        final long maxTime = System.nanoTime() + 1000000000 / 100 * Configurator.tickBudget;
+        
+        while(doOp(world) && System.nanoTime() < maxTime) {} 
+        
+        return operation == Operation.COMPLETE;
+    }
+    
+    /** returns false if cannot process more this tick */
+    private boolean doOp(World world) {
         //TODO: if configured to use held item, abort if stack has changed
         
         switch (this.operation) {
@@ -181,48 +188,28 @@ public class TreeCutter {
             break;
 
         case SEARCHING: {
-            Operation op = Operation.SEARCHING;
-            int budget = Configurator.maxSearchPosPerTick;
-            while (budget-- > 0 && op == Operation.SEARCHING) {
-                op = doSearch(world);
-            }
-            this.operation = op;
+            this.operation = doSearch(world);;
             break;
         }
 
         case PRECLEARING: {
-            Operation op = Operation.PRECLEARING;
-            int budget = Configurator.maxSearchPosPerTick;
-            while (budget-- > 0 && op == Operation.PRECLEARING) {
-                op = doPreClearing(world);
-            }
-            this.operation = op;
+            this.operation = doPreClearing(world);
             break;
         }
 
         case CLEARING_LEAVES: {
-            Operation op = Operation.CLEARING_LEAVES;
-            int budget = Configurator.maxBreaksPerTick;
-            while (budget-- > 0 && op == Operation.CLEARING_LEAVES) {
-                op = doLeafClearing(world);
-            }
-            this.cooldownTicks = Configurator.breakCooldownTicks;
-            this.operation = op;
+            breakBudget--;
+            this.operation = doLeafClearing(world);
             // drop logs now in case player doesn't want to wait for logs
-            if (op != Operation.CLEARING_LEAVES && Configurator.stackDrops) {
+            if (operation != Operation.CLEARING_LEAVES && Configurator.stackDrops) {
                 dropHandler.spawnDrops(world);
             }
             break;
         }
 
         case CLEARING_LOGS: {
-            Operation op = Operation.CLEARING_LOGS;
-            int budget = Configurator.maxBreaksPerTick;
-            while (budget-- > 0 && op == Operation.CLEARING_LOGS) {
-                op = logHandler.apply(world);
-            }
-            this.cooldownTicks = Configurator.breakCooldownTicks;
-            this.operation = op;
+            breakBudget--;
+            this.operation = logHandler.apply(world);
             break;
         }
 
@@ -236,9 +223,9 @@ public class TreeCutter {
             if (Configurator.stackDrops) {
                 dropHandler.spawnDrops(world);
             }
-            return true;
-        } else {
             return false;
+        } else {
+            return breakBudget > 0;
         }
     }
 

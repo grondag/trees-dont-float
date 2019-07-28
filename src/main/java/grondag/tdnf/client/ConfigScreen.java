@@ -17,11 +17,10 @@
 package grondag.tdnf.client;
 
 import static grondag.tdnf.Configurator.DEFAULTS;
-import static grondag.tdnf.Configurator.breakCooldownTicks;
+import static grondag.tdnf.Configurator.tickBudget;
 import static grondag.tdnf.Configurator.effectLevel;
 import static grondag.tdnf.Configurator.keepLogsIntact;
 import static grondag.tdnf.Configurator.maxBreaksPerTick;
-import static grondag.tdnf.Configurator.maxSearchPosPerTick;
 import static grondag.tdnf.Configurator.renderFallingLogs;
 import static grondag.tdnf.Configurator.fallingLogsBreakPlants;
 import static grondag.tdnf.Configurator.fallingLogsBreakFragile;
@@ -105,13 +104,9 @@ public class ConfigScreen {
                 new IntegerSliderEntry("config.tdnf.value.max_breaks_per_tick", 1, 128, maxBreaksPerTick, "config.tdnf.reset", () -> DEFAULTS.maxBreaksPerTick,
                         b -> maxBreaksPerTick = b, () -> Optional.of(I18n.translate("config.tdnf.help.max_breaks_per_tick").split(";"))));
 
-        performance.addEntry(new IntegerSliderEntry("config.tdnf.value.break_cooldown_ticks", 0, 40, breakCooldownTicks, "config.tdnf.reset",
-                () -> DEFAULTS.breakCooldownTicks, b -> breakCooldownTicks = b,
-                () -> Optional.of(I18n.translate("config.tdnf.help.break_cooldown_ticks").split(";"))));
-
-        performance.addEntry(new IntegerSliderEntry("config.tdnf.value.max_search_pos_per_tick", 1, 512, maxSearchPosPerTick, "config.tdnf.reset",
-                () -> DEFAULTS.maxSearchPosPerTick, b -> maxSearchPosPerTick = b,
-                () -> Optional.of(I18n.translate("config.tdnf.help.max_search_pos_per_tick").split(";"))));
+        performance.addEntry(new IntegerSliderEntry("config.tdnf.value.tick_budget", 1, 5, tickBudget, "config.tdnf.reset",
+                () -> DEFAULTS.tickBudget, b -> tickBudget = b,
+                () -> Optional.of(I18n.translate("config.tdnf.help.tick_budget").split(";"))));
 
         builder.setDoesConfirmSave(false);
 

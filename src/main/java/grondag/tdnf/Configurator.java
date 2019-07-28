@@ -41,6 +41,7 @@ public class Configurator {
 //        BOTTOM_OR_ANY_SIDE
 //    }
 
+    @SuppressWarnings("hiding")
     public static class ConfigData {
         @Comment("Log blocks move to the ground instead of dropping as items. Can be laggy.")
         public boolean keepLogsIntact = true;
@@ -75,11 +76,8 @@ public class Configurator {
         @Comment("Max log/leaf blocks to break per tick. 1 - 128")
         public int maxBreaksPerTick = 32;
 
-        @Comment("Ticks to wait between breaking blocks. 0 - 40")
-        public int breakCooldownTicks = 0;
-
-        @Comment("Max blocks checked per tick when searching for logs/leaves. 1 - 512")
-        public int maxSearchPosPerTick = 128;
+        @Comment("Max percentage of each server tick that can be used by TDNF. 1 - 5")
+        public int tickBudget = 1;
     }
 
     public static final ConfigData DEFAULTS = new ConfigData();
@@ -101,8 +99,7 @@ public class Configurator {
     public static boolean stackDrops = DEFAULTS.stackDrops;
     public static EffectLevel effectLevel = DEFAULTS.effectLevel;
     public static int maxBreaksPerTick = DEFAULTS.maxBreaksPerTick;
-    public static int breakCooldownTicks = DEFAULTS.breakCooldownTicks;
-    public static int maxSearchPosPerTick = DEFAULTS.maxSearchPosPerTick;
+    public static int tickBudget = DEFAULTS.tickBudget;
 
     public static boolean hasBreaking = fallingLogsBreakPlants || fallingLogsBreakFragile;
 
@@ -141,8 +138,7 @@ public class Configurator {
         stackDrops = config.stackDrops;
         effectLevel = config.effectLevel;
         maxBreaksPerTick = MathHelper.clamp(config.maxBreaksPerTick, 1, 128);
-        breakCooldownTicks = MathHelper.clamp(config.breakCooldownTicks, 0, 40);
-        maxSearchPosPerTick = MathHelper.clamp(config.maxSearchPosPerTick, 1, 512);
+        tickBudget = MathHelper.clamp(config.tickBudget, 1, 20);
         computeDerived();
     }
 
@@ -180,8 +176,7 @@ public class Configurator {
         config.stackDrops = stackDrops;
         config.effectLevel = effectLevel;
         config.maxBreaksPerTick = maxBreaksPerTick;
-        config.breakCooldownTicks = breakCooldownTicks;
-        config.maxSearchPosPerTick = maxSearchPosPerTick;
+        config.tickBudget = tickBudget;
 
         try {
             String result = JANKSON.toJson(config).toJson(true, true, 0);

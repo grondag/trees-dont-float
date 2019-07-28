@@ -87,13 +87,13 @@ public class DropHandler {
      * that drops items directly to player inventory.
      */
     private void dropDirectDepositStacks(World world, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, @Nullable ServerPlayerEntity player, @Nullable ItemStack stack) {
-        Block.getDroppedStacks(state, (ServerWorld)world, pos, blockEntity, player, stack).forEach(s -> 
-           dropStack(world, pos, s, player)
-        );
-
+        if (player == null || stack == null) {
+            Block.getDroppedStacks(state, (ServerWorld)world, pos, blockEntity).forEach(s -> dropStack(world, pos, s, player));
+        } else {
+            Block.getDroppedStacks(state, (ServerWorld)world, pos, blockEntity, player, stack).forEach(s -> dropStack(world, pos, s, player));
+        }
         state.onStacksDropped(world, pos, stack == null ? ItemStack.EMPTY : stack);
     }
-    
 
     /**
      * Version of {@link Block#dropStack(World, BlockPos, ItemStack)} that gives item to player directly if they have room
