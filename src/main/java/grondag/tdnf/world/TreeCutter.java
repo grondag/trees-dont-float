@@ -19,7 +19,6 @@ package grondag.tdnf.world;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.Random;
-import java.util.function.Function;
 
 import grondag.tdnf.Configurator;
 import grondag.tdnf.Configurator.EffectLevel;
@@ -45,15 +44,12 @@ import net.minecraft.world.World;
 
 /**
  * Call when log neighbors change. Will check for a tree-like structure starting
- * at the point and if it is not resting on solid blocks will destroy the tree.
- * <p>
+ * at the point and if it is not resting on solid blocks will destroy the tree.<p>
  * 
- * Not thread-safe. Meant to be called from server thread.
- * <p>
- *
+ * Not thread-safe. Meant to be called from server thread. <p>
  */
 public class TreeCutter {
-    private Operation operation = Operation.STARTING;
+    private Operation operation = Operation.COMPLETE;
 
     /** if search in progress, starting state of search */
     private BlockState startState = Blocks.AIR.getDefaultState();
@@ -107,11 +103,9 @@ public class TreeCutter {
     /** Counter for enforcing configured per-tick break max */
     private int breakBudget = 0;
 
-    private static final Function<World, Operation> DUMMY_LOG_HANDLER = w -> Operation.COMPLETE;
-
     /** method reference to selected log handler (clear or drop) */
-    private Function<World, Operation> logHandler = DUMMY_LOG_HANDLER;
-
+    private Operation logHandler = Operation.COMPLETE;
+    
     // all below are used for center-of-mass and fall velocity handling
     private int LOG_FACTOR = 5; // logs worth this much more than leaves
     private int xStart = 0;
@@ -162,7 +156,7 @@ public class TreeCutter {
         leafBlock = null;
         startState = Blocks.AIR.getDefaultState();
         startBlock = Blocks.AIR;
-        operation = Operation.STARTING;
+        operation = this::startSearch;
         needsFirstEffect = true;
         fallingLogIndex = 0;
     }
@@ -180,45 +174,8 @@ public class TreeCutter {
     
     /** returns false if cannot process more this tick */
     private boolean doOp(World world) {
-        //TODO: if configured to use held item, abort if stack has changed
+        operation = operation.apply(world);
         
-        switch (this.operation) {
-        case STARTING:
-            this.operation = startSearch(world);
-            break;
-
-        case SEARCHING: {
-            this.operation = doSearch(world);;
-            break;
-        }
-
-        case PRECLEARING: {
-            this.operation = doPreClearing(world);
-            break;
-        }
-
-        case CLEARING_LEAVES: {
-            breakBudget--;
-            this.operation = doLeafClearing(world);
-            // drop logs now in case player doesn't want to wait for logs
-            if (operation != Operation.CLEARING_LEAVES && Configurator.stackDrops) {
-                dropHandler.spawnDrops(world);
-            }
-            break;
-        }
-
-        case CLEARING_LOGS: {
-            breakBudget--;
-            this.operation = logHandler.apply(world);
-            break;
-        }
-
-        default:
-            operation = Operation.COMPLETE; // handle WTF
-        case COMPLETE:
-            break;
-        }
-
         if (operation == Operation.COMPLETE) {
             if (Configurator.stackDrops) {
                 dropHandler.spawnDrops(world);
@@ -227,6 +184,9 @@ public class TreeCutter {
         } else {
             return breakBudget > 0;
         }
+        
+        //TODO: if configured to use held item, abort if stack has changed
+       
     }
 
     private Operation startSearch(World world) {
@@ -264,7 +224,7 @@ public class TreeCutter {
             enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
             enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
             enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            return Operation.SEARCHING;
+            return this::doSearch;
         } else
             return Operation.COMPLETE;
 
@@ -400,9 +360,9 @@ public class TreeCutter {
                 }
             }
 
-            return Operation.PRECLEARING;
+            return this::doPreClearing;
         } else {
-            return Operation.SEARCHING;
+            return this::doSearch;
         }
     }
 
@@ -438,7 +398,7 @@ public class TreeCutter {
                     logs.enqueue(pos);
                 }
             }
-            return Operation.PRECLEARING;
+            return this::doPreClearing;
         } else {
             return prepareLogs();
         }
@@ -452,9 +412,16 @@ public class TreeCutter {
 
         if (block == leafBlock) {
             breakBlock(pos, world);
+            breakBudget--;
         }
-
-        return leaves.isEmpty() ? Operation.CLEARING_LOGS : Operation.CLEARING_LEAVES;
+        
+        if(leaves.isEmpty()) {
+            // drop logs now in case player doesn't want to wait for logs
+            dropHandler.spawnDrops(world);
+            return this.logHandler;
+        } else {
+            return this::doLeafClearing;
+        }
     }
 
     private Operation doLogClearing(World world) {
@@ -464,10 +431,11 @@ public class TreeCutter {
         final Block block = state.getBlock();
 
         if (block == startBlock) {
+            breakBudget--;
             breakBlock(pos, world);
         }
 
-        return this.logs.isEmpty() ? Operation.COMPLETE : Operation.CLEARING_LOGS;
+        return this.logs.isEmpty() ? Operation.COMPLETE : this::doLogClearing;
     }
 
     private void breakBlock(BlockPos pos, World world) {
@@ -497,7 +465,7 @@ public class TreeCutter {
 
     private Operation prepareLogs() {
         if (logs.isEmpty()) {
-            logHandler = DUMMY_LOG_HANDLER;
+            logHandler = Operation.COMPLETE;
         } else if (Configurator.keepLogsIntact) {
             logHandler = this::doLogDropping1;
             final double div = logs.size() * LOG_FACTOR + leaves.size();
@@ -528,14 +496,13 @@ public class TreeCutter {
         }
 
         if (!leaves.isEmpty() && leafBlock != null) {
-            return Operation.CLEARING_LEAVES;
-        } else if (logHandler == DUMMY_LOG_HANDLER) {
-            return Operation.COMPLETE;
+            return this::doLeafClearing;
         } else {
-            return Operation.CLEARING_LOGS;
+            return this.logHandler;
         }
     }
 
+    //TODO: implement block break limits for falling logs
     private Operation doLogDropping1(World world) {
         final int limit = fallingLogs.size();
         if (limit == 0) {
@@ -544,15 +511,15 @@ public class TreeCutter {
 
         final int i = fallingLogIndex++;
         if (i >= limit) {
-            logHandler = this::doLogDropping2;
             fallingLogIndex = 0;
-            return Operation.CLEARING_LOGS;
+            return this::doLogDropping2;
         }
 
         final long packedPos = fallingLogs.getLong(i);
         final BlockPos pos = searchPos.setFromLong(packedPos);
         world.setBlockState(pos, Blocks.AIR.getDefaultState());
-        return Operation.CLEARING_LOGS;
+        breakBudget--;
+        return this::doLogDropping1;
     }
 
     private Operation doLogDropping2(World world) {
@@ -571,6 +538,6 @@ public class TreeCutter {
         double height = Math.sqrt(Math.max(0, pos.getY() - BlockPos.unpackLongY(job.startPos()))) * 0.2;
         entity.addVelocity(xVelocity * height, 0, zVelocity * height);
         world.spawnEntity(entity);
-        return Operation.CLEARING_LOGS;
+        return this::doLogDropping2;
     }
 }

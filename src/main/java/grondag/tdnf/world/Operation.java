@@ -16,6 +16,15 @@
 
 package grondag.tdnf.world;
 
-public enum Operation {
-    STARTING, SEARCHING, PRECLEARING, CLEARING_LEAVES, CLEARING_LOGS, COMPLETE
+import net.minecraft.world.World;
+
+@FunctionalInterface
+public interface Operation {
+    Operation apply(World world);
+    
+    Operation COMPLETE = Operation::complete;
+
+    static Operation complete(World world) {
+        return COMPLETE;
+    }
 }
