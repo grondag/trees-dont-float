@@ -16,25 +16,16 @@
 
 package grondag.tdnf.client;
 
-import static grondag.tdnf.Configurator.DEFAULTS;
-import static grondag.tdnf.Configurator.tickBudget;
-import static grondag.tdnf.Configurator.effectsPerSecond;
-import static grondag.tdnf.Configurator.keepLogsIntact;
-import static grondag.tdnf.Configurator.maxBreaksPerTick;
-import static grondag.tdnf.Configurator.renderFallingLogs;
-import static grondag.tdnf.Configurator.fallingLogsBreakPlants;
-import static grondag.tdnf.Configurator.fallingLogsBreakFragile;
-import static grondag.tdnf.Configurator.protectPlayerLogs;
-import static grondag.tdnf.Configurator.directDeposit;
-//import static grondag.tdnf.Configurator.logSupportSurface;
-import static grondag.tdnf.Configurator.requireLogBreak;
+import static grondag.tdnf.Configurator.*;
+
 import static grondag.tdnf.Configurator.stackDrops;
 
 import java.util.Optional;
 
 import grondag.tdnf.Configurator;
-//import grondag.tdnf.Configurator.SupportSurface;
+import grondag.tdnf.Configurator.FallCondition;
 import me.shedaniel.clothconfig2.gui.entries.BooleanListEntry;
+import me.shedaniel.clothconfig2.gui.entries.EnumListEntry;
 import me.shedaniel.clothconfig2.gui.entries.IntegerSliderEntry;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
@@ -49,43 +40,61 @@ public class ConfigScreen {
 
         ConfigBuilder builder = ConfigBuilder.create().setParentScreen(parent).setTitle("config.tdnf.title").setSavingRunnable(ConfigScreen::saveUserInput);
 
-        // FEATURES
-        ConfigCategory features = builder.getOrCreateCategory("config.tdnf.category.features");
+        // BLOCKS
+        ConfigCategory blocks = builder.getOrCreateCategory("config.tdnf.category.blocks");
 
-        features.addEntry(new BooleanListEntry("config.tdnf.value.keep_logs_intact", keepLogsIntact, "config.tdnf.reset", () -> DEFAULTS.keepLogsIntact,
+        blocks.addEntry(new BooleanListEntry("config.tdnf.value.keep_logs_intact", keepLogsIntact, "config.tdnf.reset", () -> DEFAULTS.keepLogsIntact,
                 b -> keepLogsIntact = b, () -> Optional.of(I18n.translate("config.tdnf.help.keep_logs_intact").split(";"))));
 
-        features.addEntry(new BooleanListEntry("config.tdnf.value.render_falling", renderFallingLogs, "config.tdnf.reset", () -> DEFAULTS.renderFallingLogs,
+        blocks.addEntry(new BooleanListEntry("config.tdnf.value.render_falling", renderFallingLogs, "config.tdnf.reset", () -> DEFAULTS.renderFallingLogs,
                 b -> renderFallingLogs = b, () -> Optional.of(I18n.translate("config.tdnf.help.render_falling").split(";"))));
 
-        features.addEntry(
+        blocks.addEntry(
                 new BooleanListEntry("config.tdnf.value.break_leaves", fallingLogsBreakPlants, "config.tdnf.reset", () -> DEFAULTS.fallingLogsBreakPlants,
                         b -> fallingLogsBreakPlants = b, () -> Optional.of(I18n.translate("config.tdnf.help.break_leaves").split(";"))));
 
-        features.addEntry(
+        blocks.addEntry(
                 new BooleanListEntry("config.tdnf.value.break_fragile", fallingLogsBreakFragile, "config.tdnf.reset", () -> DEFAULTS.fallingLogsBreakFragile,
                         b -> fallingLogsBreakFragile = b, () -> Optional.of(I18n.translate("config.tdnf.help.break_fragile").split(";"))));
 
-        features.addEntry(new BooleanListEntry("config.tdnf.value.require_log_break", requireLogBreak, "config.tdnf.reset", () -> DEFAULTS.requireLogBreak,
-                b -> requireLogBreak = b, () -> Optional.of(I18n.translate("config.tdnf.help.require_log_break").split(";"))));
-
-        features.addEntry(
+        blocks.addEntry(
                 new BooleanListEntry("config.tdnf.value.protect_player_logs", protectPlayerLogs, "config.tdnf.reset", () -> DEFAULTS.protectPlayerLogs,
                         b -> protectPlayerLogs = b, () -> Optional.of(I18n.translate("config.tdnf.help.protect_player_logs").split(";"))));
 
-        features.addEntry(
+        
+        // PLAYERS
+        ConfigCategory players = builder.getOrCreateCategory("config.tdnf.category.players");
+        
+        players.addEntry(new EnumListEntry<>(
+                "config.tdnf.value.fall_condition",
+                FallCondition.class, 
+                fallCondition, 
+                "config.tdnf.reset", 
+                () -> DEFAULTS.fallCondition, 
+                (b) -> fallCondition = (FallCondition) b,
+                a -> a.toString(),
+                () -> Optional.of(I18n.translate("config.tdnf.help.fall_condition").split(";"))));
+
+        players.addEntry(
                 new BooleanListEntry("config.tdnf.value.direct_deposit", directDeposit, "config.tdnf.reset", () -> DEFAULTS.directDeposit,
                         b -> directDeposit = b, () -> Optional.of(I18n.translate("config.tdnf.help.direct_deposit").split(";"))));
 
-//        features.addEntry(new EnumListEntry(
-//                "config.tdnf.value.support_surface", 
-//                SupportSurface.class, 
-//                logSupportSurface, 
-//                "config.tdnf.reset", 
-//                () -> DEFAULTS.minimumSupportSurface, 
-//                (b) -> logSupportSurface = (SupportSurface) b,
-//                a -> a.toString(),
-//                () -> Optional.of(I18n.translate("config.tdnf.help.support_surface").split(";"))));
+        players.addEntry(new BooleanListEntry("config.tdnf.value.apply_fortune", applyFortune, "config.tdnf.reset", () -> DEFAULTS.applyFortune,
+                b -> applyFortune = b, () -> Optional.of(I18n.translate("config.tdnf.help.apply_fortune").split(";"))));
+
+        players.addEntry(new BooleanListEntry("config.tdnf.value.consume_durability", consumeDurability, "config.tdnf.reset", () -> DEFAULTS.consumeDurability,
+                b -> consumeDurability = b, () -> Optional.of(I18n.translate("config.tdnf.help.consume_durability").split(";"))));
+
+        players.addEntry(new BooleanListEntry("config.tdnf.value.protect_tools", protectTools, "config.tdnf.reset", () -> DEFAULTS.protectTools,
+                b -> protectTools = b, () -> Optional.of(I18n.translate("config.tdnf.help.protect_tools").split(";"))));
+
+        players.addEntry(new BooleanListEntry("config.tdnf.value.apply_hunger", applyHunger, "config.tdnf.reset", () -> DEFAULTS.applyHunger,
+                b -> applyHunger = b, () -> Optional.of(I18n.translate("config.tdnf.help.apply_hunger").split(";"))));
+
+        players.addEntry(new BooleanListEntry("config.tdnf.value.leaf_hunger", leafHunger, "config.tdnf.reset", () -> DEFAULTS.leafHunger,
+                b -> leafHunger = b, () -> Optional.of(I18n.translate("config.tdnf.help.leaf_hunger").split(";"))));
+
+
 
         // PERFORMANCE
         ConfigCategory performance = builder.getOrCreateCategory("config.tdnf.category.performance");

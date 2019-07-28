@@ -22,6 +22,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import grondag.tdnf.Configurator;
+import grondag.tdnf.Configurator.FallCondition;
 import grondag.tdnf.world.Dispatcher;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -49,7 +50,7 @@ public abstract class MixinLogBlock extends PillarBlock {
     public void neighborUpdate(BlockState blockState, World world, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify) {
         super.neighborUpdate(blockState, world, blockPos, otherBlock, otherPos, notify);
         
-        if (!Configurator.requireLogBreak && otherPos.getY() == blockPos.getY() - 1 && world instanceof ServerWorld) {
+        if ((Configurator.fallCondition == FallCondition.NO_SUPPORT) && otherPos.getY() == blockPos.getY() - 1 && world instanceof ServerWorld) {
 //            System.out.println("neighborUpdate notify = " + notify);
             BlockState otherState = world.getBlockState(otherPos);
             if (!Block.isFaceFullSquare(otherState.getCollisionShape(world, otherPos, EntityContext.absent()), Direction.UP)) {

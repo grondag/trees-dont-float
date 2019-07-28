@@ -37,13 +37,20 @@ public class Configurator {
 //        BOTTOM_OR_ANY_SIDE
 //    }
 
+    public static enum FallCondition {
+        NO_SUPPORT, LOG_BREAK, USE_TOOL
+    }
+
     @SuppressWarnings("hiding")
     public static class ConfigData {
+
+        // BLOCKS
+
         @Comment("Log blocks move to the ground instead of dropping as items. Can be laggy.")
-        public boolean keepLogsIntact = true;
+        public boolean keepLogsIntact = false;
 
         @Comment("Render falling logs? (Affects client side only.) Can be laggy.")
-        public boolean renderFallingLogs = true;
+        public boolean renderFallingLogs = false;
 
         @Comment("Falling logs break leaves and other plants on the way down.")
         public boolean fallingLogsBreakPlants = true;
@@ -54,17 +61,36 @@ public class Configurator {
         @Comment("Protect logs placed by players.")
         public boolean protectPlayerLogs = true;
 
-        @Comment("Consolidate item drops into stacks to prevent lag.")
-        public boolean stackDrops = true;
-        
+        // PLAYERS
+
+        @Comment("When do trees break? NO_SUPPORT, LOG_BREAK, or USE_TOOL)")
+        public FallCondition fallCondition = FallCondition.NO_SUPPORT;
+
         @Comment("Place dropped items directly into player inventory. (Good for skyblock)")
         public boolean directDeposit = false;
 
+        @Comment("Apply fortune from tool used to fell a tree. (If a tool was used.)")
+        public boolean applyFortune = true;
+
+        @Comment("Remove durability from a tool used to fell a tree. (If a tool was used.)")
+        public boolean consumeDurability = true;
+
+        @Comment("Don't break tools when using durability.")
+        public boolean protectTools = true;
+
+        @Comment("Players gain hunger from felling trees, as if they had broken each log.")
+        public boolean applyHunger = true;
+
+        @Comment("Players gain hunger from leaves in addition to logs.")
+        public boolean leafHunger = false;
+
+        // PERFORMANCE
+
+        @Comment("Consolidate item drops into stacks to prevent lag.")
+        public boolean stackDrops = true;
+
 //        @Comment("What counts as support for logs? BOTTOM, BOTTOM_OR_ALL_SIDE, or BOTTOM_OR_ANY_SIDE")
 //        public SupportSurface minimumSupportSurface;
-
-        @Comment("If true, structures only checked when logs are broken. (Not other block types.)")
-        public boolean requireLogBreak = false;
 
         @Comment("Play particles and sounds? Number is max effects per second. 0-20")
         public int effectsPerSecond = 4;
@@ -80,24 +106,32 @@ public class Configurator {
     private static final Gson GSON = new GsonBuilder().create();
     private static final Jankson JANKSON = Jankson.builder().build();
 
+    // BLOCKS
     public static boolean keepLogsIntact = DEFAULTS.keepLogsIntact;
     public static boolean renderFallingLogs = DEFAULTS.renderFallingLogs;
     public static boolean fallingLogsBreakPlants = DEFAULTS.fallingLogsBreakPlants;
     public static boolean fallingLogsBreakFragile = DEFAULTS.fallingLogsBreakFragile;
     public static boolean protectPlayerLogs = DEFAULTS.protectPlayerLogs;
-    
+
+    // PLAYERS
+    public static FallCondition fallCondition = DEFAULTS.fallCondition;
     public static boolean directDeposit = DEFAULTS.directDeposit;
+    public static boolean applyFortune = DEFAULTS.applyFortune;
+    public static boolean consumeDurability = DEFAULTS.consumeDurability;
+    public static boolean protectTools = DEFAULTS.protectTools;
+    public static boolean applyHunger = DEFAULTS.applyHunger;
+    public static boolean leafHunger = DEFAULTS.leafHunger;
 
-//    //TODO: implement
-//    public static SupportSurface logSupportSurface = DEFAULTS.minimumSupportSurface;
-
-    public static boolean requireLogBreak = DEFAULTS.requireLogBreak;
+    // PERFORMANCE
     public static boolean stackDrops = DEFAULTS.stackDrops;
     public static int effectsPerSecond = DEFAULTS.effectsPerSecond;
     public static int maxBreaksPerTick = DEFAULTS.maxBreaksPerTick;
     public static int tickBudget = DEFAULTS.tickBudget;
 
     public static boolean hasBreaking = fallingLogsBreakPlants || fallingLogsBreakFragile;
+
+    // //TODO: implement
+//    public static SupportSurface logSupportSurface = DEFAULTS.minimumSupportSurface;
 
     public static final ObjectOpenHashSet<Material> BREAKABLES = new ObjectOpenHashSet<>();
 
@@ -122,20 +156,30 @@ public class Configurator {
             e.printStackTrace();
             TreesDoNotFloat.LOG.error("Unable to load config. Using default values.");
         }
+
+        // BLOCKS
         keepLogsIntact = config.keepLogsIntact;
         renderFallingLogs = config.renderFallingLogs;
         fallingLogsBreakPlants = config.fallingLogsBreakPlants;
         fallingLogsBreakFragile = config.fallingLogsBreakFragile;
         protectPlayerLogs = config.protectPlayerLogs;
+
+        // PLAYERS
+        fallCondition = config.fallCondition;
         directDeposit = config.directDeposit;
-        
-//        logSupportSurface = config.minimumSupportSurface;
-        requireLogBreak = config.requireLogBreak;
+        applyFortune = config.applyFortune;
+        consumeDurability = config.consumeDurability;
+        protectTools = config.protectTools;
+        applyHunger = config.applyHunger;
+        leafHunger = config.leafHunger;
+
+        // PERFORMANCE
         stackDrops = config.stackDrops;
         effectsPerSecond = config.effectsPerSecond;
         maxBreaksPerTick = MathHelper.clamp(config.maxBreaksPerTick, 1, 128);
         tickBudget = MathHelper.clamp(config.tickBudget, 1, 20);
         computeDerived();
+//        logSupportSurface = config.minimumSupportSurface;
     }
 
     public static void computeDerived() {
@@ -160,19 +204,29 @@ public class Configurator {
 
     public static void saveConfig() {
         ConfigData config = new ConfigData();
+
+        // BLOCKS
         config.keepLogsIntact = keepLogsIntact;
         config.renderFallingLogs = renderFallingLogs;
         config.fallingLogsBreakPlants = fallingLogsBreakPlants;
         config.fallingLogsBreakFragile = fallingLogsBreakFragile;
         config.protectPlayerLogs = protectPlayerLogs;
-        config.directDeposit = directDeposit;
 
-//        config.minimumSupportSurface = logSupportSurface;
-        config.requireLogBreak = requireLogBreak;
+        // PLAYERS
+        config.fallCondition = fallCondition;
+        config.directDeposit = directDeposit;
+        config.applyFortune = applyFortune;
+        config.consumeDurability = consumeDurability;
+        config.protectTools = protectTools;
+        config.applyHunger = applyHunger;
+        config.leafHunger = leafHunger;
+
+        // PERFORMANCE
         config.stackDrops = stackDrops;
         config.effectsPerSecond = effectsPerSecond;
         config.maxBreaksPerTick = maxBreaksPerTick;
         config.tickBudget = tickBudget;
+//        config.minimumSupportSurface = logSupportSurface;
 
         try {
             String result = JANKSON.toJson(config).toJson(true, true, 0);
