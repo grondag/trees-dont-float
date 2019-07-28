@@ -34,7 +34,7 @@
 	"config.tdnf.help.consolidate_drops" : "Consolidate item drops into stacks to prevent lag",
 	
 	"config.tdnf.value.effect_level" : "Effect Level",
-	"config.tdnf.help.effect_level" : "Spawn breaking particles and play sounds?",
+	"config.tdnf.help.effect_level" : "Spawn breaking particles and play sounds?;Number is max effects per second.",
 	
 	"config.tdnf.value.max_breaks_per_tick" : "Max Breaks per Tick",
 	"config.tdnf.help.max_breaks_per_tick" : "Max log & leaf blocks to break per tick",

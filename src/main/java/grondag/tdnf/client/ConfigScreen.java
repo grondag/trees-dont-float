@@ -18,7 +18,7 @@ package grondag.tdnf.client;
 
 import static grondag.tdnf.Configurator.DEFAULTS;
 import static grondag.tdnf.Configurator.tickBudget;
-import static grondag.tdnf.Configurator.effectLevel;
+import static grondag.tdnf.Configurator.effectsPerSecond;
 import static grondag.tdnf.Configurator.keepLogsIntact;
 import static grondag.tdnf.Configurator.maxBreaksPerTick;
 import static grondag.tdnf.Configurator.renderFallingLogs;
@@ -33,10 +33,8 @@ import static grondag.tdnf.Configurator.stackDrops;
 import java.util.Optional;
 
 import grondag.tdnf.Configurator;
-import grondag.tdnf.Configurator.EffectLevel;
 //import grondag.tdnf.Configurator.SupportSurface;
 import me.shedaniel.clothconfig2.gui.entries.BooleanListEntry;
-import me.shedaniel.clothconfig2.gui.entries.EnumListEntry;
 import me.shedaniel.clothconfig2.gui.entries.IntegerSliderEntry;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
@@ -47,7 +45,6 @@ import net.minecraft.client.resource.language.I18n;
 
 @Environment(EnvType.CLIENT)
 public class ConfigScreen {
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     static Screen getScreen(Screen parent) {
 
         ConfigBuilder builder = ConfigBuilder.create().setParentScreen(parent).setTitle("config.tdnf.title").setSavingRunnable(ConfigScreen::saveUserInput);
@@ -96,10 +93,10 @@ public class ConfigScreen {
         performance.addEntry(new BooleanListEntry("config.tdnf.value.consolidate_drops", stackDrops, "config.tdnf.reset", () -> DEFAULTS.stackDrops,
                 b -> stackDrops = b, () -> Optional.of(I18n.translate("config.tdnf.help.consolidate_drops").split(";"))));
 
-        performance.addEntry(new EnumListEntry("config.tdnf.value.effect_level", EffectLevel.class, effectLevel, "config.tdnf.reset",
-                () -> DEFAULTS.effectLevel, (b) -> effectLevel = (EffectLevel) b, a -> a.toString(),
-                () -> Optional.of(I18n.translate("config.tdnf.help.effect_level").split(";"))));
-
+        performance.addEntry(
+            new IntegerSliderEntry("config.tdnf.value.effect_level", 0, 60, effectsPerSecond, "config.tdnf.reset", () -> DEFAULTS.effectsPerSecond,
+                    b -> effectsPerSecond = b, () -> Optional.of(I18n.translate("config.tdnf.help.effect_level").split(";"))));
+        
         performance.addEntry(
                 new IntegerSliderEntry("config.tdnf.value.max_breaks_per_tick", 1, 128, maxBreaksPerTick, "config.tdnf.reset", () -> DEFAULTS.maxBreaksPerTick,
                         b -> maxBreaksPerTick = b, () -> Optional.of(I18n.translate("config.tdnf.help.max_breaks_per_tick").split(";"))));

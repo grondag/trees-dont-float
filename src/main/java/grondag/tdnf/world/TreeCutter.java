@@ -21,7 +21,6 @@ import java.util.PriorityQueue;
 import java.util.Random;
 
 import grondag.tdnf.Configurator;
-import grondag.tdnf.Configurator.EffectLevel;
 import io.netty.util.internal.ThreadLocalRandom;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
@@ -97,12 +96,11 @@ public class TreeCutter {
     
     private final DropHandler dropHandler = new DropHandler();
     
-    /** true when limiting particles, etc. - ensures we do at least one */
-    private boolean needsFirstEffect = true;
-
+    private final FxManager fx = new FxManager();
+    
     /** Counter for enforcing configured per-tick break max */
     private int breakBudget = 0;
-
+    
     /** method reference to selected log handler (clear or drop) */
     private Operation logHandler = Operation.COMPLETE;
     
@@ -148,6 +146,7 @@ public class TreeCutter {
         fallingLogs.clear();
         leaves.clear();
         leafCounts.clear();
+        fx.reset();
         xSum = 0;
         zSum = 0;
         xStart = BlockPos.unpackLongX(job.startPos());
@@ -157,12 +156,12 @@ public class TreeCutter {
         startState = Blocks.AIR.getDefaultState();
         startBlock = Blocks.AIR;
         operation = this::startSearch;
-        needsFirstEffect = true;
         fallingLogIndex = 0;
     }
 
     /** return true when complete */
     public boolean tick(World world) {
+        fx.tick();
         breakBudget = Configurator.maxBreaksPerTick;
         
         final long maxTime = System.nanoTime() + 1000000000 / 100 * Configurator.tickBudget;
@@ -400,6 +399,10 @@ public class TreeCutter {
             }
             return this::doPreClearing;
         } else {
+            fx.addExpected(leaves.size());
+            if(!Configurator.keepLogsIntact) {
+                fx.addExpected(logs.size());
+            }
             return prepareLogs();
         }
     }
@@ -442,6 +445,8 @@ public class TreeCutter {
         BlockState blockState = world.getBlockState(pos);
         Block block = blockState.getBlock();
         if (block != startBlock && block != leafBlock) {
+            // notify fx to increase chance because chance is based on totals reported earlier
+            fx.request(false);
             return;
         }
         final FluidState fluidState = world.getFluidState(pos);
@@ -452,10 +457,8 @@ public class TreeCutter {
         world.setBlockState(pos, fluidState.getBlockState(), 3);
         Dispatcher.resume();
         
-        final EffectLevel fxLevel = Configurator.effectLevel;
-        if (fxLevel == EffectLevel.ALL || (fxLevel == EffectLevel.SOME && (needsFirstEffect || ThreadLocalRandom.current().nextInt(4) == 0))) {
+        if(fx.request(true)) {
             world.playLevelEvent(2001, pos, Block.getRawIdFromState(blockState));
-            needsFirstEffect = false;
         }
         
         //TODO: handle these

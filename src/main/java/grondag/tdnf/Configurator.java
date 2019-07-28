@@ -31,10 +31,6 @@ import net.minecraft.block.Material;
 import net.minecraft.util.math.MathHelper;
 
 public class Configurator {
-    public static enum EffectLevel {
-        SOME, NONE, ALL
-    }
-
 //    public static enum SupportSurface {
 //        BOTTOM,
 //        BOTTOM_OR_ALL_SIDES,
@@ -70,8 +66,8 @@ public class Configurator {
         @Comment("If true, structures only checked when logs are broken. (Not other block types.)")
         public boolean requireLogBreak = false;
 
-        @Comment("Play particles and sounds? Choises are SOME, NONE, and ALL.")
-        public EffectLevel effectLevel = EffectLevel.SOME;
+        @Comment("Play particles and sounds? Number is max effects per second. 0-20")
+        public int effectsPerSecond = 4;
 
         @Comment("Max log/leaf blocks to break per tick. 1 - 128")
         public int maxBreaksPerTick = 32;
@@ -97,7 +93,7 @@ public class Configurator {
 
     public static boolean requireLogBreak = DEFAULTS.requireLogBreak;
     public static boolean stackDrops = DEFAULTS.stackDrops;
-    public static EffectLevel effectLevel = DEFAULTS.effectLevel;
+    public static int effectsPerSecond = DEFAULTS.effectsPerSecond;
     public static int maxBreaksPerTick = DEFAULTS.maxBreaksPerTick;
     public static int tickBudget = DEFAULTS.tickBudget;
 
@@ -136,7 +132,7 @@ public class Configurator {
 //        logSupportSurface = config.minimumSupportSurface;
         requireLogBreak = config.requireLogBreak;
         stackDrops = config.stackDrops;
-        effectLevel = config.effectLevel;
+        effectsPerSecond = config.effectsPerSecond;
         maxBreaksPerTick = MathHelper.clamp(config.maxBreaksPerTick, 1, 128);
         tickBudget = MathHelper.clamp(config.tickBudget, 1, 20);
         computeDerived();
@@ -174,7 +170,7 @@ public class Configurator {
 //        config.minimumSupportSurface = logSupportSurface;
         config.requireLogBreak = requireLogBreak;
         config.stackDrops = stackDrops;
-        config.effectLevel = effectLevel;
+        config.effectsPerSecond = effectsPerSecond;
         config.maxBreaksPerTick = maxBreaksPerTick;
         config.tickBudget = tickBudget;
 
