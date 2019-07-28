@@ -49,10 +49,8 @@ public class DropHandler {
         if(Configurator.directDeposit) {
             dropDirectDepositStacks(world, pos, state, blockEntity, player, stack);
         } else if (hasAxe(player, stack) && Configurator.applyFortune) {
-            System.out.println("YES fortune");
             Block.dropStacks(state, world, pos, blockEntity, player, stack);
         } else {
-            System.out.println("NO fortune");
             Block.dropStacks(state, world, pos, blockEntity);
         }
     }
@@ -60,13 +58,11 @@ public class DropHandler {
     public void doDrops(BlockState blockState, World world, BlockPos pos, BlockEntity blockEntity) {
         if (Configurator.stackDrops) {
             //TODO: check for tool still in hand
-            if (hasAxe(job.player(), job.stack()) && Configurator.applyFortune) {
-                System.out.println("YES fortune");
+            if (job.hasAxe() && Configurator.applyFortune) {
                 Block.getDroppedStacks(blockState, (ServerWorld) world, pos, blockEntity, job.player(), job.stack()).forEach(s -> consolidateDrops(world, s));
                 // XP, etc. - probably not needed for logs but just in case
                 blockState.onStacksDropped(world, pos, job.stack());
             } else {
-                System.out.println("NO fortune");
                 Block.getDroppedStacks(blockState, (ServerWorld) world, pos, blockEntity).forEach(s -> consolidateDrops(world, s));
                 // XP, etc. - probably not needed for logs but just in case
                 blockState.onStacksDropped(world, pos, ItemStack.EMPTY);
@@ -100,11 +96,9 @@ public class DropHandler {
      */
     private void dropDirectDepositStacks(World world, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, @Nullable ServerPlayerEntity player, @Nullable ItemStack stack) {
         if (hasAxe(player, stack) && Configurator.applyFortune) {
-            System.out.println("YES fortune");
             Block.getDroppedStacks(state, (ServerWorld)world, pos, blockEntity, player, stack).forEach(s -> dropStack(world, pos, s, player));
             state.onStacksDropped(world, pos, stack);
         } else {
-            System.out.println("NO fortune");
             Block.getDroppedStacks(state, (ServerWorld)world, pos, blockEntity).forEach(s -> dropStack(world, pos, s, player));
             state.onStacksDropped(world, pos, ItemStack.EMPTY);
         }

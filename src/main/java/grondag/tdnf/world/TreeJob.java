@@ -27,6 +27,7 @@ public class TreeJob {
     private long startPos;
     private ServerPlayerEntity player;
     private ItemStack stack;
+    private boolean hasAxe;
     
     /** packed staring pos */
     public long startPos() {
@@ -41,6 +42,10 @@ public class TreeJob {
     /** stack used by player who initiated the break, if known */
     public ItemStack stack() {
         return stack;
+    }
+    
+    public boolean hasAxe() {
+        return hasAxe;
     }
     
     public void release() {
@@ -59,6 +64,7 @@ public class TreeJob {
         result.startPos = startPos;
         result.player = player;
         result.stack = stack;
+        result.hasAxe = DropHandler.hasAxe(player, stack);
         return result;
     }
 }

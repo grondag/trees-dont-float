@@ -35,6 +35,8 @@ import net.minecraft.block.LogBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.EntityContext;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.stat.Stats;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -461,11 +463,19 @@ public class TreeCutter {
             world.playLevelEvent(2001, pos, Block.getRawIdFromState(blockState));
         }
         
-        //TODO: handle these
-//        playerEntity_1.incrementStat(Stats.MINED.getOrCreateStat(this));
-//        playerEntity_1.addExhaustion(0.005F);
+        applyHunger(block == leafBlock, block);
     }
 
+    private void applyHunger(boolean isLeaf, Block block) {
+        if(Configurator.applyHunger && (!isLeaf || Configurator.leafHunger)) {
+            final ServerPlayerEntity player = job.player();
+            if(!player.isCreative()) {
+                player.addExhaustion(0.005F);
+                player.incrementStat(Stats.MINED.getOrCreateStat(block));
+            }
+        }
+    }
+    
     private Operation prepareLogs() {
         if (logs.isEmpty()) {
             logHandler = Operation.COMPLETE;
@@ -520,7 +530,9 @@ public class TreeCutter {
 
         final long packedPos = fallingLogs.getLong(i);
         final BlockPos pos = searchPos.setFromLong(packedPos);
+        applyHunger(false, world.getBlockState(pos).getBlock());
         world.setBlockState(pos, Blocks.AIR.getDefaultState());
+        
         breakBudget--;
         return this::doLogDropping1;
     }
