@@ -69,10 +69,10 @@ public class Configurator {
         @Comment("Place dropped items directly into player inventory. (Good for skyblock)")
         public boolean directDeposit = false;
 
-        @Comment("Apply fortune from tool used to fell a tree. (If a tool was used.)")
+        @Comment("Apply fortune from axe used to fell a tree. (If an axe was used.)")
         public boolean applyFortune = true;
 
-        @Comment("Remove durability from a tool used to fell a tree. (If a tool was used.)")
+        @Comment("Remove durability from an axe used to fell a tree. (If an axe was used.)")
         public boolean consumeDurability = true;
 
         @Comment("Don't break tools when using durability.")

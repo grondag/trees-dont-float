@@ -22,7 +22,7 @@ ext.getVersionCode = { ->
 
 archivesBaseName = "tdnf"
 group = "grondag"
-version = version = "1.4.0+build." + project.getVersionCode();
+version = version = "1.5.0+build." + project.getVersionCode();
 
 minecraft {
 }

@@ -24,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import grondag.tdnf.Configurator;
 import grondag.tdnf.Configurator.FallCondition;
 import grondag.tdnf.world.Dispatcher;
+import net.fabricmc.fabric.api.tools.FabricToolTags;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LogBlock;
@@ -32,6 +33,7 @@ import net.minecraft.block.PillarBlock;
 import net.minecraft.entity.EntityContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateFactory;
@@ -49,7 +51,7 @@ public abstract class MixinLogBlock extends PillarBlock {
     @Override
     public void neighborUpdate(BlockState blockState, World world, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify) {
         super.neighborUpdate(blockState, world, blockPos, otherBlock, otherPos, notify);
-        
+
         if ((Configurator.fallCondition == FallCondition.NO_SUPPORT) && otherPos.getY() == blockPos.getY() - 1 && world instanceof ServerWorld) {
 //            System.out.println("neighborUpdate notify = " + notify);
             BlockState otherState = world.getBlockState(otherPos);
@@ -61,16 +63,24 @@ public abstract class MixinLogBlock extends PillarBlock {
 
     @Override
     public void onBreak(World world, BlockPos blockPos, BlockState blockState, PlayerEntity playerEntity) {
-        if(!world.isClient && playerEntity != null) {
+        if (!world.isClient && playerEntity != null) {
+            final ServerPlayerEntity player = (ServerPlayerEntity) playerEntity;
+            if (Configurator.fallCondition == FallCondition.USE_TOOL) {
+                final ItemStack stack = player.getMainHandStack();
+                if (FabricToolTags.AXES.contains(stack.getItem())) {
+                    Dispatcher.enqueCheck(world, blockPos, player);
+                }
+            } else {
 //            System.out.println("onBreak playerEntity = " + (playerEntity == null ? "NULL" : playerEntity.toString()));
-            Dispatcher.enqueCheck(world, blockPos, (ServerPlayerEntity)playerEntity);
+                Dispatcher.enqueCheck(world, blockPos, player);
+            }
         }
         super.onBreak(world, blockPos, blockState, playerEntity);
     }
 
     @Override
     public void onBlockRemoved(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify) {
-        if (oldState.getBlock() != newState.getBlock()) {
+        if (oldState.getBlock() != newState.getBlock() && Configurator.fallCondition != FallCondition.USE_TOOL) {
 //            System.out.println("onBlockRemoved notify = " + notify);
             Dispatcher.enqueCheck(world, blockPos, null);
         }

@@ -40,7 +40,6 @@ public class FxManager {
     public boolean request(boolean isBreak) {
         if(dirtyForecast) {
             if(fxBudget > 0) {
-                System.out.println("budget:" + fxBudget + " expected breaks:" + expectedTotalBreaks);
                 final int estimatedTicks = Math.round((fxClockEnd - System.currentTimeMillis()) / 50);
                 final int expectedBreaksThisSecond = Math.min(expectedTotalBreaks, Configurator.maxBreaksPerTick * estimatedTicks);
                 fxChance = MathHelper.clamp((float)fxBudget / expectedBreaksThisSecond, 0f, 1f);
@@ -68,9 +67,6 @@ public class FxManager {
         if(ms > fxClockEnd) {
             fxBudget = Configurator.effectsPerSecond;
             fxClockEnd  = ms + 1000;
-            System.out.println("");
-            System.out.println("clock reset");
-            System.out.println("");
             dirtyForecast = true;
         }
     }
