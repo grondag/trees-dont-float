@@ -56,7 +56,7 @@ public abstract class MixinBlock {
     }
     
     @Inject(at = @At("HEAD"), method = "neighborUpdate")
-    void hookNeighborUpdate(BlockState blockState, World world, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify,  CallbackInfo ci) {
+    private void hookNeighborUpdate(BlockState blockState, World world, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify,  CallbackInfo ci) {
         if (!world.isClient && isLog() && Configurator.fallCondition == FallCondition.NO_SUPPORT && otherPos.getY() == blockPos.getY() - 1) {
 //            System.out.println("neighborUpdate notify = " + notify);
             BlockState otherState = world.getBlockState(otherPos);
@@ -67,7 +67,7 @@ public abstract class MixinBlock {
     }
 
     @Inject(at = @At("HEAD"), method = "onBreak")
-    void hookOnBreak(World world, BlockPos blockPos, BlockState blockState, PlayerEntity playerEntity, CallbackInfo ci) {
+    private void hookOnBreak(World world, BlockPos blockPos, BlockState blockState, PlayerEntity playerEntity, CallbackInfo ci) {
         if (!world.isClient && isLog() && playerEntity != null) {
             final ServerPlayerEntity player = (ServerPlayerEntity) playerEntity;
             if (Configurator.fallCondition == FallCondition.USE_TOOL) {
@@ -82,7 +82,7 @@ public abstract class MixinBlock {
     }
 
     @Inject(at = @At("HEAD"), method = "onBlockRemoved")
-    void hookOnBlockRemoved(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
+    private void hookOnBlockRemoved(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
         if (isLog() && oldState.getBlock() != newState.getBlock() && Configurator.fallCondition != FallCondition.USE_TOOL) {
 //            System.out.println("onBlockRemoved notify = " + notify);
             Dispatcher.enqueCheck(world, blockPos, null);

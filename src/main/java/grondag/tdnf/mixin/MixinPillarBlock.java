@@ -30,7 +30,7 @@ import net.minecraft.state.property.Properties;
 public abstract class MixinPillarBlock extends MixinBlock {
 
     @Inject(at = @At("RETURN"), method = "getPlacementState")
-    void getPlacementState(ItemPlacementContext context, CallbackInfoReturnable<BlockState> ci) {
+    private void hookGetPlacementState(ItemPlacementContext context, CallbackInfoReturnable<BlockState> ci) {
         if (isLog()) {
             Block me = (Block)(Object)this;
             BlockState state = ci.getReturnValue();
