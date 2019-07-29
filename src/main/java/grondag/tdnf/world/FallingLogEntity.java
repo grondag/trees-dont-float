@@ -73,7 +73,10 @@ public class FallingLogEntity extends Entity {
 
     public FallingLogEntity(World world, double x, double y, double z, BlockState state) {
         this(FALLING_LOG, world);
-        this.block = state;
+        if(!world.isClient) {
+            entityCount++;
+        }
+        this.fallingBlockState = state;
         this.field_6033 = true;
         this.setPosition(x, y + (double) ((1.0F - this.getHeight()) / 2.0F), z);
         this.setVelocity(Vec3d.ZERO);
@@ -85,13 +88,16 @@ public class FallingLogEntity extends Entity {
 
     public FallingLogEntity(EntityType<?> entityType, World world_1) {
         super(entityType, world_1);
-        this.block = Blocks.OAK_LOG.getDefaultState();
+        if(!world.isClient) {
+            entityCount++;
+        }
+        this.fallingBlockState = Blocks.OAK_LOG.getDefaultState();
         this.dropItem = true;
         this.fallHurtMax = 40;
         this.fallHurtAmount = 2.0F;
     }
 
-    private BlockState block;
+    private BlockState fallingBlockState;
     public int timeFalling;
     public boolean dropItem;
     private boolean destroyedOnLanding;
@@ -131,13 +137,13 @@ public class FallingLogEntity extends Entity {
 
     @Override
     public void tick() {
-        if (this.block.isAir()) {
+        if (this.fallingBlockState.isAir()) {
             this.remove();
         } else {
             this.prevX = this.x;
             this.prevY = this.y;
             this.prevZ = this.z;
-            Block block_1 = this.block.getBlock();
+            Block block_1 = this.fallingBlockState.getBlock();
             BlockPos myPos;
             this.timeFalling++;
 
@@ -166,7 +172,7 @@ public class FallingLogEntity extends Entity {
                     BlockPos downPos = myPos.down();
                     BlockState downBlockState = this.world.getBlockState(downPos);
                     if (downBlockState.canReplace(new AutomaticItemPlacementContext(this.world, downPos, Direction.DOWN, ItemStack.EMPTY, Direction.UP))
-                            && this.block.canPlaceAt(this.world, downPos)) {
+                            && this.fallingBlockState.canPlaceAt(this.world, downPos)) {
                         this.setPosition(myPos.getX() + 0.5, this.y, myPos.getZ() + 0.5);
                         this.setVelocity(0, this.getVelocity().y, 0);
                         this.onGround = false;
@@ -177,12 +183,12 @@ public class FallingLogEntity extends Entity {
                             if (!this.destroyedOnLanding) {
                                 if (localBlockState
                                         .canReplace(new AutomaticItemPlacementContext(this.world, myPos, Direction.DOWN, ItemStack.EMPTY, Direction.UP))
-                                        && this.block.canPlaceAt(this.world, myPos)) {
-                                    if (this.block.contains(Properties.WATERLOGGED) && this.world.getFluidState(myPos).getFluid() == Fluids.WATER) {
-                                        this.block = (BlockState) this.block.with(Properties.WATERLOGGED, true);
+                                        && this.fallingBlockState.canPlaceAt(this.world, myPos)) {
+                                    if (this.fallingBlockState.contains(Properties.WATERLOGGED) && this.world.getFluidState(myPos).getFluid() == Fluids.WATER) {
+                                        this.fallingBlockState = (BlockState) this.fallingBlockState.with(Properties.WATERLOGGED, true);
                                     }
 
-                                    if (this.world.setBlockState(myPos, this.block, 3)) {
+                                    if (this.world.setBlockState(myPos, this.fallingBlockState, 3)) {
                                         // noop
                                     } else if (this.dropItem && this.world.getGameRules().getBoolean(GameRules.DO_ENTITY_DROPS)) {
                                         this.dropItem(block_1);
@@ -206,7 +212,7 @@ public class FallingLogEntity extends Entity {
             int int_1 = MathHelper.ceil(float_1 - 1.0F);
             if (int_1 > 0) {
                 List<Entity> list_1 = Lists.newArrayList(this.world.getEntities(this, this.getBoundingBox()));
-                boolean boolean_1 = this.block.matches(BlockTags.ANVIL);
+                boolean boolean_1 = this.fallingBlockState.matches(BlockTags.ANVIL);
                 DamageSource damageSource_1 = boolean_1 ? DamageSource.ANVIL : DamageSource.FALLING_BLOCK;
                 Iterator<Entity> var7 = list_1.iterator();
 
@@ -216,11 +222,11 @@ public class FallingLogEntity extends Entity {
                 }
 
                 if (boolean_1 && (double) this.random.nextFloat() < 0.05000000074505806D + (double) int_1 * 0.05D) {
-                    BlockState blockState_1 = AnvilBlock.getLandingState(this.block);
+                    BlockState blockState_1 = AnvilBlock.getLandingState(this.fallingBlockState);
                     if (blockState_1 == null) {
                         this.destroyedOnLanding = true;
                     } else {
-                        this.block = blockState_1;
+                        this.fallingBlockState = blockState_1;
                     }
                 }
             }
@@ -230,7 +236,7 @@ public class FallingLogEntity extends Entity {
 
     @Override
     protected void writeCustomDataToTag(CompoundTag compoundTag_1) {
-        compoundTag_1.put("BlockState", TagHelper.serializeBlockState(this.block));
+        compoundTag_1.put("BlockState", TagHelper.serializeBlockState(this.fallingBlockState));
         compoundTag_1.putInt("Time", this.timeFalling);
         compoundTag_1.putBoolean("DropItem", this.dropItem);
         compoundTag_1.putBoolean("HurtEntities", this.hurtEntities);
@@ -240,13 +246,13 @@ public class FallingLogEntity extends Entity {
 
     @Override
     protected void readCustomDataFromTag(CompoundTag compoundTag_1) {
-        this.block = TagHelper.deserializeBlockState(compoundTag_1.getCompound("BlockState"));
+        this.fallingBlockState = TagHelper.deserializeBlockState(compoundTag_1.getCompound("BlockState"));
         this.timeFalling = compoundTag_1.getInt("Time");
         if (compoundTag_1.containsKey("HurtEntities", 99)) {
             this.hurtEntities = compoundTag_1.getBoolean("HurtEntities");
             this.fallHurtAmount = compoundTag_1.getFloat("FallHurtAmount");
             this.fallHurtMax = compoundTag_1.getInt("FallHurtMax");
-        } else if (this.block.matches(BlockTags.ANVIL)) {
+        } else if (this.fallingBlockState.matches(BlockTags.ANVIL)) {
             this.hurtEntities = true;
         }
 
@@ -254,8 +260,8 @@ public class FallingLogEntity extends Entity {
             this.dropItem = compoundTag_1.getBoolean("DropItem");
         }
 
-        if (this.block.isAir()) {
-            this.block = Blocks.OAK_LOG.getDefaultState();
+        if (this.fallingBlockState.isAir()) {
+            this.fallingBlockState = Blocks.OAK_LOG.getDefaultState();
         }
 
     }
@@ -278,11 +284,11 @@ public class FallingLogEntity extends Entity {
     @Override
     public void populateCrashReport(CrashReportSection crashReportSection_1) {
         super.populateCrashReport(crashReportSection_1);
-        crashReportSection_1.add("Immitating BlockState", (Object) this.block.toString());
+        crashReportSection_1.add("Immitating BlockState", (Object) this.fallingBlockState.toString());
     }
 
     public BlockState getBlockState() {
-        return this.block;
+        return this.fallingBlockState;
     }
 
     @Override
@@ -330,6 +336,7 @@ public class FallingLogEntity extends Entity {
 
     public void toBuffer(PacketByteBuf buf) {
         buf.writeVarInt(this.getEntityId());
+        buf.writeVarInt(Block.getRawIdFromState(fallingBlockState));
         buf.writeUuid(this.uuid);
         buf.writeDouble(this.x);
         buf.writeDouble(this.y);
@@ -344,6 +351,7 @@ public class FallingLogEntity extends Entity {
 
     public void fromBuffer(PacketByteBuf buf) {
         this.setEntityId(buf.readVarInt());
+        fallingBlockState = Block.getStateFromRawId(buf.readVarInt());
         this.uuid = buf.readUuid();
         this.x = buf.readDouble();
         this.y = buf.readDouble();
@@ -356,8 +364,24 @@ public class FallingLogEntity extends Entity {
         final double vz = (double) buf.readShort() / 8000.0D;
         this.setVelocity(vx, vy, vz);
     }
+    
+
+    @Override
+    public void remove() {
+        if(!this.removed) {
+            entityCount--;
+        }
+        super.remove();
+    }
+
 
     static {
         BLOCK_POS = DataTracker.registerData(FallingBlockEntity.class, TrackedDataHandlerRegistry.BLOCK_POS);
+    }
+
+    private static int entityCount = 0;
+    
+    public static boolean canSpawn() {
+        return entityCount < Configurator.maxFallingBlocks;
     }
 }

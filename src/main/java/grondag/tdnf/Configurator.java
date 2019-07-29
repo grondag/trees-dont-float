@@ -103,6 +103,9 @@ public class Configurator {
 
         @Comment("Max percentage of each server tick that can be used by TDNF. 1 - 5")
         public int tickBudget = 1;
+        
+        @Comment("Max number of active falling block entities. 1 - 64")
+        public int maxFallingBlocks = 16;
     }
 
     public static final ConfigData DEFAULTS = new ConfigData();
@@ -131,6 +134,7 @@ public class Configurator {
     public static int effectsPerSecond = DEFAULTS.effectsPerSecond;
     public static int maxBreaksPerTick = DEFAULTS.maxBreaksPerTick;
     public static int tickBudget = DEFAULTS.tickBudget;
+    public static int maxFallingBlocks = DEFAULTS.maxFallingBlocks;
 
     public static boolean hasBreaking = fallingLogsBreakPlants || fallingLogsBreakFragile;
 
@@ -182,6 +186,7 @@ public class Configurator {
         effectsPerSecond = config.effectsPerSecond;
         maxBreaksPerTick = MathHelper.clamp(config.maxBreaksPerTick, 1, 128);
         tickBudget = MathHelper.clamp(config.tickBudget, 1, 20);
+        maxFallingBlocks = MathHelper.clamp(config.maxFallingBlocks, 1, 64);
         computeDerived();
 //        logSupportSurface = config.minimumSupportSurface;
     }
@@ -231,6 +236,8 @@ public class Configurator {
         config.effectsPerSecond = effectsPerSecond;
         config.maxBreaksPerTick = maxBreaksPerTick;
         config.tickBudget = tickBudget;
+        config.maxFallingBlocks = maxFallingBlocks;
+        
 //        config.minimumSupportSurface = logSupportSurface;
 
         try {

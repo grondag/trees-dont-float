@@ -35,10 +35,8 @@ public class MixinBlockState {
         if(!world.isClient()) {
             BlockState me = (BlockState)(Object)this;
             if(!me.isAir() && Dispatcher.isDoomed(myPos)) {
-                System.out.println("Doomed: " + ((BlockState)(Object)this).toString());
                 ci.setReturnValue((BlockState)(Object)this);
             }
         }
      }
-    
 }

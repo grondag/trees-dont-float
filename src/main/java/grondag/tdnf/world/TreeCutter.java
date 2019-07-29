@@ -28,6 +28,7 @@ import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -55,9 +56,9 @@ public class TreeCutter {
     private Operation operation = Operation.COMPLETE;
 
     /** if search in progress, starting state of search */
-    private BlockState startState = Blocks.AIR.getDefaultState();
-
-    private Block startBlock;
+//    private BlockState startState = Blocks.AIR.getDefaultState();
+//
+//    private Block startBlock;
 
     private final PriorityQueue<Visit> toVisit = new PriorityQueue<>(new Comparator<Visit>() {
         @Override
@@ -80,6 +81,8 @@ public class TreeCutter {
      */
     private final LongArrayList fallingLogs = new LongArrayList();
 
+    private final ObjectArrayList<BlockState> fallingLogStates = new ObjectArrayList<>(); 
+    
     /** Used to iterate {@link #fallingLogs} */
     private int fallingLogIndex = 0;
 
@@ -151,6 +154,7 @@ public class TreeCutter {
         toVisit.clear();
         logs.clear();
         fallingLogs.clear();
+        fallingLogStates.clear();
         leaves.clear();
         leafCounts.clear();
         fx.reset();
@@ -160,8 +164,8 @@ public class TreeCutter {
         zStart = BlockPos.unpackLongZ(job.startPos());
         prepIt = null;
         leafBlock = null;
-        startState = Blocks.AIR.getDefaultState();
-        startBlock = Blocks.AIR;
+//        startState = Blocks.AIR.getDefaultState();
+//        startBlock = Blocks.AIR;
         operation = this::startSearch;
         fallingLogIndex = 0;
     }
@@ -206,8 +210,8 @@ public class TreeCutter {
         BlockState state = world.getBlockState(searchPos);
 
         if (state.getBlock().matches(BlockTags.LOGS) && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
-            this.startState = state;
-            this.startBlock = state.getBlock();
+//            this.startState = state;
+//            this.startBlock = state.getBlock();
 
             this.visited.put(packedPos, POS_TYPE_LOG);
 
@@ -317,7 +321,7 @@ public class TreeCutter {
                 }
             } else if (fromType != POS_TYPE_LEAF) {
                 // visiting from wood (ignore type never added to queue)
-                if (block == this.startState.getBlock() && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
+                if (BlockTags.LOGS.contains(block) && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
                     this.visited.put(packedPos, POS_TYPE_LOG);
 
                     enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LOG_FROM_ABOVE, newDepth);
@@ -460,7 +464,7 @@ public class TreeCutter {
         final BlockState state = world.getBlockState(pos);
         final Block block = state.getBlock();
 
-        if (block == startBlock) {
+        if (BlockTags.LOGS.contains(block)) {
             if(checkDurability(world, state, pos)) {
                 breakBudget--;
                 breakBlock(pos, world);
@@ -481,13 +485,13 @@ public class TreeCutter {
     private void breakBlock(BlockPos pos, World world) {
         BlockState blockState = world.getBlockState(pos);
         Block block = blockState.getBlock();
-        if (block != startBlock && block != leafBlock) {
+        if (!BlockTags.LOGS.contains(block) && block != leafBlock) {
             // notify fx to increase chance because chance is based on totals reported earlier
             fx.request(false);
             return;
         }
         final FluidState fluidState = world.getFluidState(pos);
-        final BlockEntity blockEntity = startBlock.hasBlockEntity() ? world.getBlockEntity(pos) : null;
+        final BlockEntity blockEntity = block.hasBlockEntity() ? world.getBlockEntity(pos) : null;
 
         dropHandler.doDrops(blockState, world, pos, blockEntity);
         Dispatcher.suspend(p -> doomed.contains(p.asLong()));
@@ -582,7 +586,8 @@ public class TreeCutter {
         final long packedPos = fallingLogs.getLong(i);
         final BlockPos pos = searchPos.setFromLong(packedPos);
         final BlockState state = world.getBlockState(pos);
-
+        fallingLogStates.add(state);
+        
         if(checkDurability(world, state, pos)) {
             applyHunger(false, state.getBlock());
             world.setBlockState(pos, Blocks.AIR.getDefaultState());
@@ -608,12 +613,22 @@ public class TreeCutter {
             dropHandler.spawnDrops(world);
             return this::doLeafClearing;
         }
-        final long packedPos = fallingLogs.getLong(i);
-        final BlockPos pos = searchPos.setFromLong(packedPos);
-        FallingLogEntity entity = new FallingLogEntity(world, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, startState.with(LogBlock.AXIS, fallAxis));
-        double height = Math.sqrt(Math.max(0, pos.getY() - BlockPos.unpackLongY(job.startPos()))) * 0.2;
-        entity.addVelocity(xVelocity * height, 0, zVelocity * height);
-        world.spawnEntity(entity);
+        
+        if(FallingLogEntity.canSpawn()) {
+            final long packedPos = fallingLogs.getLong(i);
+            final BlockPos pos = searchPos.setFromLong(packedPos);
+            BlockState state = fallingLogStates.get(i);
+            if(state.contains(LogBlock.AXIS)) {
+                state = state.with(LogBlock.AXIS, fallAxis);
+            }
+            FallingLogEntity entity = new FallingLogEntity(world, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, state);
+            double height = Math.sqrt(Math.max(0, pos.getY() - BlockPos.unpackLongY(job.startPos()))) * 0.2;
+            entity.addVelocity(xVelocity * height, 0, zVelocity * height);
+            world.spawnEntity(entity);
+        } else {
+            // force exit till next tick
+            breakBudget = 0;
+        }
         return this::doLogDropping2;
     }
 }

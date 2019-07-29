@@ -61,6 +61,9 @@
 	"config.tdnf.value.tick_budget" : "Tick Budget",
 	"config.tdnf.help.tick_budget" : "Max percentage of each server tick;that can be used by TDNF.",
 	
+	"config.tdnf.value.max_falling_blocks" : "Max Falling Blocks",
+	"config.tdnf.help.max_falling_blocks" : "Max number of active falling block entities.",
+	
 	"config.tdnf.value.support_surface" : "Minimum Support Surface",
 	"config.tdnf.help.support_surface" : "What counts as support for logs?"
 	

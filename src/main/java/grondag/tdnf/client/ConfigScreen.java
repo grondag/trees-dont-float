@@ -116,7 +116,11 @@ public class ConfigScreen {
         performance.addEntry(new IntegerSliderEntry("config.tdnf.value.tick_budget", 1, 5, tickBudget, "config.tdnf.reset",
                 () -> DEFAULTS.tickBudget, b -> tickBudget = b,
                 () -> Optional.of(I18n.translate("config.tdnf.help.tick_budget").split(";"))));
-
+        
+        performance.addEntry(new IntegerSliderEntry("config.tdnf.value.max_falling_blocks", 1, 64, maxFallingBlocks, "config.tdnf.reset",
+                () -> DEFAULTS.maxFallingBlocks, b -> maxFallingBlocks = b,
+                () -> Optional.of(I18n.translate("config.tdnf.help.max_falling_blocks").split(";"))));
+        
         builder.setDoesConfirmSave(false);
 
         return builder.build();
