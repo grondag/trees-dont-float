@@ -601,20 +601,14 @@ public class TreeCutter {
 
     private Operation doLogDropping2(World world) {
         final int limit = fallingLogs.size();
-        if (limit == 0) {
-            // drop leaves now in case player doesn't want to wait for logs
-            dropHandler.spawnDrops(world);
-            return this::doLeafClearing;
-        }
-
-        final int i = fallingLogIndex++;
-        if (i >= limit) {
+        if (limit == 0 || fallingLogIndex >= limit - 1) {
             // drop leaves now in case player doesn't want to wait for logs
             dropHandler.spawnDrops(world);
             return this::doLeafClearing;
         }
         
         if(FallingLogEntity.canSpawn()) {
+            final int i = fallingLogIndex++;
             final long packedPos = fallingLogs.getLong(i);
             final BlockPos pos = searchPos.setFromLong(packedPos);
             BlockState state = fallingLogStates.get(i);
