@@ -521,7 +521,7 @@ public class TreeCutter {
     private void applyHunger(boolean isLeaf, Block block) {
         if(Configurator.applyHunger && (!isLeaf || Configurator.leafHunger)) {
             final ServerPlayerEntity player = job.player();
-            if(!player.isCreative()) {
+            if(player != null && !player.isCreative()) {
                 player.addExhaustion(0.005F);
                 player.incrementStat(Stats.MINED.getOrCreateStat(block));
             }
