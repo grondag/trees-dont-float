@@ -28,10 +28,9 @@ import net.minecraft.state.property.Properties;
 
 @Mixin(PillarBlock.class)
 public abstract class MixinPillarBlock extends MixinBlock {
-
-    @Inject(at = @At("RETURN"), method = "getPlacementState", cancellable = true)
+    @Inject(at = @At("RETURN"), method = "getPlacementState", require = 0, cancellable = true)
     private void hookGetPlacementState(ItemPlacementContext context, CallbackInfoReturnable<BlockState> ci) {
-        if (isLog()) {
+        if (context.getWorld() != null && !context.getWorld().isClient && isLog()) {
             Block me = (Block)(Object)this;
             BlockState state = ci.getReturnValue();
             if (context.getPlayer() != null && state.getBlock() == me && me.getStateFactory().getProperties().contains(Properties.PERSISTENT)) {
