@@ -26,6 +26,7 @@ import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.block.Block;
@@ -68,6 +69,8 @@ public class TreeCutter {
     /** packed positions that have received a valid visit */
     private final Long2ByteOpenHashMap visited = new Long2ByteOpenHashMap();
 
+    private final LongOpenHashSet doomed = new LongOpenHashSet();
+    
     /** packed positions of logs to be cleared - populated during pre-clearing */
     private final LongArrayFIFOQueue logs = new LongArrayFIFOQueue();
 
@@ -96,17 +99,17 @@ public class TreeCutter {
     private Block leafBlock = null;
 
     private TreeJob job = null;
-    
+
     private final DropHandler dropHandler = new DropHandler();
-    
+
     private final FxManager fx = new FxManager();
-    
+
     /** Counter for enforcing configured per-tick break max */
     private int breakBudget = 0;
-    
+
     /** method reference to selected log handler (clear or drop) */
     private Operation logHandler = Operation.COMPLETE;
-    
+
     // all below are used for center-of-mass and fall velocity handling
     private int LOG_FACTOR = 5; // logs worth this much more than leaves
     private int xStart = 0;
@@ -144,6 +147,7 @@ public class TreeCutter {
         this.job = job;
         dropHandler.reset(job);
         visited.clear();
+        doomed.clear();
         toVisit.clear();
         logs.clear();
         fallingLogs.clear();
@@ -170,21 +174,21 @@ public class TreeCutter {
             }
             return true;
         }
-        
+
         fx.tick();
         breakBudget = Configurator.maxBreaksPerTick;
-        
+
         final long maxTime = System.nanoTime() + 1000000000 / 100 * Configurator.tickBudget;
-        
+
         while(doOp(world) && System.nanoTime() < maxTime) {} 
-        
+
         return operation == Operation.COMPLETE;
     }
-    
+
     /** returns false if cannot process more this tick */
     private boolean doOp(World world) {
         operation = operation.apply(world);
-        
+
         if (operation == Operation.COMPLETE) {
             if (Configurator.stackDrops) {
                 dropHandler.spawnDrops(world);
@@ -390,6 +394,7 @@ public class TreeCutter {
             final byte type = e.getByteValue();
             if (type != POS_TYPE_IGNORE) {
                 final long pos = e.getLongKey();
+                doomed.add(pos);
                 if (type == POS_TYPE_LEAF) {
                     if (Configurator.keepLogsIntact) {
                         xSum += (BlockPos.unpackLongX(pos) - xStart);
@@ -418,7 +423,7 @@ public class TreeCutter {
                     return Operation.COMPLETE;
                 }
             }
-            
+
             fx.addExpected(leaves.size());
             if(!Configurator.keepLogsIntact) {
                 fx.addExpected(logs.size());
@@ -441,18 +446,16 @@ public class TreeCutter {
                 return Operation.COMPLETE;
             }
         }
-        
+
         if(leaves.isEmpty()) {
-            // drop logs now in case player doesn't want to wait for logs
-            dropHandler.spawnDrops(world);
-            return this.logHandler;
+            return Operation.COMPLETE;
         } else {
             return this::doLeafClearing;
         }
     }
 
     private Operation doLogClearing(World world) {
-        final long packedPos = logs.dequeueLong();
+        final long packedPos = fallingLogs.popLong();
         final BlockPos pos = searchPos.setFromLong(packedPos);
         final BlockState state = world.getBlockState(pos);
         final Block block = state.getBlock();
@@ -466,7 +469,13 @@ public class TreeCutter {
             }
         }
 
-        return this.logs.isEmpty() ? Operation.COMPLETE : this::doLogClearing;
+        if(fallingLogs.isEmpty()) {
+            // drop leaves now in case player doesn't want to wait for logs
+            dropHandler.spawnDrops(world);
+            return this::doLeafClearing;
+        } else {
+            return this::doLogClearing;
+        }
     }
 
     private void breakBlock(BlockPos pos, World world) {
@@ -481,14 +490,14 @@ public class TreeCutter {
         final BlockEntity blockEntity = startBlock.hasBlockEntity() ? world.getBlockEntity(pos) : null;
 
         dropHandler.doDrops(blockState, world, pos, blockEntity);
-        Dispatcher.suspend();
+        Dispatcher.suspend(p -> doomed.contains(p.asLong()));
         world.setBlockState(pos, fluidState.getBlockState(), 3);
         Dispatcher.resume();
-        
+
         if(fx.request(true)) {
             world.playLevelEvent(2001, pos, Block.getRawIdFromState(blockState));
         }
-        
+
         applyHunger(block == leafBlock, block);
     }
 
@@ -504,7 +513,7 @@ public class TreeCutter {
             return true;
         }
     }
-    
+
     private void applyHunger(boolean isLeaf, Block block) {
         if(Configurator.applyHunger && (!isLeaf || Configurator.leafHunger)) {
             final ServerPlayerEntity player = job.player();
@@ -514,44 +523,44 @@ public class TreeCutter {
             }
         }
     }
-    
+
     private Operation prepareLogs() {
         if (logs.isEmpty()) {
             logHandler = Operation.COMPLETE;
-        } else if (Configurator.keepLogsIntact) {
-            logHandler = this::doLogDropping1;
-            final double div = logs.size() * LOG_FACTOR + leaves.size();
-            final double xCenterOfMass = xStart + xSum / div;
-            final double zCenterOfMass = zStart + zSum / div;
-            final Random r = ThreadLocalRandom.current();
-
-            xVelocity = xCenterOfMass - xStart;
-            zVelocity = zCenterOfMass - zStart;
-            if (xVelocity == 0 && zVelocity == 0) {
-                xVelocity = r.nextGaussian();
-                zVelocity = r.nextGaussian();
-            }
-
-            // normalize
-            double len = Math.sqrt(xVelocity * xVelocity + zVelocity * zVelocity);
-            xVelocity /= len;
-            zVelocity /= len;
-
-            fallAxis = Math.abs(xVelocity) > Math.abs(zVelocity) ? Axis.X : Axis.Z;
-
+        } else {
             while (!logs.isEmpty()) {
                 fallingLogs.add(logs.dequeueLastLong());
             }
             fallingLogs.sort((l0, l1) -> Integer.compare(BlockPos.unpackLongY(l1), BlockPos.unpackLongY(l0)));
-        } else {
-            logHandler = this::doLogClearing;
+            
+            if (Configurator.keepLogsIntact) {
+                logHandler = this::doLogDropping1;
+                
+                final double div = logs.size() * LOG_FACTOR + leaves.size();
+                final double xCenterOfMass = xStart + xSum / div;
+                final double zCenterOfMass = zStart + zSum / div;
+                final Random r = ThreadLocalRandom.current();
+    
+                xVelocity = xCenterOfMass - xStart;
+                zVelocity = zCenterOfMass - zStart;
+                if (xVelocity == 0 && zVelocity == 0) {
+                    xVelocity = r.nextGaussian();
+                    zVelocity = r.nextGaussian();
+                }
+    
+                // normalize
+                double len = Math.sqrt(xVelocity * xVelocity + zVelocity * zVelocity);
+                xVelocity /= len;
+                zVelocity /= len;
+    
+                fallAxis = Math.abs(xVelocity) > Math.abs(zVelocity) ? Axis.X : Axis.Z;
+                
+            } else {
+                logHandler = this::doLogClearing;
+            }
         }
+        return this.logHandler;
 
-        if (!leaves.isEmpty() && leafBlock != null) {
-            return this::doLeafClearing;
-        } else {
-            return this.logHandler;
-        }
     }
 
     //TODO: implement block break limits for falling logs
@@ -569,15 +578,15 @@ public class TreeCutter {
             job.forceCompletion();
             return this::doLogDropping2;
         }
-        
+
         final long packedPos = fallingLogs.getLong(i);
         final BlockPos pos = searchPos.setFromLong(packedPos);
         final BlockState state = world.getBlockState(pos);
-        
+
         if(checkDurability(world, state, pos)) {
             applyHunger(false, state.getBlock());
             world.setBlockState(pos, Blocks.AIR.getDefaultState());
-            
+
             breakBudget--;
             return this::doLogDropping1;
         } else {
@@ -588,12 +597,16 @@ public class TreeCutter {
     private Operation doLogDropping2(World world) {
         final int limit = fallingLogs.size();
         if (limit == 0) {
-            return Operation.COMPLETE;
+            // drop leaves now in case player doesn't want to wait for logs
+            dropHandler.spawnDrops(world);
+            return this::doLeafClearing;
         }
 
         final int i = fallingLogIndex++;
         if (i >= limit) {
-            return Operation.COMPLETE;
+            // drop leaves now in case player doesn't want to wait for logs
+            dropHandler.spawnDrops(world);
+            return this::doLeafClearing;
         }
         final long packedPos = fallingLogs.getLong(i);
         final BlockPos pos = searchPos.setFromLong(packedPos);

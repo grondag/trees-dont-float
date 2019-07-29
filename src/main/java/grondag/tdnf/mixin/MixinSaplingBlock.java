@@ -21,6 +21,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.google.common.base.Predicates;
+
 import grondag.tdnf.world.Dispatcher;
 import net.minecraft.block.SaplingBlock;
 
@@ -28,7 +30,7 @@ import net.minecraft.block.SaplingBlock;
 public class MixinSaplingBlock {
     @Inject(at = @At("HEAD"), method = "generate")
     private void beforeGenerate(CallbackInfo ci) {
-        Dispatcher.suspend();
+        Dispatcher.suspend(Predicates.alwaysFalse());
     }
 
     @Inject(at = @At("RETURN"), method = "generate")

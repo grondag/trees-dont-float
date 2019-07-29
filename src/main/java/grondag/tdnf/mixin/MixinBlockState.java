@@ -13,36 +13,32 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  ******************************************************************************/
-
 package grondag.tdnf.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import net.minecraft.block.Block;
+import grondag.tdnf.world.Dispatcher;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.LogBlock;
-import net.minecraft.block.MaterialColor;
-import net.minecraft.block.PillarBlock;
-import net.minecraft.state.StateFactory;
-import net.minecraft.state.property.Properties;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.world.IWorld;
 
-@Mixin(LogBlock.class)
-public abstract class MixinLogBlock extends PillarBlock {
-    public MixinLogBlock(MaterialColor materialColor_1, Block.Settings block$Settings_1) {
-        super(block$Settings_1);
-    }
-
-    @Inject(at = @At("RETURN"), method = "<init>")
-    private void onInit(CallbackInfo ci) {
-        this.setDefaultState((BlockState) this.getDefaultState().with(Properties.PERSISTENT, false));
-    }
-
-    @Override
-    protected void appendProperties(StateFactory.Builder<Block, BlockState> builder) {
-        super.appendProperties(builder);
-        builder.add(Properties.PERSISTENT);
-    }
+@Mixin(BlockState.class)
+public class MixinBlockState {
+    
+    @Inject(at = @At("HEAD"), method = "getStateForNeighborUpdate", cancellable = true)
+    private void hookGetStateForNeighborUpdate(Direction face, BlockState otherState, IWorld world, 
+            BlockPos myPos, BlockPos otherPos, CallbackInfoReturnable<BlockState> ci) {
+        if(!world.isClient()) {
+            BlockState me = (BlockState)(Object)this;
+            if(!me.isAir() && Dispatcher.isDoomed(myPos)) {
+                System.out.println("Doomed: " + ((BlockState)(Object)this).toString());
+                ci.setReturnValue((BlockState)(Object)this);
+            }
+        }
+     }
+    
 }

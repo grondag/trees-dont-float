@@ -17,6 +17,9 @@
 package grondag.tdnf.world;
 
 import java.util.IdentityHashMap;
+import java.util.function.Predicate;
+
+import com.google.common.base.Predicates;
 
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
@@ -29,6 +32,8 @@ public class Dispatcher {
 
     private static boolean suspended = false;
 
+    private static Predicate<BlockPos> doomTest = Predicates.alwaysFalse();
+    
     public static void init() {
         WorldTickCallback.EVENT.register(Dispatcher::routeTick);
     }
@@ -83,8 +88,7 @@ public class Dispatcher {
     public static void routeTick(World world) {
         if (world.isClient) {
             return;
-        }
-        ;
+        };
 
         WorldJobs jobs = worldJobs.get(world);
         if (jobs == null) {
@@ -107,11 +111,17 @@ public class Dispatcher {
         jobs.enqueue(BlockPos.asLong(pos.getX(), pos.getY() + 1, pos.getZ()), player);
     }
 
-    public static void suspend() {
+    public static void suspend(Predicate<BlockPos> theDoomed) {
+        doomTest = theDoomed;
         suspended = true;
     }
 
     public static void resume() {
+        doomTest = Predicates.alwaysFalse();
         suspended = false;
+    }
+
+    public static boolean isDoomed(BlockPos pos) {
+        return doomTest.test(pos);
     }
 }
