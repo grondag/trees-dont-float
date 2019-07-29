@@ -19,7 +19,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import grondag.tdnf.Configurator;
 import grondag.tdnf.Configurator.FallCondition;
@@ -29,9 +28,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.EntityContext;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.state.property.Properties;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -42,9 +39,10 @@ public abstract class MixinBlock {
     private static final int LOG = 0;
     private static final int UNKNOWN = 1;
     private static final int OTHER = 2;
-    private int blockType = UNKNOWN;
     
-    private boolean isLog() {
+    int blockType = UNKNOWN;
+    
+    boolean isLog() {
         int result = blockType;
         if(result == UNKNOWN) {
             if(BlockTags.LOGS.contains((Block)(Object)this)) {
@@ -58,7 +56,7 @@ public abstract class MixinBlock {
     }
     
     @Inject(at = @At("HEAD"), method = "neighborUpdate")
-    private void hookNeighborUpdate(BlockState blockState, World world, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify,  CallbackInfo ci) {
+    void hookNeighborUpdate(BlockState blockState, World world, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify,  CallbackInfo ci) {
         if (!world.isClient && isLog() && Configurator.fallCondition == FallCondition.NO_SUPPORT && otherPos.getY() == blockPos.getY() - 1) {
 //            System.out.println("neighborUpdate notify = " + notify);
             BlockState otherState = world.getBlockState(otherPos);
@@ -69,7 +67,7 @@ public abstract class MixinBlock {
     }
 
     @Inject(at = @At("HEAD"), method = "onBreak")
-    private void hookOnBreak(World world, BlockPos blockPos, BlockState blockState, PlayerEntity playerEntity, CallbackInfo ci) {
+    void hookOnBreak(World world, BlockPos blockPos, BlockState blockState, PlayerEntity playerEntity, CallbackInfo ci) {
         if (!world.isClient && isLog() && playerEntity != null) {
             final ServerPlayerEntity player = (ServerPlayerEntity) playerEntity;
             if (Configurator.fallCondition == FallCondition.USE_TOOL) {
@@ -84,21 +82,10 @@ public abstract class MixinBlock {
     }
 
     @Inject(at = @At("HEAD"), method = "onBlockRemoved")
-    private void hookOnBlockRemoved(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
+    void hookOnBlockRemoved(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
         if (isLog() && oldState.getBlock() != newState.getBlock() && Configurator.fallCondition != FallCondition.USE_TOOL) {
 //            System.out.println("onBlockRemoved notify = " + notify);
             Dispatcher.enqueCheck(world, blockPos, null);
-        }
-    }
-
-    @Inject(at = @At("RETURN"), method = "getPlacementState")
-    private void getPlacementState(ItemPlacementContext context, CallbackInfoReturnable<BlockState> ci) {
-        if (isLog()) {
-            Block me = (Block)(Object)this;
-            BlockState state = ci.getReturnValue();
-            if (context.getPlayer() != null && state.getBlock() == me && me.getStateFactory().getProperties().contains(Properties.PERSISTENT)) {
-                ci.setReturnValue(state.with(Properties.PERSISTENT, true));
-            }
         }
     }
 }
