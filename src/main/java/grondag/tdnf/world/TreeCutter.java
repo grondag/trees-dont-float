@@ -27,7 +27,6 @@ import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.block.Block;
@@ -54,11 +53,6 @@ import net.minecraft.world.World;
  */
 public class TreeCutter {
     private Operation operation = Operation.COMPLETE;
-
-    /** if search in progress, starting state of search */
-//    private BlockState startState = Blocks.AIR.getDefaultState();
-//
-//    private Block startBlock;
 
     private final PriorityQueue<Visit> toVisit = new PriorityQueue<>(new Comparator<Visit>() {
         @Override
@@ -89,17 +83,11 @@ public class TreeCutter {
     /** leaves to be cleared - populated during pre-clearing */
     private final LongArrayFIFOQueue leaves = new LongArrayFIFOQueue();
 
-    /** Used to determine which leaf block should be {@link #leafBlock} */
-    private final Object2IntOpenHashMap<Block> leafCounts = new Object2IntOpenHashMap<>();
-
     /** general purpose mutable pos */
     private final BlockPos.Mutable searchPos = new BlockPos.Mutable();
 
     /** iterator traversed during pre-clearing */
     private ObjectIterator<Entry> prepIt = null;
-
-    /** most common leaf block next to trunk */
-    private Block leafBlock = null;
 
     private TreeJob job = null;
 
@@ -156,16 +144,12 @@ public class TreeCutter {
         fallingLogs.clear();
         fallingLogStates.clear();
         leaves.clear();
-        leafCounts.clear();
         fx.reset();
         xSum = 0;
         zSum = 0;
         xStart = BlockPos.unpackLongX(job.startPos());
         zStart = BlockPos.unpackLongZ(job.startPos());
         prepIt = null;
-        leafBlock = null;
-//        startState = Blocks.AIR.getDefaultState();
-//        startBlock = Blocks.AIR;
         operation = this::startSearch;
         fallingLogIndex = 0;
     }
@@ -282,9 +266,6 @@ public class TreeCutter {
 
                         // restart depth of search when transitioning from log to leaf
                         newDepth = 0;
-
-                        // leaves that are most common next to trunk are the ones we will break
-                        leafCounts.addTo(block, 1);
                     }
                 }
 
@@ -360,20 +341,6 @@ public class TreeCutter {
 
         if (this.toVisit.isEmpty()) {
             prepIt = this.visited.long2ByteEntrySet().iterator();
-
-            // id most common leaf type next to trunk - will use it for breaking
-            if (!leafCounts.isEmpty()) {
-                int max = 0;
-                ObjectIterator<it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<Block>> it = leafCounts.object2IntEntrySet().iterator();
-                while (it.hasNext()) {
-                    it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<Block> e = it.next();
-                    if (e.getIntValue() > max) {
-                        max = e.getIntValue();
-                        leafBlock = e.getKey();
-                    }
-                }
-            }
-
             return this::doPreClearing;
         } else {
             return this::doSearch;
@@ -437,12 +404,16 @@ public class TreeCutter {
     }
 
     private Operation doLeafClearing(World world) {
+        if(leaves.isEmpty()) {
+            return Operation.COMPLETE;
+        }
+        
         long packedPos = leaves.dequeueLong();
         BlockPos pos = searchPos.setFromLong(packedPos);
         BlockState state = world.getBlockState(pos);
         Block block = state.getBlock();
 
-        if (block == leafBlock) {
+        if (BlockTags.LEAVES.contains(block)) {
             if(!Configurator.leafDurability || checkDurability(world, state, pos)) {
                 breakBlock(pos, world);
                 breakBudget--;
@@ -451,11 +422,7 @@ public class TreeCutter {
             }
         }
 
-        if(leaves.isEmpty()) {
-            return Operation.COMPLETE;
-        } else {
-            return this::doLeafClearing;
-        }
+        return this::doLeafClearing;
     }
 
     private Operation doLogClearing(World world) {
@@ -485,7 +452,8 @@ public class TreeCutter {
     private void breakBlock(BlockPos pos, World world) {
         BlockState blockState = world.getBlockState(pos);
         Block block = blockState.getBlock();
-        if (!BlockTags.LOGS.contains(block) && block != leafBlock) {
+        final boolean isLeaf = BlockTags.LEAVES.contains(block);
+        if (!BlockTags.LOGS.contains(block) && !isLeaf) {
             // notify fx to increase chance because chance is based on totals reported earlier
             fx.request(false);
             return;
@@ -502,7 +470,7 @@ public class TreeCutter {
             world.playLevelEvent(2001, pos, Block.getRawIdFromState(blockState));
         }
 
-        applyHunger(block == leafBlock, block);
+        applyHunger(isLeaf, block);
     }
 
     private boolean checkDurability(World world, BlockState state, BlockPos pos) {
