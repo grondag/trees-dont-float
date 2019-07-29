@@ -42,7 +42,17 @@ public class ConfigScreen {
 
         // BLOCKS
         ConfigCategory blocks = builder.getOrCreateCategory("config.tdnf.category.blocks");
-
+        
+        blocks.addEntry(new EnumListEntry<>(
+                "config.tdnf.value.fall_condition",
+                FallCondition.class, 
+                fallCondition, 
+                "config.tdnf.reset", 
+                () -> DEFAULTS.fallCondition, 
+                (b) -> fallCondition = (FallCondition) b,
+                a -> a.toString(),
+                () -> Optional.of(I18n.translate("config.tdnf.help.fall_condition").split(";"))));
+        
         blocks.addEntry(new BooleanListEntry("config.tdnf.value.keep_logs_intact", keepLogsIntact, "config.tdnf.reset", () -> DEFAULTS.keepLogsIntact,
                 b -> keepLogsIntact = b, () -> Optional.of(I18n.translate("config.tdnf.help.keep_logs_intact").split(";"))));
 
@@ -64,16 +74,6 @@ public class ConfigScreen {
         
         // PLAYERS
         ConfigCategory players = builder.getOrCreateCategory("config.tdnf.category.players");
-        
-        players.addEntry(new EnumListEntry<>(
-                "config.tdnf.value.fall_condition",
-                FallCondition.class, 
-                fallCondition, 
-                "config.tdnf.reset", 
-                () -> DEFAULTS.fallCondition, 
-                (b) -> fallCondition = (FallCondition) b,
-                a -> a.toString(),
-                () -> Optional.of(I18n.translate("config.tdnf.help.fall_condition").split(";"))));
 
         players.addEntry(
                 new BooleanListEntry("config.tdnf.value.direct_deposit", directDeposit, "config.tdnf.reset", () -> DEFAULTS.directDeposit,
@@ -85,6 +85,9 @@ public class ConfigScreen {
         players.addEntry(new BooleanListEntry("config.tdnf.value.consume_durability", consumeDurability, "config.tdnf.reset", () -> DEFAULTS.consumeDurability,
                 b -> consumeDurability = b, () -> Optional.of(I18n.translate("config.tdnf.help.consume_durability").split(";"))));
 
+        players.addEntry(new BooleanListEntry("config.tdnf.value.leaf_durability", leafDurability, "config.tdnf.reset", () -> DEFAULTS.leafDurability,
+                b -> leafDurability = b, () -> Optional.of(I18n.translate("config.tdnf.help.leaf_durability").split(";"))));
+        
         players.addEntry(new BooleanListEntry("config.tdnf.value.protect_tools", protectTools, "config.tdnf.reset", () -> DEFAULTS.protectTools,
                 b -> protectTools = b, () -> Optional.of(I18n.translate("config.tdnf.help.protect_tools").split(";"))));
 

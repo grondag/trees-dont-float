@@ -35,6 +35,7 @@ import net.minecraft.block.LogBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.EntityContext;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.stat.Stats;
 import net.minecraft.tag.BlockTags;
@@ -405,6 +406,19 @@ public class TreeCutter {
             }
             return this::doPreClearing;
         } else {
+            // Confirm tool has adequate durability
+            // This only matters when we have to protect the tool or when we are keeping logs intact.
+            // It matters when logs are intact because we remove all the logs first and then spawn them
+            // incrementally. If we run out of durability mid-removal it gets weird due to lack of fancy physics.
+            if(job.hasAxe() && Configurator.consumeDurability && (Configurator.protectTools || Configurator.keepLogsIntact)) {
+                final ItemStack stack = job.stack();
+                final int capacity = stack.isEmpty() ? 0 : stack.getMaxDamage() - stack.getDamage();
+                final int needed = logs.size() + (Configurator.leafDurability ? leaves.size() : 0);
+                if(needed >= capacity) {
+                    return Operation.COMPLETE;
+                }
+            }
+            
             fx.addExpected(leaves.size());
             if(!Configurator.keepLogsIntact) {
                 fx.addExpected(logs.size());
@@ -420,8 +434,12 @@ public class TreeCutter {
         Block block = state.getBlock();
 
         if (block == leafBlock) {
-            breakBlock(pos, world);
-            breakBudget--;
+            if(!Configurator.leafDurability || checkDurability(world, state, pos)) {
+                breakBlock(pos, world);
+                breakBudget--;
+            } else {
+                return Operation.COMPLETE;
+            }
         }
         
         if(leaves.isEmpty()) {
@@ -440,8 +458,12 @@ public class TreeCutter {
         final Block block = state.getBlock();
 
         if (block == startBlock) {
-            breakBudget--;
-            breakBlock(pos, world);
+            if(checkDurability(world, state, pos)) {
+                breakBudget--;
+                breakBlock(pos, world);
+            } else {
+                return Operation.COMPLETE;
+            }
         }
 
         return this.logs.isEmpty() ? Operation.COMPLETE : this::doLogClearing;
@@ -470,6 +492,19 @@ public class TreeCutter {
         applyHunger(block == leafBlock, block);
     }
 
+    private boolean checkDurability(World world, BlockState state, BlockPos pos) {
+        if(Configurator.consumeDurability && job.hasAxe() && !job.player().isCreative()) {
+            final ItemStack stack = job.stack();
+            if(Configurator.protectTools && stack.getDamage() >= stack.getMaxDamage() - 2) {
+                return false;
+            }
+            stack.getItem().postMine(stack, world, state, pos, job.player());
+            return true;
+        } else {
+            return true;
+        }
+    }
+    
     private void applyHunger(boolean isLeaf, Block block) {
         if(Configurator.applyHunger && (!isLeaf || Configurator.leafHunger)) {
             final ServerPlayerEntity player = job.player();
@@ -529,18 +564,25 @@ public class TreeCutter {
         final int i = fallingLogIndex++;
         if (i >= limit) {
             fallingLogIndex = 0;
+            //FIXME: not in right place - what about logs partially completed - can abort then? See below also
             // logs are all removed so should not stop after this
             job.forceCompletion();
             return this::doLogDropping2;
         }
-
+        
         final long packedPos = fallingLogs.getLong(i);
         final BlockPos pos = searchPos.setFromLong(packedPos);
-        applyHunger(false, world.getBlockState(pos).getBlock());
-        world.setBlockState(pos, Blocks.AIR.getDefaultState());
+        final BlockState state = world.getBlockState(pos);
         
-        breakBudget--;
-        return this::doLogDropping1;
+        if(checkDurability(world, state, pos)) {
+            applyHunger(false, state.getBlock());
+            world.setBlockState(pos, Blocks.AIR.getDefaultState());
+            
+            breakBudget--;
+            return this::doLogDropping1;
+        } else {
+            return Operation.COMPLETE;
+        }
     }
 
     private Operation doLogDropping2(World world) {

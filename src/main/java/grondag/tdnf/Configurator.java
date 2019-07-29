@@ -45,6 +45,9 @@ public class Configurator {
     public static class ConfigData {
 
         // BLOCKS
+        
+        @Comment("When do trees break? (NO_SUPPORT, LOG_BREAK, or USE_TOOL)")
+        public FallCondition fallCondition = FallCondition.NO_SUPPORT;
 
         @Comment("Log blocks move to the ground instead of dropping as items. Can be laggy.")
         public boolean keepLogsIntact = false;
@@ -63,9 +66,6 @@ public class Configurator {
 
         // PLAYERS
 
-        @Comment("When do trees break? NO_SUPPORT, LOG_BREAK, or USE_TOOL)")
-        public FallCondition fallCondition = FallCondition.NO_SUPPORT;
-
         @Comment("Place dropped items directly into player inventory. (Good for skyblock)")
         public boolean directDeposit = false;
 
@@ -74,6 +74,9 @@ public class Configurator {
 
         @Comment("Remove durability from an axe used to fell a tree. (If an axe was used.)")
         public boolean consumeDurability = true;
+        
+        @Comment("Tools take durability loss from leaves as well as logs.")
+        public boolean leafDurability = false;
 
         @Comment("Don't break tools when using durability.")
         public boolean protectTools = true;
@@ -107,6 +110,7 @@ public class Configurator {
     private static final Jankson JANKSON = Jankson.builder().build();
 
     // BLOCKS
+    public static FallCondition fallCondition = DEFAULTS.fallCondition;
     public static boolean keepLogsIntact = DEFAULTS.keepLogsIntact;
     public static boolean renderFallingLogs = DEFAULTS.renderFallingLogs;
     public static boolean fallingLogsBreakPlants = DEFAULTS.fallingLogsBreakPlants;
@@ -114,10 +118,10 @@ public class Configurator {
     public static boolean protectPlayerLogs = DEFAULTS.protectPlayerLogs;
 
     // PLAYERS
-    public static FallCondition fallCondition = DEFAULTS.fallCondition;
     public static boolean directDeposit = DEFAULTS.directDeposit;
     public static boolean applyFortune = DEFAULTS.applyFortune;
     public static boolean consumeDurability = DEFAULTS.consumeDurability;
+    public static boolean leafDurability = DEFAULTS.leafDurability;
     public static boolean protectTools = DEFAULTS.protectTools;
     public static boolean applyHunger = DEFAULTS.applyHunger;
     public static boolean leafHunger = DEFAULTS.leafHunger;
@@ -157,6 +161,7 @@ public class Configurator {
         }
 
         // BLOCKS
+        fallCondition = config.fallCondition;
         keepLogsIntact = config.keepLogsIntact;
         renderFallingLogs = config.renderFallingLogs;
         fallingLogsBreakPlants = config.fallingLogsBreakPlants;
@@ -164,10 +169,10 @@ public class Configurator {
         protectPlayerLogs = config.protectPlayerLogs;
 
         // PLAYERS
-        fallCondition = config.fallCondition;
         directDeposit = config.directDeposit;
         applyFortune = config.applyFortune;
         consumeDurability = config.consumeDurability;
+        leafDurability = config.leafDurability;
         protectTools = config.protectTools;
         applyHunger = config.applyHunger;
         leafHunger = config.leafHunger;
@@ -205,6 +210,7 @@ public class Configurator {
         ConfigData config = new ConfigData();
 
         // BLOCKS
+        config.fallCondition = fallCondition;
         config.keepLogsIntact = keepLogsIntact;
         config.renderFallingLogs = renderFallingLogs;
         config.fallingLogsBreakPlants = fallingLogsBreakPlants;
@@ -212,10 +218,10 @@ public class Configurator {
         config.protectPlayerLogs = protectPlayerLogs;
 
         // PLAYERS
-        config.fallCondition = fallCondition;
         config.directDeposit = directDeposit;
         config.applyFortune = applyFortune;
         config.consumeDurability = consumeDurability;
+        config.leafDurability = leafDurability;
         config.protectTools = protectTools;
         config.applyHunger = applyHunger;
         config.leafHunger = leafHunger;

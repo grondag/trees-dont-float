@@ -50,7 +50,7 @@ public class TreeJob {
     }
     
     public boolean hasAxe() {
-        return hasAxe && player.getMainHandStack() == stack;
+        return hasAxe && player.getMainHandStack() == stack && !stack.isEmpty();
     }
     
     /** Call when when changing tool or player status can no longer affect the outcome */

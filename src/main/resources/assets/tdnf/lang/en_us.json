@@ -3,6 +3,9 @@
 	"config.tdnf.reset" : "Reset",
 	
 	"config.tdnf.category.blocks" : "Blocks",
+		
+	"config.tdnf.value.fall_condition" : "Fall Condition",
+	"config.tdnf.help.fall_condition" : "When do trees break?",
 	
 	"config.tdnf.value.keep_logs_intact" : "Keep Logs Intact",
 	"config.tdnf.help.keep_logs_intact" : "Log blocks fall to the ground instead of dropping;as items. Can be laggy.",
@@ -19,19 +22,20 @@
 	"config.tdnf.value.protect_player_logs" : "Protect Player Logs",
 	"config.tdnf.help.protect_player_logs" : "Logs placed by players are allowed to float.",
 	
-	"config.tdnf.category.players" : "Players",
 	
-	"config.tdnf.value.fall_condition" : "Fall Condition",
-	"config.tdnf.help.fall_condition" : "When do trees break?)",
+	"config.tdnf.category.players" : "Players",
 	
 	"config.tdnf.value.direct_deposit" : "Direct Deposit",
 	"config.tdnf.help.direct_deposit" : "Dropped items go directly to player inventory.;Useful for skyblock packs.",
 	
 	"config.tdnf.value.apply_fortune" : "Apply Fortune",
-	"config.tdnf.help.apply_fortune" : "Apply fortune from tool used to fell;a tree. (If a tool was used.)",
+	"config.tdnf.help.apply_fortune" : "Apply fortune from tool used to fell;a tree. (If a tool is used)",
 	
 	"config.tdnf.value.consume_durability" : "Consume Durability",
-	"config.tdnf.help.consume_durability" : "Remove durability from a tool used;to fell a tree. (If a tool was used.).",
+	"config.tdnf.help.consume_durability" : "Remove durability from a tool used;to fell a tree. (If a tool is used)",
+	
+	"config.tdnf.value.leaf_durability" : "Leaf Durability",
+	"config.tdnf.help.leaf_durability" : "Tools take durability loss from leaves as;well as logs. (If a tool is used)",
 	
 	"config.tdnf.value.protect_tools" : "Protect Tools",
 	"config.tdnf.help.protect_tools" : "Don't break tools when using durability.",
@@ -41,7 +45,7 @@
 	
 	"config.tdnf.value.leaf_hunger" : "Leaf Hunger",
 	"config.tdnf.help.leaf_hunger" : "Players gain hunger from leaves;in addition to logs.",
-	
+
 	
 	"config.tdnf.category.performance" : "Performance",
 	
