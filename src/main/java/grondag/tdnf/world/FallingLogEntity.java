@@ -77,7 +77,7 @@ public class FallingLogEntity extends Entity {
             entityCount++;
         }
         this.fallingBlockState = state;
-        this.field_6033 = true;
+        this.inanimate = true;
         this.setPosition(x, y + (double) ((1.0F - this.getHeight()) / 2.0F), z);
         this.setVelocity(Vec3d.ZERO);
         this.prevX = x;
@@ -107,7 +107,7 @@ public class FallingLogEntity extends Entity {
     protected static final TrackedData<BlockPos> BLOCK_POS;
 
     @Override
-    public boolean canPlayerAttack() {
+    public boolean isAttackable() {
         return false;
     }
 
@@ -356,7 +356,7 @@ public class FallingLogEntity extends Entity {
         this.x = buf.readDouble();
         this.y = buf.readDouble();
         this.z = buf.readDouble();
-        method_18003(x, y, z);
+        updateTrackedPosition(x, y, z);
         this.pitch = (float) (buf.readByte() * 360) / 256.0F;
         this.yaw = buf.readByte();
         final double vx = (double) buf.readShort() / 8000.0D;
