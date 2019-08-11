@@ -83,7 +83,9 @@ public abstract class MixinBlock {
 
     @Inject(at = @At("HEAD"), method = "onBlockRemoved")
     private void hookOnBlockRemoved(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
-        if (isLog() && oldState.getBlock() != newState.getBlock() && Configurator.fallCondition != FallCondition.USE_TOOL) {
+        if (isLog() && oldState.getBlock() != newState.getBlock() 
+                && Configurator.fallCondition != FallCondition.USE_TOOL
+                && !Block.isFaceFullSquare(newState.getCollisionShape(world, blockPos, EntityContext.absent()), Direction.UP)) {
 //            System.out.println("onBlockRemoved notify = " + notify);
             Dispatcher.enqueCheck(world, blockPos, null);
         }
