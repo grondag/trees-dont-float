@@ -569,7 +569,7 @@ public class TreeCutter {
 
     private Operation doLogDropping2(World world) {
         final int limit = fallingLogs.size();
-        if (limit == 0 || fallingLogIndex >= limit - 1) {
+        if (limit == 0 || fallingLogIndex >= limit) {
             // drop leaves now in case player doesn't want to wait for logs
             dropHandler.spawnDrops(world);
             return this::doLeafClearing;
