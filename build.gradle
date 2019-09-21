@@ -102,8 +102,10 @@ dependencies {
 	modCompile "net.fabricmc:fabric-loader:${project.loader_version}"
 	modCompile "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	
-	modImplementation "blue.endless:jankson:1.1.2"
-	include "blue.endless:jankson:1.1.2"
+	modImplementation ("blue.endless:jankson:${jankson_version}") {
+        exclude group :"net.fabricmc.fabric-api"
+    }
+	include "blue.endless:jankson:${jankson_version}"
 	
 	modImplementation ("me.shedaniel.cloth:config-2:${clothconfig_version}") {
         exclude group :"io.github.prospector.modmenu"
@@ -113,30 +115,25 @@ dependencies {
     
 	// For dev env testing 
 	modRuntime "com.jamieswhiteshirt:developer-mode:${project.devmode_version}"
-	modImplementation "io.github.prospector:modmenu:${project.modmenu_version}"
+	modImplementation ("io.github.prospector:modmenu:${project.modmenu_version}") {
+        exclude group :"net.fabricmc.fabric-api"
+    }
 	
 	compile "org.apiguardian:apiguardian-api:1.0.0"
 	compile "com.google.code.findbugs:jsr305:3.0.2"
 }
 
 publishing {
-    publications {
-        mavenJava(MavenPublication) {
-			artifact ("${project.buildDir.absolutePath}/libs/${archivesBaseName}-${project.version}.jar") { 
-				classifier null
+	publications {
+		mavenJava(MavenPublication) {
+			artifact(remapJar) {
 				builtBy remapJar
 			}
-
-			artifact ("${project.buildDir.absolutePath}/libs/${archivesBaseName}-${project.version}-dev.jar") { 
-				classifier "dev"
-				builtBy remapJar
-			}
-			
 			artifact(sourcesJar) {
 				builtBy remapSourcesJar
 			}
-        }
-    }
+		}
+	}
 
     repositories {
         maven {
