@@ -63,7 +63,7 @@ public class FallingLogEntityRenderer extends EntityRenderer<FallingLogEntity> {
                     GlStateManager.setupSolidRenderingTextureCombine(this.getOutlineColor(fallingLogEntity));
                 }
 
-                bufferBuilder_1.begin(7, VertexFormats.POSITION_COLOR_UV_LMAP);
+                bufferBuilder_1.begin(7, VertexFormats.POSITION_COLOR_UV_NORMAL);
                 BlockPos blockPos_1 = new BlockPos(fallingLogEntity.x, fallingLogEntity.getBoundingBox().maxY, fallingLogEntity.z);
                 GlStateManager.translatef((float) (double_1 - (double) blockPos_1.getX() - 0.5D), (float) (double_2 - (double) blockPos_1.getY()),
                         (float) (double_3 - (double) blockPos_1.getZ() - 0.5D));

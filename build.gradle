@@ -34,7 +34,10 @@ repositories {
     maven { url "https://minecraft.curseforge.com/api/maven" }
     maven { url "https://maven.fabricmc.net/io/github/prospector/modmenu/ModMenu/" }
     maven { url "https://maven.jamieswhiteshirt.com/libs-release/"}
-    
+    maven {
+      name = "Cotton"
+      url = "http://server.bbkr.space:8081/artifactory/libs-release/"
+    }
  	maven {
     	name = "grondag"
     	url = "https://grondag-repo.appspot.com"
@@ -102,10 +105,10 @@ dependencies {
 	modCompile "net.fabricmc:fabric-loader:${project.loader_version}"
 	modCompile "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	
-	modImplementation ("blue.endless:jankson:${jankson_version}") {
-        exclude group :"net.fabricmc.fabric-api"
-    }
-	include "blue.endless:jankson:${jankson_version}"
+    modImplementation ("io.github.cottonmc:Jankson-Fabric:${jankson_version}") {
+		exclude group :"net.fabricmc.fabric-api"
+	}
+	include "io.github.cottonmc:Jankson-Fabric:${jankson_version}"
 	
 	modImplementation ("me.shedaniel.cloth:config-2:${clothconfig_version}") {
         exclude group :"io.github.prospector.modmenu"

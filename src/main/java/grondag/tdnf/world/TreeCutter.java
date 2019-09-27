@@ -189,7 +189,7 @@ public class TreeCutter {
 
     private Operation startSearch(World world) {
         final long packedPos = job.startPos();
-        searchPos.setFromLong(packedPos);
+        searchPos.set(packedPos);
 
         BlockState state = world.getBlockState(searchPos);
 
@@ -233,7 +233,7 @@ public class TreeCutter {
 
         final long packedPos = toVisit.packedBlockPos;
 
-        searchPos.setFromLong(packedPos);
+        searchPos.set(packedPos);
 
         final byte fromType = toVisit.type;
 
@@ -409,7 +409,7 @@ public class TreeCutter {
         }
         
         long packedPos = leaves.dequeueLong();
-        BlockPos pos = searchPos.setFromLong(packedPos);
+        BlockPos pos = searchPos.set(packedPos);
         BlockState state = world.getBlockState(pos);
         Block block = state.getBlock();
 
@@ -427,7 +427,7 @@ public class TreeCutter {
 
     private Operation doLogClearing(World world) {
         final long packedPos = fallingLogs.popLong();
-        final BlockPos pos = searchPos.setFromLong(packedPos);
+        final BlockPos pos = searchPos.set(packedPos);
         final BlockState state = world.getBlockState(pos);
         final Block block = state.getBlock();
 
@@ -552,7 +552,7 @@ public class TreeCutter {
         }
 
         final long packedPos = fallingLogs.getLong(i);
-        final BlockPos pos = searchPos.setFromLong(packedPos);
+        final BlockPos pos = searchPos.set(packedPos);
         final BlockState state = world.getBlockState(pos);
         fallingLogStates.add(state);
         
@@ -578,7 +578,7 @@ public class TreeCutter {
         if(FallingLogEntity.canSpawn()) {
             final int i = fallingLogIndex++;
             final long packedPos = fallingLogs.getLong(i);
-            final BlockPos pos = searchPos.setFromLong(packedPos);
+            final BlockPos pos = searchPos.set(packedPos);
             BlockState state = fallingLogStates.get(i);
             if(state.contains(LogBlock.AXIS)) {
                 state = state.with(LogBlock.AXIS, fallAxis);
