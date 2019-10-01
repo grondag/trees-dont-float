@@ -42,7 +42,7 @@ public class LeafInfo implements ToIntFunction<BlockState> {
         return MAP.computeIfAbsent(block, b -> {
             final Collection<Property<?>> props = b.getStateFactory().getProperties();
             for (Property<?> p : props) {
-                if (p.getValueType() == Integer.class && p.getName().equalsIgnoreCase("distance")) {
+                if (p.getType() == Integer.class && p.getName().equalsIgnoreCase("distance")) {
                     return new LeafInfo((IntProperty) p);
                 }
             }

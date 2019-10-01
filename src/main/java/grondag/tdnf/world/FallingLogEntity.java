@@ -46,12 +46,12 @@ import net.minecraft.fluid.Fluids;
 import net.minecraft.item.AutomaticItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtHelper;
 import net.minecraft.network.Packet;
 import net.minecraft.state.property.Properties;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.PacketByteBuf;
-import net.minecraft.util.TagHelper;
 import net.minecraft.util.crash.CrashReportSection;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -169,7 +169,7 @@ public class FallingLogEntity extends Entity {
                 if (localBlockState.getBlock() != Blocks.MOVING_PISTON) {
 
                     // if block below can be replaced then keep falling
-                    BlockPos downPos = myPos.down();
+                    BlockPos downPos = myPos.down(1);
                     BlockState downBlockState = this.world.getBlockState(downPos);
                     if (downBlockState.canReplace(new AutomaticItemPlacementContext(this.world, downPos, Direction.DOWN, ItemStack.EMPTY, Direction.UP))
                             && this.fallingBlockState.canPlaceAt(this.world, downPos)) {
@@ -235,18 +235,18 @@ public class FallingLogEntity extends Entity {
     }
 
     @Override
-    protected void writeCustomDataToTag(CompoundTag compoundTag_1) {
-        compoundTag_1.put("BlockState", TagHelper.serializeBlockState(this.fallingBlockState));
-        compoundTag_1.putInt("Time", this.timeFalling);
-        compoundTag_1.putBoolean("DropItem", this.dropItem);
-        compoundTag_1.putBoolean("HurtEntities", this.hurtEntities);
-        compoundTag_1.putFloat("FallHurtAmount", this.fallHurtAmount);
-        compoundTag_1.putInt("FallHurtMax", this.fallHurtMax);
+    protected void writeCustomDataToTag(CompoundTag tag) {
+        tag.put("BlockState", NbtHelper.fromBlockState(this.fallingBlockState));
+        tag.putInt("Time", this.timeFalling);
+        tag.putBoolean("DropItem", this.dropItem);
+        tag.putBoolean("HurtEntities", this.hurtEntities);
+        tag.putFloat("FallHurtAmount", this.fallHurtAmount);
+        tag.putInt("FallHurtMax", this.fallHurtMax);
     }
 
     @Override
     protected void readCustomDataFromTag(CompoundTag compoundTag_1) {
-        this.fallingBlockState = TagHelper.deserializeBlockState(compoundTag_1.getCompound("BlockState"));
+        this.fallingBlockState = NbtHelper.toBlockState(compoundTag_1.getCompound("BlockState"));
         this.timeFalling = compoundTag_1.getInt("Time");
         if (compoundTag_1.containsKey("HurtEntities", 99)) {
             this.hurtEntities = compoundTag_1.getBoolean("HurtEntities");

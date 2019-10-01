@@ -26,7 +26,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.LogBlock;
 import net.minecraft.block.MaterialColor;
 import net.minecraft.block.PillarBlock;
-import net.minecraft.state.StateFactory;
+import net.minecraft.state.StateManager;
 import net.minecraft.state.property.Properties;
 
 @Mixin(LogBlock.class)
@@ -41,7 +41,7 @@ public abstract class MixinLogBlock extends PillarBlock {
     }
 
     @Override
-    protected void appendProperties(StateFactory.Builder<Block, BlockState> builder) {
+    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
         super.appendProperties(builder);
         builder.add(Properties.PERSISTENT);
     }

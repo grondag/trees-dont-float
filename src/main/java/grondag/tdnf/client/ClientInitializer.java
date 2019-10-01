@@ -20,7 +20,7 @@ import grondag.tdnf.world.FallingLogEntity;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.render.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendereregistry.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.network.ClientSidePacketRegistry;
 
 @Environment(EnvType.CLIENT)
@@ -28,7 +28,7 @@ public class ClientInitializer implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ClientSidePacketRegistry.INSTANCE.register(FallingLogEntity.IDENTIFIER, FallingLogNetworkHandler::accept);
-        EntityRendererRegistry.INSTANCE.register(FallingLogEntity.class,
+        EntityRendererRegistry.INSTANCE.register(FallingLogEntity.FALLING_LOG,
                 (entityRenderDispatcher, context) -> new FallingLogEntityRenderer(entityRenderDispatcher));
     }
 }
