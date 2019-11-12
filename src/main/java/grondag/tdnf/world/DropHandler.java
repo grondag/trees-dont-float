@@ -74,7 +74,7 @@ public class DropHandler {
     
     public void spawnDrops(World world) {
         if (!drops.isEmpty()) {
-            BlockPos pos = searchPos.setFromLong(job.startPos());
+            BlockPos pos = searchPos.set(job.startPos());
             final int limit = drops.size();
             for (int i = 0; i < limit; i++) {
                 dropStack(world, pos, drops.get(i), job.player());
@@ -127,7 +127,7 @@ public class DropHandler {
         stack = stack.copy();
 
         if (!stack.isStackable()) {
-            dropStack(world, searchPos.setFromLong(job.startPos()), stack, job.player());
+            dropStack(world, searchPos.set(job.startPos()), stack, job.player());
             return;
         }
 
@@ -148,7 +148,7 @@ public class DropHandler {
                     }
 
                     if (existing.getCount() == existing.getMaxCount()) {
-                        dropStack(world, searchPos.setFromLong(job.startPos()), existing, job.player());
+                        dropStack(world, searchPos.set(job.startPos()), existing, job.player());
                         drops.remove(i);
                         break;
                     }
