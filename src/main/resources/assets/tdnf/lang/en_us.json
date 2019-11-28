@@ -65,6 +65,9 @@
 	"config.tdnf.help.max_falling_blocks" : "Max number of active falling block entities.",
 	
 	"config.tdnf.value.support_surface" : "Minimum Support Surface",
-	"config.tdnf.help.support_surface" : "What counts as support for logs?"
+	"config.tdnf.help.support_surface" : "What counts as support for logs?",
+	
+	"config.tdnf.value.job_timeout_ticks" : "Job Timeout Ticks",
+	"config.tdnf.help.job_timeout_ticks" : "Jobs taking longer than this are abandoned.;20 ticks/second."
 	
 }
