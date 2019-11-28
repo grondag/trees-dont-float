@@ -142,7 +142,7 @@ public class ConfigScreen {
 				() -> DEFAULTS.maxFallingBlocks, b -> maxFallingBlocks = b,
 				() -> Optional.of(I18n.translate("config.tdnf.help.max_falling_blocks").split(";"))));
 
-		performance.addEntry(new IntegerSliderEntry("config.tdnf.value.job_timeout_ticks", 1, 64, jobTimeoutTicks, "config.tdnf.reset",
+		performance.addEntry(new IntegerSliderEntry("config.tdnf.value.job_timeout_ticks", 20, 2400, jobTimeoutTicks, "config.tdnf.reset",
 				() -> DEFAULTS.jobTimeoutTicks, b -> jobTimeoutTicks = b,
 				() -> Optional.of(I18n.translate("config.tdnf.help.job_timeout_ticks").split(";"))));
 
