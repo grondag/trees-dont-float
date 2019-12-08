@@ -18,9 +18,6 @@ package grondag.tdnf.client;
 
 import java.util.Random;
 
-import grondag.tdnf.world.FallingLogEntity;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
@@ -36,6 +33,11 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+
+import grondag.tdnf.world.FallingLogEntity;
+
 /**
  * Straight-up copy of FallingBlockEntityRenderer
  */
@@ -43,7 +45,7 @@ import net.minecraft.world.World;
 public class FallingLogEntityRenderer extends EntityRenderer<FallingLogEntity> {
 	public FallingLogEntityRenderer(EntityRenderDispatcher entityRenderDispatcher_1) {
 		super(entityRenderDispatcher_1);
-		field_4673 = 0.5F;
+		shadowSize = 0.5F;
 	}
 
 	@Override
