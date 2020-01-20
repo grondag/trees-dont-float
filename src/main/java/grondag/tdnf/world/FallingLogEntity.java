@@ -16,13 +16,8 @@
 
 package grondag.tdnf.world;
 
-import grondag.tdnf.Configurator;
-import grondag.tdnf.TreesDoNotFloat;
 import io.netty.buffer.Unpooled;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.entity.FabricEntityTypeBuilder;
-import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -54,6 +49,14 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.entity.FabricEntityTypeBuilder;
+import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
+
+import grondag.tdnf.Configurator;
+import grondag.tdnf.TreesDoNotFloat;
+
 /**
  * Hacked-up variant of FallingBlock
  */
@@ -71,7 +74,7 @@ public class FallingLogEntity extends Entity {
 		}
 		fallingBlockState = state;
 		inanimate = true;
-		setPosition(x, y + (1.0F - getHeight()) / 2.0F, z);
+		setPos(x, y + (1.0F - getHeight()) / 2.0F, z);
 		this.setVelocity(Vec3d.ZERO);
 		prevX = x;
 		prevY = y;
@@ -166,7 +169,7 @@ public class FallingLogEntity extends Entity {
 					final BlockState downBlockState = world.getBlockState(downPos);
 					if (downBlockState.canReplace(new AutomaticItemPlacementContext(world, downPos, Direction.DOWN, ItemStack.EMPTY, Direction.UP))
 							&& fallingBlockState.canPlaceAt(world, downPos)) {
-						setPosition(myPos.getX() + 0.5, getY(), myPos.getZ() + 0.5);
+						setPos(myPos.getX() + 0.5, getY(), myPos.getZ() + 0.5);
 						this.setVelocity(0, getVelocity().y, 0);
 						onGround = false;
 						collided = false;
