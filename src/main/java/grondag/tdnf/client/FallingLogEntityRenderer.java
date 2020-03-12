@@ -55,7 +55,7 @@ public class FallingLogEntityRenderer extends EntityRenderer<FallingLogEntity> {
 		if (blockState.getRenderType() == BlockRenderType.MODEL) {
 			final World world = fallingLogEntity.getWorldClient();
 
-			if (blockState != world.getBlockState(new BlockPos(fallingLogEntity)) && blockState.getRenderType() == BlockRenderType.MODEL) {
+			if (blockState != world.getBlockState(new BlockPos(fallingLogEntity.getPos())) && blockState.getRenderType() == BlockRenderType.MODEL) {
 				matrixStack.push();
 				final BlockPos blockPos = new BlockPos(fallingLogEntity.getX(), fallingLogEntity.getBoundingBox().y2, fallingLogEntity.getZ());
 				matrixStack.translate(-0.5D, 0.0D, -0.5D);

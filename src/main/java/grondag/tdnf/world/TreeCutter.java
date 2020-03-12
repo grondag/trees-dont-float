@@ -195,7 +195,7 @@ public class TreeCutter {
 
 		final BlockState state = world.getBlockState(searchPos);
 
-		if (state.getBlock().matches(BlockTags.LOGS) && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
+		if (state.getBlock().isIn(BlockTags.LOGS) && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
 			//            this.startState = state;
 			//            this.startBlock = state.getBlock();
 
@@ -247,7 +247,7 @@ public class TreeCutter {
 
 			final Block block = state.getBlock();
 
-			if (block.matches(BlockTags.LEAVES)) {
+			if (block.isIn(BlockTags.LEAVES)) {
 				boolean validVisit = false;
 				final LeafInfo inf = LeafInfo.get(block);
 

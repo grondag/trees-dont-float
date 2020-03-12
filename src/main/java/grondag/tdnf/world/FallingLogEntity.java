@@ -79,7 +79,7 @@ public class FallingLogEntity extends Entity {
 		prevX = x;
 		prevY = y;
 		prevZ = z;
-		setFallingBlockPos(new BlockPos(this));
+		setFallingBlockPos(new BlockPos(getPos()));
 	}
 
 	public FallingLogEntity(EntityType<?> entityType, World world_1) {
@@ -149,7 +149,7 @@ public class FallingLogEntity extends Entity {
 
 			move(MovementType.SELF, getVelocity());
 			// PERF: mutable?
-			myPos = new BlockPos(this);
+			myPos = new BlockPos(getPos());
 
 			if (!onGround) {
 				if (!world.isClient && (timeFalling > 100 && (myPos.getY() < 1 || myPos.getY() > 256) || timeFalling > 600)) {
@@ -300,7 +300,7 @@ public class FallingLogEntity extends Entity {
 			final int l = MathHelper.ceil(y + 0.5);
 			final int i1 = MathHelper.floor(z - 0.5);
 			final int j1 = MathHelper.ceil(z + 0.5);
-			final BlockPos.PooledMutable searchPos = BlockPos.PooledMutable.get();
+			final BlockPos.Mutable searchPos = SEARCH_POS.get();
 
 			for (int k1 = i; k1 < j; ++k1) {
 				for (int l1 = k; l1 < l; ++l1) {
@@ -313,9 +313,10 @@ public class FallingLogEntity extends Entity {
 					}
 				}
 			}
-			searchPos.close();
 		}
 	}
+
+	private static final ThreadLocal<BlockPos.Mutable> SEARCH_POS = ThreadLocal.withInitial(BlockPos.Mutable::new);
 
 	public void toBuffer(PacketByteBuf buf) {
 		buf.writeVarInt(getEntityId());
