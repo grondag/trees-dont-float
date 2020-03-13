@@ -25,7 +25,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCategory;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.entity.MovementType;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
@@ -74,12 +73,12 @@ public class FallingLogEntity extends Entity {
 		}
 		fallingBlockState = state;
 		inanimate = true;
-		setPos(x, y + (1.0F - getHeight()) / 2.0F, z);
-		this.setVelocity(Vec3d.ZERO);
+		updatePosition(x, y + (1.0F - getHeight()) / 2.0F, z);
+		setVelocity(Vec3d.ZERO);
 		prevX = x;
 		prevY = y;
 		prevZ = z;
-		setFallingBlockPos(new BlockPos(getPos()));
+		setFallingBlockPos(getSenseCenterPos());
 	}
 
 	public FallingLogEntity(EntityType<?> entityType, World world_1) {
@@ -148,8 +147,7 @@ public class FallingLogEntity extends Entity {
 			}
 
 			move(MovementType.SELF, getVelocity());
-			// PERF: mutable?
-			myPos = new BlockPos(getPos());
+			myPos = getSenseCenterPos();
 
 			if (!onGround) {
 				if (!world.isClient && (timeFalling > 100 && (myPos.getY() < 1 || myPos.getY() > 256) || timeFalling > 600)) {
@@ -353,15 +351,16 @@ public class FallingLogEntity extends Entity {
 
 	@Override
 	public void remove() {
-		if(!removed) {
+		if (!removed) {
 			entityCount--;
 		}
+
 		super.remove();
 	}
 
 
 	static {
-		BLOCK_POS = DataTracker.registerData(FallingBlockEntity.class, TrackedDataHandlerRegistry.BLOCK_POS);
+		BLOCK_POS = DataTracker.registerData(FallingLogEntity.class, TrackedDataHandlerRegistry.BLOCK_POS);
 	}
 
 	private static int entityCount = 0;
