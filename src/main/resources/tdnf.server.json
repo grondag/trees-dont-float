@@ -3,10 +3,10 @@
   "package": "grondag.tdnf.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "MixinAbstractBlock",
+    "MixinAbstractBlockState",
   	"MixinBlock",
-    "MixinBlockState",
     "MixinPillarBlock",
-    "MixinLogBlock",
     "MixinSaplingBlock"
   ],
   "injectors": {

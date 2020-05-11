@@ -45,7 +45,7 @@ import grondag.tdnf.world.FallingLogEntity;
 public class FallingLogEntityRenderer extends EntityRenderer<FallingLogEntity> {
 	public FallingLogEntityRenderer(EntityRenderDispatcher entityRenderDispatcher_1) {
 		super(entityRenderDispatcher_1);
-		shadowSize = 0.5F;
+		shadowRadius = 0.5F;
 	}
 
 	@Override

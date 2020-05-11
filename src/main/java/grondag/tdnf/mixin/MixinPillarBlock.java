@@ -18,20 +18,39 @@ package grondag.tdnf.mixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.MaterialColor;
 import net.minecraft.block.PillarBlock;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.state.StateManager;
 import net.minecraft.state.property.Properties;
 
+import grondag.tdnf.world.LogTest;
+
 @Mixin(PillarBlock.class)
-public abstract class MixinPillarBlock extends MixinBlock {
+public abstract class MixinPillarBlock extends Block implements LogTest {
+	public MixinPillarBlock(MaterialColor materialColor_1, Block.Settings block$Settings_1) {
+		super(block$Settings_1);
+	}
+
+	@Inject(at = @At("RETURN"), method = "<init>")
+	private void onInit(CallbackInfo ci) {
+		setDefaultState(getDefaultState().with(Properties.PERSISTENT, false));
+	}
+
+	@Inject(at = @At("RETURN"), method = "appendProperties")
+	private void appendProperties(StateManager.Builder<Block, BlockState> builder, CallbackInfo ci) {
+		builder.add(Properties.PERSISTENT);
+	}
+
 	@Inject(at = @At("RETURN"), method = "getPlacementState", require = 0, cancellable = true)
 	private void hookGetPlacementState(ItemPlacementContext context, CallbackInfoReturnable<BlockState> ci) {
 		if (context.getWorld() != null && !context.getWorld().isClient && isLog()) {
-			final Block me = (Block)(Object)this;
+			final Block me = this;
 			final BlockState state = ci.getReturnValue();
 			if (context.getPlayer() != null && state.getBlock() == me && me.getStateManager().getProperties().contains(Properties.PERSISTENT)) {
 				ci.setReturnValue(state.with(Properties.PERSISTENT, true));

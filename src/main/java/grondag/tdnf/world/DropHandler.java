@@ -115,7 +115,7 @@ public class DropHandler {
 			Block.dropStack(world, pos, stack);
 		} else if(!world.isClient && !stack.isEmpty() && world.getGameRules().getBoolean(GameRules.DO_TILE_DROPS)) {
 			if(!player.giveItemStack(stack)) {
-				final BlockPos playerPos = player.getSenseCenterPos();
+				final BlockPos playerPos = player.getBlockPos();
 				final ItemEntity itemEntity_1 = new ItemEntity(world, playerPos.getX(), playerPos.getY(), playerPos.getZ(), stack);
 				itemEntity_1.setToDefaultPickupDelay();
 				world.spawnEntity(itemEntity_1);

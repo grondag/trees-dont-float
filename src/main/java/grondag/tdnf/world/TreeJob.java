@@ -77,7 +77,7 @@ public class TreeJob {
 				|| player.getMainHandStack() != stack
 				|| player.notInAnyWorld
 				|| player.world != world
-				|| !closeEnough(player.getSenseCenterPos()));
+				|| !closeEnough(player.getBlockPos()));
 	}
 
 	private final boolean closeEnough(BlockPos pos) {

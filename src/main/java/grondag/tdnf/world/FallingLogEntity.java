@@ -36,9 +36,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtHelper;
 import net.minecraft.network.Packet;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.PacketByteBuf;
 import net.minecraft.util.crash.CrashReportSection;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -78,7 +78,7 @@ public class FallingLogEntity extends Entity {
 		prevX = x;
 		prevY = y;
 		prevZ = z;
-		setFallingBlockPos(getSenseCenterPos());
+		setFallingBlockPos(getBlockPos());
 	}
 
 	public FallingLogEntity(EntityType<?> entityType, World world_1) {
@@ -147,7 +147,7 @@ public class FallingLogEntity extends Entity {
 			}
 
 			move(MovementType.SELF, getVelocity());
-			myPos = getSenseCenterPos();
+			myPos = getBlockPos();
 
 			if (!onGround) {
 				if (!world.isClient && (timeFalling > 100 && (myPos.getY() < 1 || myPos.getY() > 256) || timeFalling > 600)) {
@@ -170,9 +170,10 @@ public class FallingLogEntity extends Entity {
 						setPos(myPos.getX() + 0.5, getY(), myPos.getZ() + 0.5);
 						this.setVelocity(0, getVelocity().y, 0);
 						onGround = false;
-						collided = false;
+						verticalCollision = false;
 					} else {
 						remove();
+
 						if (!world.isClient) {
 							if (!destroyedOnLanding) {
 								if (localBlockState

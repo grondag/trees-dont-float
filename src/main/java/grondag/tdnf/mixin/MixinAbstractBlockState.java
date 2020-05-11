@@ -21,13 +21,15 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import grondag.tdnf.world.Dispatcher;
+
+import net.minecraft.block.AbstractBlock.AbstractBlockState;
 import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.IWorld;
 
-@Mixin(BlockState.class)
-public class MixinBlockState {
+@Mixin(AbstractBlockState.class)
+public class MixinAbstractBlockState {
     
     @Inject(at = @At("HEAD"), method = "getStateForNeighborUpdate", cancellable = true)
     private void hookGetStateForNeighborUpdate(Direction face, BlockState otherState, IWorld world, 

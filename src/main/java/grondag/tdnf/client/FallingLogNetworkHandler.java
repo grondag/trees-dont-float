@@ -23,7 +23,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.network.PacketContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.PacketByteBuf;
+import net.minecraft.network.PacketByteBuf;
 
 @Environment(EnvType.CLIENT)
 public class FallingLogNetworkHandler {

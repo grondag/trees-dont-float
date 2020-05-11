@@ -32,9 +32,9 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.LogBlock;
+import net.minecraft.block.PillarBlock;
+import net.minecraft.block.ShapeContext;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.EntityContext;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -332,7 +332,7 @@ public class TreeCutter {
 					if (fromType == POS_TYPE_LOG_FROM_ABOVE) {
 						// if found a supporting block for a connected log
 						// then tree remains standing
-						if (Block.isFaceFullSquare(state.getCollisionShape(world, searchPos, EntityContext.absent()), Direction.UP)) {
+						if (Block.isFaceFullSquare(state.getCollisionShape(world, searchPos, ShapeContext.absent()), Direction.UP)) {
 							return Operation.COMPLETE;
 						}
 					}
@@ -601,8 +601,8 @@ public class TreeCutter {
 			final BlockPos pos = searchPos.set(packedPos);
 			BlockState state = fallingLogStates.get(i);
 
-			if(state.contains(LogBlock.AXIS)) {
-				state = state.with(LogBlock.AXIS, fallAxis);
+			if(state.contains(PillarBlock.AXIS)) {
+				state = state.with(PillarBlock.AXIS, fallAxis);
 			}
 
 			final FallingLogEntity entity = new FallingLogEntity(world, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, state);
