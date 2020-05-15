@@ -159,9 +159,7 @@ public class TreeCutter {
 	/** return true when complete */
 	public boolean tick(World world) {
 		if(job.isCancelled(world)) {
-			if (Configurator.stackDrops) {
-				dropHandler.spawnDrops(world);
-			}
+			dropHandler.spawnDrops(world);
 			return true;
 		}
 
@@ -171,6 +169,11 @@ public class TreeCutter {
 		final long maxTime = System.nanoTime() + 1000000000 / 100 * Configurator.tickBudget;
 
 		while(doOp(world) && System.nanoTime() < maxTime) {}
+
+		// if we have to end early, at least spawn drops
+		if (job.isTimedOut()) {
+			dropHandler.spawnDrops(world);
+		}
 
 		return operation == Operation.COMPLETE;
 	}
@@ -480,7 +483,7 @@ public class TreeCutter {
 		Dispatcher.resume();
 
 		if(fx.request(true)) {
-			world.playLevelEvent(2001, pos, Block.getRawIdFromState(blockState));
+			world.syncWorldEvent(2001, pos, Block.getRawIdFromState(blockState));
 		}
 
 		applyHunger(isLeaf, block);
@@ -519,12 +522,13 @@ public class TreeCutter {
 			while (!logs.isEmpty()) {
 				fallingLogs.add(logs.dequeueLastLong());
 			}
+
 			fallingLogs.sort((l0, l1) -> Integer.compare(BlockPos.unpackLongY(l1), BlockPos.unpackLongY(l0)));
 
 			if (Configurator.keepLogsIntact) {
 				logHandler = this::doLogDropping1;
 
-				final double div = logs.size() * LOG_FACTOR + leaves.size();
+				final double div = fallingLogs.size() * LOG_FACTOR + leaves.size();
 				final double xCenterOfMass = xStart + xSum / div;
 				final double zCenterOfMass = zStart + zSum / div;
 				final Random r = ThreadLocalRandom.current();
@@ -535,6 +539,9 @@ public class TreeCutter {
 				if (xVelocity == 0 && zVelocity == 0) {
 					xVelocity = r.nextGaussian();
 					zVelocity = r.nextGaussian();
+					fallAxis = Axis.Y;
+				} else {
+					fallAxis = Math.abs(xVelocity) > Math.abs(zVelocity) ? Axis.X : Axis.Z;
 				}
 
 				// normalize
@@ -542,7 +549,6 @@ public class TreeCutter {
 				xVelocity /= len;
 				zVelocity /= len;
 
-				fallAxis = Math.abs(xVelocity) > Math.abs(zVelocity) ? Axis.X : Axis.Z;
 
 			} else {
 				logHandler = this::doLogClearing;
@@ -595,24 +601,42 @@ public class TreeCutter {
 			return this::doLeafClearing;
 		}
 
-		if(FallingLogEntity.canSpawn()) {
-			final int i = fallingLogIndex++;
-			final long packedPos = fallingLogs.getLong(i);
-			final BlockPos pos = searchPos.set(packedPos);
-			BlockState state = fallingLogStates.get(i);
+		if (job.isTimedOut()) {
+			while(fallingLogIndex < limit) {
+				final int  i = fallingLogIndex++;
+				final long packedPos = fallingLogs.getLong(i);
+				final BlockPos pos = searchPos.set(packedPos);
+				BlockState state = fallingLogStates.get(i);
 
-			if(state.contains(PillarBlock.AXIS)) {
-				state = state.with(PillarBlock.AXIS, fallAxis);
+				if(state.contains(PillarBlock.AXIS)) {
+					state = state.with(PillarBlock.AXIS, fallAxis);
+				}
+
+				dropHandler.doDrops(state, world, pos, null);
 			}
 
-			final FallingLogEntity entity = new FallingLogEntity(world, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, state);
-			final double height = Math.sqrt(Math.max(0, pos.getY() - BlockPos.unpackLongY(job.startPos()))) * 0.2;
-			entity.addVelocity(xVelocity * height, 0, zVelocity * height);
-			world.spawnEntity(entity);
+			return this::doLeafClearing;
 		} else {
-			// force exit till next tick
-			breakBudget = 0;
+			if(FallingLogEntity.canSpawn()) {
+				final int i = fallingLogIndex++;
+				final long packedPos = fallingLogs.getLong(i);
+				final BlockPos pos = searchPos.set(packedPos);
+				BlockState state = fallingLogStates.get(i);
+
+				if(state.contains(PillarBlock.AXIS)) {
+					state = state.with(PillarBlock.AXIS, fallAxis);
+				}
+
+				final FallingLogEntity entity = new FallingLogEntity(world, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, state);
+				final double height = Math.sqrt(Math.max(0, pos.getY() - BlockPos.unpackLongY(job.startPos()))) * 0.2;
+				entity.addVelocity(xVelocity * height, 0, zVelocity * height);
+				world.spawnEntity(entity);
+			} else {
+				// force exit till next tick
+				breakBudget = 0;
+			}
+
+			return this::doLogDropping2;
 		}
-		return this::doLogDropping2;
 	}
 }

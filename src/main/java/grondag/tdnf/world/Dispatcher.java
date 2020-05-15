@@ -70,9 +70,14 @@ public class Dispatcher {
 
 			if (result != null) {
 				if (cutter.tick(world) || ++currentJobTicks > Configurator.jobTimeoutTicks) {
-					queuedPositions.remove(result.startPos());
-					result.release();
-					currentJob = null;
+					if (result.isTimedOut()) {
+						queuedPositions.remove(result.startPos());
+						result.release();
+						currentJob = null;
+					} else {
+						// give job one more tick to clean up
+						result.timeout();
+					}
 				}
 			}
 

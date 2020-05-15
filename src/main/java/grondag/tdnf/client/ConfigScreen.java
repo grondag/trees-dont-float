@@ -37,16 +37,18 @@ import static grondag.tdnf.Configurator.renderFallingLogs;
 import static grondag.tdnf.Configurator.stackDrops;
 import static grondag.tdnf.Configurator.tickBudget;
 
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
-import me.shedaniel.clothconfig2.gui.entries.BooleanListEntry;
-import me.shedaniel.clothconfig2.gui.entries.EnumListEntry;
-import me.shedaniel.clothconfig2.gui.entries.IntegerSliderEntry;
+import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.resource.language.I18n;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -56,96 +58,145 @@ import grondag.tdnf.Configurator.FallCondition;
 
 @Environment(EnvType.CLIENT)
 public class ConfigScreen {
-	@SuppressWarnings("deprecation")
+	private static ConfigEntryBuilder ENTRY_BUILDER = ConfigEntryBuilder.create();
+
+	static Text[] parse(String key) {
+		return Arrays.stream(I18n.translate(key).split(";")).map(s ->  new LiteralText(s)).collect(Collectors.toList()).toArray(new Text[0]);
+	}
+
 	static Screen getScreen(Screen parent) {
 
-		final ConfigBuilder builder = ConfigBuilder.create().setParentScreen(parent).setTitle("config.tdnf.title").setSavingRunnable(ConfigScreen::saveUserInput);
+		final ConfigBuilder builder = ConfigBuilder.create().setParentScreen(parent).setTitle(new TranslatableText("config.tdnf.title")).setSavingRunnable(ConfigScreen::saveUserInput);
 
 		// BLOCKS
-		final ConfigCategory blocks = builder.getOrCreateCategory("config.tdnf.category.blocks");
+		final ConfigCategory blocks = builder.getOrCreateCategory(new TranslatableText("config.tdnf.category.blocks"));
 
-		blocks.addEntry(new EnumListEntry<>(
-				"config.tdnf.value.fall_condition",
+		blocks.addEntry(ENTRY_BUILDER.startEnumSelector(
+				new TranslatableText("config.tdnf.value.fall_condition"),
 				FallCondition.class,
-				fallCondition,
-				"config.tdnf.reset",
-				() -> DEFAULTS.fallCondition,
-				(b) -> fallCondition = b,
-				a -> a.toString(),
-				() -> Optional.of(I18n.translate("config.tdnf.help.fall_condition").split(";"))));
+				fallCondition)
+				.setDefaultValue(DEFAULTS.fallCondition)
+				.setSaveConsumer(b -> fallCondition = b)
+				.setEnumNameProvider(a -> new LiteralText(a.toString()))
+				.setTooltip(parse("config.tdnf.help.fall_condition"))
+				.build());
 
-		blocks.addEntry(new BooleanListEntry("config.tdnf.value.keep_logs_intact", keepLogsIntact, "config.tdnf.reset", () -> DEFAULTS.keepLogsIntact,
-				b -> keepLogsIntact = b, () -> Optional.of(I18n.translate("config.tdnf.help.keep_logs_intact").split(";"))));
+		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.keep_logs_intact"), keepLogsIntact)
+				.setDefaultValue(DEFAULTS.keepLogsIntact)
+				.setSaveConsumer(b -> keepLogsIntact = b)
+				.setTooltip(parse("config.tdnf.help.keep_logs_intact"))
+				.build());
 
-		blocks.addEntry(new BooleanListEntry("config.tdnf.value.render_falling", renderFallingLogs, "config.tdnf.reset", () -> DEFAULTS.renderFallingLogs,
-				b -> renderFallingLogs = b, () -> Optional.of(I18n.translate("config.tdnf.help.render_falling").split(";"))));
+		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.render_falling"), renderFallingLogs)
+				.setDefaultValue(DEFAULTS.renderFallingLogs)
+				.setSaveConsumer(b -> renderFallingLogs = b)
+				.setTooltip(parse("config.tdnf.help.render_falling"))
+				.build());
 
-		blocks.addEntry(
-				new BooleanListEntry("config.tdnf.value.break_leaves", fallingLogsBreakPlants, "config.tdnf.reset", () -> DEFAULTS.fallingLogsBreakPlants,
-						b -> fallingLogsBreakPlants = b, () -> Optional.of(I18n.translate("config.tdnf.help.break_leaves").split(";"))));
+		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.break_leaves"), fallingLogsBreakPlants)
+				.setDefaultValue(DEFAULTS.fallingLogsBreakPlants)
+				.setSaveConsumer(b -> fallingLogsBreakPlants = b)
+				.setTooltip(parse("config.tdnf.help.break_leaves"))
+				.build());
 
-		blocks.addEntry(
-				new BooleanListEntry("config.tdnf.value.break_fragile", fallingLogsBreakFragile, "config.tdnf.reset", () -> DEFAULTS.fallingLogsBreakFragile,
-						b -> fallingLogsBreakFragile = b, () -> Optional.of(I18n.translate("config.tdnf.help.break_fragile").split(";"))));
+		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.break_fragile"), fallingLogsBreakFragile)
+				.setDefaultValue(DEFAULTS.fallingLogsBreakFragile)
+				.setSaveConsumer(b -> fallingLogsBreakFragile = b)
+				.setTooltip(parse("config.tdnf.help.break_fragile"))
+				.build());
 
-		blocks.addEntry(
-				new BooleanListEntry("config.tdnf.value.protect_player_logs", protectPlayerLogs, "config.tdnf.reset", () -> DEFAULTS.protectPlayerLogs,
-						b -> protectPlayerLogs = b, () -> Optional.of(I18n.translate("config.tdnf.help.protect_player_logs").split(";"))));
+		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.protect_player_logs"), protectPlayerLogs)
+				.setDefaultValue(DEFAULTS.protectPlayerLogs)
+				.setSaveConsumer(b -> protectPlayerLogs = b)
+				.setTooltip(parse("config.tdnf.help.protect_player_logs"))
+				.build());
 
 
 		// PLAYERS
-		final ConfigCategory players = builder.getOrCreateCategory("config.tdnf.category.players");
+		final ConfigCategory players = builder.getOrCreateCategory(new TranslatableText("config.tdnf.category.players"));
 
-		players.addEntry(
-				new BooleanListEntry("config.tdnf.value.direct_deposit", directDeposit, "config.tdnf.reset", () -> DEFAULTS.directDeposit,
-						b -> directDeposit = b, () -> Optional.of(I18n.translate("config.tdnf.help.direct_deposit").split(";"))));
+		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.direct_deposit"), directDeposit)
+				.setDefaultValue(DEFAULTS.directDeposit)
+				.setSaveConsumer(b -> directDeposit = b)
+				.setTooltip(parse("config.tdnf.help.direct_deposit"))
+				.build());
 
-		players.addEntry(new BooleanListEntry("config.tdnf.value.apply_fortune", applyFortune, "config.tdnf.reset", () -> DEFAULTS.applyFortune,
-				b -> applyFortune = b, () -> Optional.of(I18n.translate("config.tdnf.help.apply_fortune").split(";"))));
+		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.apply_fortune"), applyFortune)
+				.setDefaultValue(DEFAULTS.applyFortune)
+				.setSaveConsumer(b -> applyFortune = b)
+				.setTooltip(parse("config.tdnf.help.apply_fortune"))
+				.build());
 
-		players.addEntry(new BooleanListEntry("config.tdnf.value.consume_durability", consumeDurability, "config.tdnf.reset", () -> DEFAULTS.consumeDurability,
-				b -> consumeDurability = b, () -> Optional.of(I18n.translate("config.tdnf.help.consume_durability").split(";"))));
+		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.consume_durability"), consumeDurability)
+				.setDefaultValue(DEFAULTS.consumeDurability)
+				.setSaveConsumer(b -> consumeDurability = b)
+				.setTooltip(parse("config.tdnf.help.consume_durability"))
+				.build());
 
-		players.addEntry(new BooleanListEntry("config.tdnf.value.leaf_durability", leafDurability, "config.tdnf.reset", () -> DEFAULTS.leafDurability,
-				b -> leafDurability = b, () -> Optional.of(I18n.translate("config.tdnf.help.leaf_durability").split(";"))));
+		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.leaf_durability"), leafDurability)
+				.setDefaultValue(DEFAULTS.leafDurability)
+				.setSaveConsumer(b -> leafDurability = b)
+				.setTooltip(parse("config.tdnf.help.leaf_durability"))
+				.build());
 
-		players.addEntry(new BooleanListEntry("config.tdnf.value.protect_tools", protectTools, "config.tdnf.reset", () -> DEFAULTS.protectTools,
-				b -> protectTools = b, () -> Optional.of(I18n.translate("config.tdnf.help.protect_tools").split(";"))));
+		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.protect_tools"), protectTools)
+				.setDefaultValue(DEFAULTS.protectTools)
+				.setSaveConsumer(b -> protectTools = b)
+				.setTooltip(parse("config.tdnf.help.protect_tools"))
+				.build());
 
-		players.addEntry(new BooleanListEntry("config.tdnf.value.apply_hunger", applyHunger, "config.tdnf.reset", () -> DEFAULTS.applyHunger,
-				b -> applyHunger = b, () -> Optional.of(I18n.translate("config.tdnf.help.apply_hunger").split(";"))));
+		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.apply_hunger"), applyHunger)
+				.setDefaultValue(DEFAULTS.applyHunger)
+				.setSaveConsumer(b -> applyHunger = b)
+				.setTooltip(parse("config.tdnf.help.apply_hunger"))
+				.build());
 
-		players.addEntry(new BooleanListEntry("config.tdnf.value.leaf_hunger", leafHunger, "config.tdnf.reset", () -> DEFAULTS.leafHunger,
-				b -> leafHunger = b, () -> Optional.of(I18n.translate("config.tdnf.help.leaf_hunger").split(";"))));
-
+		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.leaf_hunger"), leafHunger)
+				.setDefaultValue(DEFAULTS.leafHunger)
+				.setSaveConsumer(b -> leafHunger = b)
+				.setTooltip(parse("config.tdnf.help.leaf_hunger"))
+				.build());
 
 
 		// PERFORMANCE
-		final ConfigCategory performance = builder.getOrCreateCategory("config.tdnf.category.performance");
+		final ConfigCategory performance = builder.getOrCreateCategory(new TranslatableText("config.tdnf.category.performance"));
 
-		performance.addEntry(new BooleanListEntry("config.tdnf.value.consolidate_drops", stackDrops, "config.tdnf.reset", () -> DEFAULTS.stackDrops,
-				b -> stackDrops = b, () -> Optional.of(I18n.translate("config.tdnf.help.consolidate_drops").split(";"))));
+		performance.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.consolidate_drops"), stackDrops)
+				.setDefaultValue(DEFAULTS.stackDrops)
+				.setSaveConsumer(b -> stackDrops = b)
+				.setTooltip(parse("config.tdnf.help.consolidate_drops"))
+				.build());
 
-		performance.addEntry(
-				new IntegerSliderEntry("config.tdnf.value.effect_level", 0, 60, effectsPerSecond, "config.tdnf.reset", () -> DEFAULTS.effectsPerSecond,
-						b -> effectsPerSecond = b, () -> Optional.of(I18n.translate("config.tdnf.help.effect_level").split(";"))));
 
-		performance.addEntry(
-				new IntegerSliderEntry("config.tdnf.value.max_breaks_per_tick", 1, 128, maxBreaksPerTick, "config.tdnf.reset", () -> DEFAULTS.maxBreaksPerTick,
-						b -> maxBreaksPerTick = b, () -> Optional.of(I18n.translate("config.tdnf.help.max_breaks_per_tick").split(";"))));
+		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.effect_level"), effectsPerSecond, 0, 60)
+				.setDefaultValue(DEFAULTS.effectsPerSecond)
+				.setSaveConsumer(b -> effectsPerSecond = b)
+				.setTooltip(parse("config.tdnf.help.effect_level"))
+				.build());
 
-		performance.addEntry(new IntegerSliderEntry("config.tdnf.value.tick_budget", 1, 5, tickBudget, "config.tdnf.reset",
-				() -> DEFAULTS.tickBudget, b -> tickBudget = b,
-				() -> Optional.of(I18n.translate("config.tdnf.help.tick_budget").split(";"))));
+		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.max_breaks_per_tick"), maxBreaksPerTick, 1, 128)
+				.setDefaultValue(DEFAULTS.maxBreaksPerTick)
+				.setSaveConsumer(b -> maxBreaksPerTick = b)
+				.setTooltip(parse("config.tdnf.help.max_breaks_per_tick"))
+				.build());
 
-		performance.addEntry(new IntegerSliderEntry("config.tdnf.value.max_falling_blocks", 1, 64, maxFallingBlocks, "config.tdnf.reset",
-				() -> DEFAULTS.maxFallingBlocks, b -> maxFallingBlocks = b,
-				() -> Optional.of(I18n.translate("config.tdnf.help.max_falling_blocks").split(";"))));
+		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.tick_budget"), tickBudget, 1, 5)
+				.setDefaultValue(DEFAULTS.tickBudget)
+				.setSaveConsumer(b -> tickBudget = b)
+				.setTooltip(parse("config.tdnf.help.tick_budget"))
+				.build());
 
-		performance.addEntry(new IntegerSliderEntry("config.tdnf.value.job_timeout_ticks", 20, 2400, jobTimeoutTicks, "config.tdnf.reset",
-				() -> DEFAULTS.jobTimeoutTicks, b -> jobTimeoutTicks = b,
-				() -> Optional.of(I18n.translate("config.tdnf.help.job_timeout_ticks").split(";"))));
+		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.max_falling_blocks"), maxFallingBlocks, 1, 64)
+				.setDefaultValue(DEFAULTS.maxFallingBlocks)
+				.setSaveConsumer(b -> maxFallingBlocks = b)
+				.setTooltip(parse("config.tdnf.help.max_falling_blocks"))
+				.build());
 
+		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.job_timeout_ticks"), jobTimeoutTicks, 20, 2400)
+				.setDefaultValue(DEFAULTS.jobTimeoutTicks)
+				.setSaveConsumer(b -> jobTimeoutTicks = b)
+				.setTooltip(parse("config.tdnf.help.job_timeout_ticks"))
+				.build());
 
 		builder.setDoesConfirmSave(false);
 

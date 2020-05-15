@@ -34,6 +34,7 @@ public class TreeJob {
 	private ItemStack stack;
 	private boolean hasAxe;
 	private boolean canCancel = true;
+	private boolean isTimedOut = false;
 
 	/** packed staring pos */
 	public long startPos() {
@@ -52,6 +53,14 @@ public class TreeJob {
 
 	public boolean hasAxe() {
 		return hasAxe && player.getMainHandStack() == stack && !stack.isEmpty();
+	}
+
+	public void timeout() {
+		isTimedOut = true;
+	}
+
+	public boolean isTimedOut() {
+		return isTimedOut;
 	}
 
 	/** Call when when changing tool or player status can no longer affect the outcome */
@@ -99,6 +108,7 @@ public class TreeJob {
 		result.stack = stack;
 		result.hasAxe = DropHandler.hasAxe(player, stack);
 		result.canCancel = result.hasAxe && Configurator.fallCondition == FallCondition.USE_TOOL;
+		result.isTimedOut = false;
 		return result;
 	}
 }

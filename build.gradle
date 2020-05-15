@@ -1,5 +1,5 @@
 plugins {
-	id "fabric-loom" version "0.2.6-SNAPSHOT"
+	id "fabric-loom" version "0.2.7-SNAPSHOT"
 	id "eclipse"
 	id "maven-publish"
 	id "com.github.breadmoirai.github-release" version "2.2.9"
@@ -16,6 +16,7 @@ def version_tag = project.mod_name.replaceAll('-', '_') + '_version'
 
 minecraft {
 	refmapName = project.mod_name + "-refmap.json"
+	accessWidener = file("src/main/resources/${project.mod_name}.accesswidener")
 }
 
 def artifact_name = project.mod_name + "-" + project.mc_tag
