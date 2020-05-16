@@ -207,14 +207,14 @@ public class Configurator {
 			BREAKABLES.add(Material.CACTUS);
 			BREAKABLES.add(Material.LEAVES);
 			BREAKABLES.add(Material.PLANT);
-			BREAKABLES.add(Material.PUMPKIN);
+			BREAKABLES.add(Material.GOURD);
 		}
 
 		if (fallingLogsBreakFragile) {
 			BREAKABLES.add(Material.CARPET);
 			BREAKABLES.add(Material.COBWEB);
 			BREAKABLES.add(Material.GLASS);
-			BREAKABLES.add(Material.PART);
+			BREAKABLES.add(Material.SUPPORTED);
 		}
 	}
 
