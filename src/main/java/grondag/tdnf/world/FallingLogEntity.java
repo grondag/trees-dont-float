@@ -62,8 +62,6 @@ public class FallingLogEntity extends FallingBlockEntity {
 
 		if(!world.isClient) {
 			entityCount++;
-			// TODO: remove
-			System.out.println("new log created.  entityCount = " + entityCount);
 		}
 
 		block = Blocks.OAK_LOG.getDefaultState();
@@ -230,8 +228,6 @@ public class FallingLogEntity extends FallingBlockEntity {
 
 		if (!removed && !world.isClient) {
 			--entityCount;
-			// TODO: remove
-			System.out.println("remove called.  entityCount = " + entityCount);
 		}
 
 		super.remove();
