@@ -66,8 +66,8 @@ public abstract class MixinAbstractBlock implements LogTest {
 		}
 	}
 
-	@Inject(at = @At("HEAD"), method = "onBlockRemoved")
-	private void hookOnBlockRemoved(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
+	@Inject(at = @At("HEAD"), method = "onStateReplaced")
+	private void hookOnStateReplaced(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
 		if (isLog() && oldState.getBlock() != newState.getBlock()
 				&& Configurator.fallCondition != FallCondition.USE_TOOL
 				&& !Block.isFaceFullSquare(newState.getCollisionShape(world, blockPos, ShapeContext.absent()), Direction.UP)) {

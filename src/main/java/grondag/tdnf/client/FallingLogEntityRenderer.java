@@ -57,7 +57,7 @@ public class FallingLogEntityRenderer extends EntityRenderer<FallingLogEntity> {
 
 			if (blockState != world.getBlockState(new BlockPos(fallingLogEntity.getPos())) && blockState.getRenderType() == BlockRenderType.MODEL) {
 				matrixStack.push();
-				final BlockPos blockPos = new BlockPos(fallingLogEntity.getX(), fallingLogEntity.getBoundingBox().y2, fallingLogEntity.getZ());
+				final BlockPos blockPos = new BlockPos(fallingLogEntity.getX(), fallingLogEntity.getBoundingBox().maxY, fallingLogEntity.getZ());
 				matrixStack.translate(-0.5D, 0.0D, -0.5D);
 				final BlockRenderManager blockRenderManager = MinecraftClient.getInstance().getBlockRenderManager();
 				blockRenderManager.getModelRenderer().render(world, blockRenderManager.getModel(blockState), blockState, blockPos, matrixStack, provider.getBuffer(RenderLayers.getBlockLayer(blockState)), false, new Random(), blockState.getRenderingSeed(fallingLogEntity.getFallingBlockPos()), OverlayTexture.DEFAULT_UV);
