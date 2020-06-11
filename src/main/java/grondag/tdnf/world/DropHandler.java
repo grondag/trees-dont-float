@@ -113,7 +113,7 @@ public class DropHandler {
 	private void dropStack(World world, BlockPos pos, ItemStack stack, ServerPlayerEntity player) {
 		if(player == null || !Configurator.directDeposit) {
 			Block.dropStack(world, pos, stack);
-		} else if(!world.isClient && !stack.isEmpty() && world.getGameRules().getBoolean(GameRules.DO_TILE_DROPS)) {
+		} else if(!world.isClient && !stack.isEmpty() && world.getGameRules().getBoolean(GameRules.field_19392)) {
 			if(!player.giveItemStack(stack)) {
 				final BlockPos playerPos = player.getBlockPos();
 				final ItemEntity itemEntity_1 = new ItemEntity(world, playerPos.getX(), playerPos.getY(), playerPos.getZ(), stack);
