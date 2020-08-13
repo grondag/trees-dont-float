@@ -118,12 +118,15 @@ public class TreeCutter {
 	private static final byte POS_TYPE_LOG_FROM_ABOVE = 0;
 	private static final byte POS_TYPE_LOG = 1;
 	private static final byte POS_TYPE_LOG_FROM_DIAGONAL = 2;
-	private static final byte POS_TYPE_LEAF = 3;
-	private static final byte POS_TYPE_IGNORE = 4;
+	private static final byte POS_TYPE_LOG_FROM_ABOVE_DIAGONAL = 3;
+	private static final byte POS_TYPE_LOG_SUPPORT = 4;
+	private static final byte POS_TYPE_LEAF = 5;
+	private static final byte POS_TYPE_IGNORE = 6;
 
 	// avoids littering code with (byte)0
 	private static final byte ZERO_BYTE = 0;
 
+	// PERF: use relative packed pos and pack into single long to avoid allocating
 	private class Visit {
 		private final byte type;
 		private final byte depth;
@@ -308,15 +311,36 @@ public class TreeCutter {
 				}
 			} else if (fromType != POS_TYPE_LEAF) {
 				// visiting from wood (ignore type never added to queue)
-				if (BlockTags.LOGS.contains(block) && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
+
+				final boolean isCandidateLog = BlockTags.LOGS.contains(block) && !(Configurator.protectPlayerLogs && Persistence.get(state));
+
+				final boolean isSupport = (fromType == POS_TYPE_LOG_FROM_ABOVE || fromType == POS_TYPE_LOG_SUPPORT)
+						&& (isCandidateLog || Block.isFaceFullSquare(state.getCollisionShape(world, searchPos, ShapeContext.absent()), Direction.UP));
+
+				// if found a supporting block for a nearby connected log then tree remains standing
+				if (isSupport && newDepth <= Configurator.maxSupportDistance)  {
+					return Operation.COMPLETE;
+				}
+
+				// support blocks are never removed, even if they are logs
+				// and we don't pursue upward or diagonal searches from support blocks
+				if (isSupport) {
+					visited.put(packedPos, POS_TYPE_IGNORE);
+
+					enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LOG_SUPPORT, newDepth);
+					enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LOG_SUPPORT, newDepth);
+					enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LOG_SUPPORT, newDepth);
+					enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LOG_SUPPORT, newDepth);
+					enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LOG_SUPPORT, newDepth);
+				} else if (isCandidateLog) {
 					visited.put(packedPos, POS_TYPE_LOG);
 
-					enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LOG_FROM_ABOVE, newDepth);
 					enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LOG, newDepth);
 					enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LOG, newDepth);
 					enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LOG, newDepth);
 					enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LOG, newDepth);
 					enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LOG, newDepth);
+					enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LOG_FROM_ABOVE, newDepth);
 
 					enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
 					enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
@@ -331,17 +355,16 @@ public class TreeCutter {
 					enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
 					enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
 					enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-				} else {
-					if (fromType == POS_TYPE_LOG_FROM_ABOVE) {
-						// if found a supporting block for a connected log
-						// then tree remains standing
-						if (Block.isFaceFullSquare(state.getCollisionShape(world, searchPos, ShapeContext.absent()), Direction.UP)) {
-							return Operation.COMPLETE;
-						}
-					}
-					visited.put(packedPos, POS_TYPE_IGNORE);
-				}
 
+					enqueIfViable(BlockPos.add(packedPos, -1, -1, -1), POS_TYPE_LOG_FROM_ABOVE_DIAGONAL, newDepth);
+					enqueIfViable(BlockPos.add(packedPos, -1, -1, 0), POS_TYPE_LOG_FROM_ABOVE_DIAGONAL, newDepth);
+					enqueIfViable(BlockPos.add(packedPos, -1, -1, 1), POS_TYPE_LOG_FROM_ABOVE_DIAGONAL, newDepth);
+					enqueIfViable(BlockPos.add(packedPos, 0, -1, -1), POS_TYPE_LOG_FROM_ABOVE_DIAGONAL, newDepth);
+					enqueIfViable(BlockPos.add(packedPos, 0, -1, 1), POS_TYPE_LOG_FROM_ABOVE_DIAGONAL, newDepth);
+					enqueIfViable(BlockPos.add(packedPos, 1, -1, -1), POS_TYPE_LOG_FROM_ABOVE_DIAGONAL, newDepth);
+					enqueIfViable(BlockPos.add(packedPos, 1, -1, 0), POS_TYPE_LOG_FROM_ABOVE_DIAGONAL, newDepth);
+					enqueIfViable(BlockPos.add(packedPos, 1, -1, 1), POS_TYPE_LOG_FROM_ABOVE_DIAGONAL, newDepth);
+				}
 			}
 		}
 

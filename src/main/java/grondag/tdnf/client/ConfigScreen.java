@@ -31,6 +31,7 @@ import static grondag.tdnf.Configurator.leafDurability;
 import static grondag.tdnf.Configurator.leafHunger;
 import static grondag.tdnf.Configurator.maxBreaksPerTick;
 import static grondag.tdnf.Configurator.maxFallingBlocks;
+import static grondag.tdnf.Configurator.maxSupportDistance;
 import static grondag.tdnf.Configurator.protectPlayerLogs;
 import static grondag.tdnf.Configurator.protectTools;
 import static grondag.tdnf.Configurator.renderFallingLogs;
@@ -111,6 +112,11 @@ public class ConfigScreen {
 				.setTooltip(parse("config.tdnf.help.protect_player_logs"))
 				.build());
 
+		blocks.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.max_support_distance"), maxSupportDistance, 0, 127)
+				.setDefaultValue(DEFAULTS.maxSupportDistance)
+				.setSaveConsumer(b -> maxSupportDistance = b)
+				.setTooltip(parse("config.tdnf.help.max_support_distance"))
+				.build());
 
 		// PLAYERS
 		final ConfigCategory players = builder.getOrCreateCategory(new TranslatableText("config.tdnf.category.players"));

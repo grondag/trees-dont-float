@@ -65,6 +65,9 @@ public class Configurator {
 		@Comment("Protect logs placed by players.")
 		public boolean protectPlayerLogs = true;
 
+		@Comment("Connections to downward supporting surfaces must be this close to break point to prevent felling.  0 to 127.")
+		public int maxSupportDistance = 12;
+
 		// PLAYERS
 
 		@Comment("Place dropped items directly into player inventory. (Good for skyblock)")
@@ -123,6 +126,7 @@ public class Configurator {
 	public static boolean fallingLogsBreakPlants = DEFAULTS.fallingLogsBreakPlants;
 	public static boolean fallingLogsBreakFragile = DEFAULTS.fallingLogsBreakFragile;
 	public static boolean protectPlayerLogs = DEFAULTS.protectPlayerLogs;
+	public static int maxSupportDistance = DEFAULTS.maxSupportDistance;
 
 	// PLAYERS
 	public static boolean directDeposit = DEFAULTS.directDeposit;
@@ -177,6 +181,7 @@ public class Configurator {
 		fallingLogsBreakPlants = config.fallingLogsBreakPlants;
 		fallingLogsBreakFragile = config.fallingLogsBreakFragile;
 		protectPlayerLogs = config.protectPlayerLogs;
+		maxSupportDistance = config.maxSupportDistance;
 
 		// PLAYERS
 		directDeposit = config.directDeposit;
@@ -228,6 +233,7 @@ public class Configurator {
 		config.fallingLogsBreakPlants = fallingLogsBreakPlants;
 		config.fallingLogsBreakFragile = fallingLogsBreakFragile;
 		config.protectPlayerLogs = protectPlayerLogs;
+		config.maxSupportDistance = maxSupportDistance;
 
 		// PLAYERS
 		config.directDeposit = directDeposit;

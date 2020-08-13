@@ -22,6 +22,8 @@
 	"config.tdnf.value.protect_player_logs" : "Protect Player Logs",
 	"config.tdnf.help.protect_player_logs" : "Logs placed by players are allowed to float.",
 	
+	"config.tdnf.value.max_support_distance" : "Max Support Distance",
+	"config.tdnf.help.max_support_distance" : "Connections to downward supporting surfaces must be within;this distance from break point to prevent felling.",
 	
 	"config.tdnf.category.players" : "Players",
 	
