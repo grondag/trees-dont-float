@@ -23,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Material;
 import net.minecraft.block.MaterialColor;
 import net.minecraft.block.PillarBlock;
 import net.minecraft.item.ItemPlacementContext;
@@ -39,12 +40,16 @@ public abstract class MixinPillarBlock extends Block implements LogTest {
 
 	@Inject(at = @At("RETURN"), method = "<init>")
 	private void onInit(CallbackInfo ci) {
-		setDefaultState(getDefaultState().with(Properties.PERSISTENT, false));
+		if (material == Material.WOOD || material == Material.NETHER_WOOD) {
+			setDefaultState(getDefaultState().with(Properties.PERSISTENT, false));
+		}
 	}
 
-	@Inject(at = @At("RETURN"), method = "appendProperties")
+	@Inject(at = @At("RETURN"), method = "appendProperties", require = 1)
 	private void appendProperties(StateManager.Builder<Block, BlockState> builder, CallbackInfo ci) {
-		builder.add(Properties.PERSISTENT);
+		if (material == Material.WOOD || material == Material.NETHER_WOOD) {
+			builder.add(Properties.PERSISTENT);
+		}
 	}
 
 	@Inject(at = @At("RETURN"), method = "getPlacementState", require = 0, cancellable = true)
@@ -52,6 +57,7 @@ public abstract class MixinPillarBlock extends Block implements LogTest {
 		if (context.getWorld() != null && !context.getWorld().isClient && isLog()) {
 			final Block me = this;
 			final BlockState state = ci.getReturnValue();
+
 			if (context.getPlayer() != null && state.getBlock() == me && me.getStateManager().getProperties().contains(Properties.PERSISTENT)) {
 				ci.setReturnValue(state.with(Properties.PERSISTENT, true));
 			}

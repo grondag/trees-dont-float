@@ -24,10 +24,10 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
 
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
-import net.fabricmc.fabric.api.event.world.WorldTickCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
 import grondag.tdnf.Configurator;
 
@@ -38,7 +38,7 @@ public class Dispatcher {
 	private static Predicate<BlockPos> doomTest = Predicates.alwaysFalse();
 
 	public static void init() {
-		WorldTickCallback.EVENT.register(Dispatcher::routeTick);
+		ServerTickEvents.END_WORLD_TICK.register(Dispatcher::routeTick);
 	}
 
 	private static class WorldJobs {
@@ -58,7 +58,7 @@ public class Dispatcher {
 			return result;
 		}
 
-		public void run(World world) {
+		public void run(ServerWorld world) {
 			TreeJob result = currentJob;
 
 			if (result == null & !jobList.isEmpty()) {
@@ -95,9 +95,9 @@ public class Dispatcher {
 		}
 	}
 
-	private static final IdentityHashMap<World, WorldJobs> worldJobs = new IdentityHashMap<>();
+	private static final IdentityHashMap<ServerWorld, WorldJobs> worldJobs = new IdentityHashMap<>();
 
-	public static void routeTick(World world) {
+	public static void routeTick(ServerWorld world) {
 		if (world.isClient) {
 			return;
 		}
@@ -111,7 +111,7 @@ public class Dispatcher {
 		resume();
 	}
 
-	public static void enqueCheck(World world, BlockPos pos, ServerPlayerEntity player) {
+	public static void enqueCheck(ServerWorld world, BlockPos pos, ServerPlayerEntity player) {
 		if (world.isClient || suspended) {
 			return;
 		}

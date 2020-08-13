@@ -25,6 +25,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -46,11 +47,11 @@ public abstract class MixinBlock extends AbstractBlock implements LogTest {
 			final ServerPlayerEntity player = (ServerPlayerEntity) playerEntity;
 			if (Configurator.fallCondition == FallCondition.USE_TOOL) {
 				if(DropHandler.hasAxe(player, player.getMainHandStack())) {
-					Dispatcher.enqueCheck(world, blockPos, player);
+					Dispatcher.enqueCheck((ServerWorld) world, blockPos, player);
 				}
 			} else {
 				//            System.out.println("onBreak playerEntity = " + (playerEntity == null ? "NULL" : playerEntity.toString()));
-				Dispatcher.enqueCheck(world, blockPos, player);
+				Dispatcher.enqueCheck((ServerWorld) world, blockPos, player);
 			}
 		}
 	}

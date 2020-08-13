@@ -38,6 +38,7 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.stat.Stats;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.math.BlockPos;
@@ -157,7 +158,7 @@ public class TreeCutter {
 	}
 
 	/** return true when complete */
-	public boolean tick(World world) {
+	public boolean tick(ServerWorld world) {
 		if(job.isCancelled(world)) {
 			dropHandler.spawnDrops(world);
 			return true;
@@ -179,7 +180,7 @@ public class TreeCutter {
 	}
 
 	/** returns false if cannot process more this tick */
-	private boolean doOp(World world) {
+	private boolean doOp(ServerWorld world) {
 		operation = operation.apply(world);
 
 		if (operation == Operation.COMPLETE) {
@@ -417,7 +418,7 @@ public class TreeCutter {
 		}
 	}
 
-	private Operation doLeafClearing(World world) {
+	private Operation doLeafClearing(ServerWorld world) {
 		if(leaves.isEmpty()) {
 			return Operation.COMPLETE;
 		}
@@ -439,7 +440,7 @@ public class TreeCutter {
 		return this::doLeafClearing;
 	}
 
-	private Operation doLogClearing(World world) {
+	private Operation doLogClearing(ServerWorld world) {
 		final long packedPos = fallingLogs.popLong();
 		final BlockPos pos = searchPos.set(packedPos);
 		final BlockState state = world.getBlockState(pos);
@@ -463,7 +464,7 @@ public class TreeCutter {
 		}
 	}
 
-	private void breakBlock(BlockPos pos, World world) {
+	private void breakBlock(BlockPos pos, ServerWorld world) {
 		final BlockState blockState = world.getBlockState(pos);
 		final Block block = blockState.getBlock();
 		final boolean isLeaf = BlockTags.LEAVES.contains(block);
@@ -592,7 +593,7 @@ public class TreeCutter {
 		}
 	}
 
-	private Operation doLogDropping2(World world) {
+	private Operation doLogDropping2(ServerWorld world) {
 		final int limit = fallingLogs.size();
 
 		if (limit == 0 || fallingLogIndex >= limit) {

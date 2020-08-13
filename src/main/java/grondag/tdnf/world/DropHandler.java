@@ -48,7 +48,7 @@ public class DropHandler {
 	/** holds consolidated drops */
 	private final ObjectArrayList<ItemStack> drops = new ObjectArrayList<>();
 
-	private void doUnstackedDrops(World world, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, @Nullable ServerPlayerEntity player, @Nullable ItemStack stack) {
+	private void doUnstackedDrops(ServerWorld world, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, @Nullable ServerPlayerEntity player, @Nullable ItemStack stack) {
 		if(Configurator.directDeposit) {
 			dropDirectDepositStacks(world, pos, state, blockEntity, player, stack);
 		} else if (hasAxe(player, stack) && Configurator.applyFortune) {
@@ -58,14 +58,14 @@ public class DropHandler {
 		}
 	}
 
-	public void doDrops(BlockState blockState, World world, BlockPos pos, BlockEntity blockEntity) {
-		if (Configurator.stackDrops) {
+	public void doDrops(BlockState blockState, ServerWorld world, BlockPos pos, BlockEntity blockEntity) {
+		if (Configurator.stackDrops && !world.isClient) {
 			if (job.hasAxe() && Configurator.applyFortune) {
-				Block.getDroppedStacks(blockState, (ServerWorld) world, pos, blockEntity, job.player(), job.stack()).forEach(s -> consolidateDrops(world, s));
+				Block.getDroppedStacks(blockState, world, pos, blockEntity, job.player(), job.stack()).forEach(s -> consolidateDrops(world, s));
 				// XP, etc. - probably not needed for logs but just in case
 				blockState.onStacksDropped(world, pos, job.stack());
 			} else {
-				Block.getDroppedStacks(blockState, (ServerWorld) world, pos, blockEntity).forEach(s -> consolidateDrops(world, s));
+				Block.getDroppedStacks(blockState, world, pos, blockEntity).forEach(s -> consolidateDrops(world, s));
 				// XP, etc. - probably not needed for logs but just in case
 				blockState.onStacksDropped(world, pos, ItemStack.EMPTY);
 			}
@@ -96,12 +96,12 @@ public class DropHandler {
 	 * Version of {@link Block#dropStacks(BlockState, World, BlockPos, BlockEntity, net.minecraft.entity.Entity, ItemStack)}
 	 * that drops items directly to player inventory.
 	 */
-	private void dropDirectDepositStacks(World world, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, @Nullable ServerPlayerEntity player, @Nullable ItemStack stack) {
+	private void dropDirectDepositStacks(ServerWorld world, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, @Nullable ServerPlayerEntity player, @Nullable ItemStack stack) {
 		if (hasAxe(player, stack) && Configurator.applyFortune) {
-			Block.getDroppedStacks(state, (ServerWorld)world, pos, blockEntity, player, stack).forEach(s -> dropStack(world, pos, s, player));
+			Block.getDroppedStacks(state, world, pos, blockEntity, player, stack).forEach(s -> dropStack(world, pos, s, player));
 			state.onStacksDropped(world, pos, stack);
 		} else {
-			Block.getDroppedStacks(state, (ServerWorld)world, pos, blockEntity).forEach(s -> dropStack(world, pos, s, player));
+			Block.getDroppedStacks(state, world, pos, blockEntity).forEach(s -> dropStack(world, pos, s, player));
 			state.onStacksDropped(world, pos, ItemStack.EMPTY);
 		}
 	}
