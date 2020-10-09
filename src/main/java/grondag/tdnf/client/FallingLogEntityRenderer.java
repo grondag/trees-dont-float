@@ -18,6 +18,8 @@ package grondag.tdnf.client;
 
 import java.util.Random;
 
+import grondag.tdnf.world.FallingLogEntity;
+
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
@@ -35,8 +37,6 @@ import net.minecraft.world.World;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-
-import grondag.tdnf.world.FallingLogEntity;
 
 /**
  * Straight-up copy of FallingBlockEntityRenderer
@@ -69,6 +69,6 @@ public class FallingLogEntityRenderer extends EntityRenderer<FallingLogEntity> {
 
 	@Override
 	public Identifier getTexture(FallingLogEntity var1) {
-		return SpriteAtlasTexture.BLOCK_ATLAS_TEX;
+		return SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE;
 	}
 }
