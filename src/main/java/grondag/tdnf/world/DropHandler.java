@@ -16,9 +16,9 @@
 
 package grondag.tdnf.world;
 
-import javax.annotation.Nullable;
-
+import grondag.tdnf.Configurator;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -33,8 +33,6 @@ import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
 import net.fabricmc.fabric.api.tools.FabricToolTags;
-
-import grondag.tdnf.Configurator;
 
 public class DropHandler {
 	public static boolean hasAxe(PlayerEntity player, ItemStack stack) {
