@@ -13,45 +13,60 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  ******************************************************************************/
-package grondag.tdnf.mixin;
+package grondag.tdnf;
 
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import grondag.tdnf.Configurator.FallCondition;
+import grondag.tdnf.world.Dispatcher;
+import grondag.tdnf.world.DropHandler;
+import grondag.tdnf.world.LogTest;
 
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-import grondag.tdnf.Configurator;
-import grondag.tdnf.Configurator.FallCondition;
-import grondag.tdnf.world.Dispatcher;
-import grondag.tdnf.world.DropHandler;
-import grondag.tdnf.world.LogTest;
+public class PlayerBreakHandler {
+	private static boolean isActive = false;
 
-@Mixin(Block.class)
-public abstract class MixinBlock extends AbstractBlock implements LogTest {
-	public MixinBlock(Settings settings) {
-		super(settings);
+	/**
+	 * True when player break action is active and non-player fall conditions should be ignored.
+	 */
+	public static boolean isActive() {
+		return isActive;
 	}
 
-	@Inject(at = @At("HEAD"), method = "onBreak")
-	private void hookOnBreak(World world, BlockPos blockPos, BlockState blockState, PlayerEntity playerEntity, CallbackInfo ci) {
-		if (!world.isClient && isLog() && playerEntity != null) {
+	public static boolean beforeBreak(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
+		if (player != null && LogTest.test(state)) {
+			isActive = true;
+		}
+
+		return true;
+	}
+
+	public static void onCanceled(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
+		isActive = false;
+	}
+
+	public static void onBreak(World world, PlayerEntity playerEntity, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
+		isActive = false;
+
+		if (playerEntity != null && LogTest.test(state)) {
 			final ServerPlayerEntity player = (ServerPlayerEntity) playerEntity;
+
+			if (!Configurator.activeWhen.test(player)) {
+				return;
+			}
+
 			if (Configurator.fallCondition == FallCondition.USE_TOOL) {
 				if(DropHandler.hasAxe(player, player.getMainHandStack())) {
-					Dispatcher.enqueCheck((ServerWorld) world, blockPos, player);
+					Dispatcher.enqueCheck((ServerWorld) world, pos, player);
 				}
 			} else {
 				//            System.out.println("onBreak playerEntity = " + (playerEntity == null ? "NULL" : playerEntity.toString()));
-				Dispatcher.enqueCheck((ServerWorld) world, blockPos, player);
+				Dispatcher.enqueCheck((ServerWorld) world, pos, player);
 			}
 		}
 	}

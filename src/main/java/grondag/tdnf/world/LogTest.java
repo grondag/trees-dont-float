@@ -16,10 +16,16 @@
 
 package grondag.tdnf.world;
 
+import net.minecraft.block.BlockState;
+
 public interface LogTest {
 	int LOG = 0;
 	int UNKNOWN = 1;
 	int OTHER = 2;
 
 	boolean isLog();
+
+	static boolean test(BlockState blockState) {
+		return ((LogTest) blockState.getBlock()).isLog();
+	}
 }

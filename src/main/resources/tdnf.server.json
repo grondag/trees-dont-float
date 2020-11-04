@@ -5,8 +5,6 @@
   "mixins": [
     "MixinAbstractBlock",
     "MixinAbstractBlockState",
-  	"MixinBlock",
-    "MixinPillarBlock",
     "MixinSaplingBlock"
   ],
   "injectors": {

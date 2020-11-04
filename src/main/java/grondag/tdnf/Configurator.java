@@ -27,24 +27,41 @@ import com.google.gson.GsonBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import net.minecraft.block.Material;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.MathHelper;
 
 import net.fabricmc.loader.api.FabricLoader;
 
 public class Configurator {
-	//    public static enum SupportSurface {
-	//        BOTTOM,
-	//        BOTTOM_OR_ALL_SIDES,
-	//        BOTTOM_OR_ANY_SIDE
-	//    }
-
 	public enum FallCondition {
 		NO_SUPPORT, LOG_BREAK, USE_TOOL
 	}
 
+	public enum ActiveWhen {
+		SNEAKING() {
+			@Override
+			public boolean test(PlayerEntity playerEntity) {
+				return playerEntity.isSneaking();
+			}
+		},
+
+		NOT_SNEAKING() {
+			@Override
+			public boolean test(PlayerEntity playerEntity) {
+				System.out.println("not sneaking " + !playerEntity.isSneaking());
+				return !playerEntity.isSneaking();
+			}
+		},
+
+		ALWAYS;
+
+		public boolean test(PlayerEntity playerEntity) {
+			return true;
+		}
+	}
+
 	@SuppressWarnings("hiding")
 	public static class ConfigData {
-
 		// BLOCKS
 
 		@Comment("When do trees break? (NO_SUPPORT, LOG_BREAK, or USE_TOOL)")
@@ -62,8 +79,8 @@ public class Configurator {
 		@Comment("Falling logs break glass and other fragile blocks.")
 		public boolean fallingLogsBreakFragile = false;
 
-		@Comment("Protect logs placed by players.")
-		public boolean protectPlayerLogs = true;
+		@Comment("Players can sneak (or not sneak) to disable mod for building. (SNEAKING, NOT_SNEAKING, or ALWAYS)")
+		public ActiveWhen activeWhen = ActiveWhen.NOT_SNEAKING;
 
 		// PLAYERS
 
@@ -122,7 +139,7 @@ public class Configurator {
 	public static boolean renderFallingLogs = DEFAULTS.renderFallingLogs;
 	public static boolean fallingLogsBreakPlants = DEFAULTS.fallingLogsBreakPlants;
 	public static boolean fallingLogsBreakFragile = DEFAULTS.fallingLogsBreakFragile;
-	public static boolean protectPlayerLogs = DEFAULTS.protectPlayerLogs;
+	public static ActiveWhen activeWhen = DEFAULTS.activeWhen;
 
 	// PLAYERS
 	public static boolean directDeposit = DEFAULTS.directDeposit;
@@ -151,7 +168,8 @@ public class Configurator {
 
 
 	public static void init() {
-		configFile = new File(FabricLoader.getInstance().getConfigDirectory(), "trees-do-not-float.json5");
+		configFile = new File(FabricLoader.getInstance().getConfigDir().toFile(), "trees-do-not-float.json5");
+
 		if (configFile.exists()) {
 			loadConfig();
 		} else {
@@ -176,7 +194,7 @@ public class Configurator {
 		renderFallingLogs = config.renderFallingLogs;
 		fallingLogsBreakPlants = config.fallingLogsBreakPlants;
 		fallingLogsBreakFragile = config.fallingLogsBreakFragile;
-		protectPlayerLogs = config.protectPlayerLogs;
+		activeWhen = config.activeWhen;
 
 		// PLAYERS
 		directDeposit = config.directDeposit;
@@ -227,7 +245,7 @@ public class Configurator {
 		config.renderFallingLogs = renderFallingLogs;
 		config.fallingLogsBreakPlants = fallingLogsBreakPlants;
 		config.fallingLogsBreakFragile = fallingLogsBreakFragile;
-		config.protectPlayerLogs = protectPlayerLogs;
+		config.activeWhen = activeWhen;
 
 		// PLAYERS
 		config.directDeposit = directDeposit;

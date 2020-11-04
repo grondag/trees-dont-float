@@ -19,8 +19,8 @@
 	"config.tdnf.value.break_fragile" : "Break Fragiles",
 	"config.tdnf.help.break_fragile" : "Falling logs break glass and other fragile blocks.",
 	
-	"config.tdnf.value.protect_player_logs" : "Protect Player Logs",
-	"config.tdnf.help.protect_player_logs" : "Logs placed by players are allowed to float.",
+	"config.tdnf.value.active_when" : "Active When",
+	"config.tdnf.help.active_when" : "Players can sneak (or not sneak) to disable mod for building.",
 	
 	
 	"config.tdnf.category.players" : "Players",

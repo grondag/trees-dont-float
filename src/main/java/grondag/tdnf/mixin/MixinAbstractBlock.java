@@ -15,6 +15,10 @@
  ******************************************************************************/
 package grondag.tdnf.mixin;
 
+import grondag.tdnf.Configurator;
+import grondag.tdnf.Configurator.FallCondition;
+import grondag.tdnf.world.Dispatcher;
+import grondag.tdnf.world.LogTest;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,11 +35,6 @@ import net.minecraft.tag.BlockTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
-
-import grondag.tdnf.Configurator;
-import grondag.tdnf.Configurator.FallCondition;
-import grondag.tdnf.world.Dispatcher;
-import grondag.tdnf.world.LogTest;
 
 @Mixin(AbstractBlock.class)
 public abstract class MixinAbstractBlock implements LogTest {
@@ -64,7 +63,7 @@ public abstract class MixinAbstractBlock implements LogTest {
 	@Inject(at = @At("HEAD"), method = "neighborUpdate")
 	private void hookNeighborUpdate(BlockState blockState, World world, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify,  CallbackInfo ci) {
 		if (!world.isClient && isLog() && Configurator.fallCondition == FallCondition.NO_SUPPORT && otherPos.getY() == blockPos.getY() - 1) {
-			//            System.out.println("neighborUpdate notify = " + notify);
+			//			System.out.println("neighborUpdate notify = " + notify);
 			final BlockState otherState = world.getBlockState(otherPos);
 			if (!Block.isFaceFullSquare(otherState.getCollisionShape(world, otherPos, ShapeContext.absent()), Direction.UP)) {
 				Dispatcher.enqueCheck((ServerWorld) world, otherPos, null);
@@ -75,10 +74,10 @@ public abstract class MixinAbstractBlock implements LogTest {
 	@Inject(at = @At("HEAD"), method = "onStateReplaced")
 	private void hookOnStateReplaced(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
 		if (isLog() && oldState.getBlock() != newState.getBlock()
-				&& !world.isClient
-				&& Configurator.fallCondition != FallCondition.USE_TOOL
-				&& !Block.isFaceFullSquare(newState.getCollisionShape(world, blockPos, ShapeContext.absent()), Direction.UP)) {
-			//            System.out.println("onBlockRemoved notify = " + notify);
+		&& !world.isClient
+		&& Configurator.fallCondition != FallCondition.USE_TOOL
+		&& !Block.isFaceFullSquare(newState.getCollisionShape(world, blockPos, ShapeContext.absent()), Direction.UP)) {
+			//			System.out.println("onBlockRemoved notify = " + notify);
 			Dispatcher.enqueCheck((ServerWorld) world, blockPos, null);
 		}
 	}

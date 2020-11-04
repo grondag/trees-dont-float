@@ -19,7 +19,9 @@ package grondag.tdnf.world;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.function.Predicate;
 
+import grondag.tdnf.Configurator;
 import io.netty.util.internal.ThreadLocalRandom;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
@@ -45,8 +47,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.world.World;
-
-import grondag.tdnf.Configurator;
 
 /**
  * Call when log neighbors change. Will check for a tree-like structure starting
@@ -199,7 +199,7 @@ public class TreeCutter {
 
 		final BlockState state = world.getBlockState(searchPos);
 
-		if (state.getBlock().isIn(BlockTags.LOGS) && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
+		if (state.getBlock().isIn(BlockTags.LOGS)) {
 			//            this.startState = state;
 			//            this.startBlock = state.getBlock();
 
@@ -309,7 +309,7 @@ public class TreeCutter {
 				}
 			} else if (fromType != POS_TYPE_LEAF) {
 				// visiting from wood (ignore type never added to queue)
-				if (BlockTags.LOGS.contains(block) && !(Configurator.protectPlayerLogs && Persistence.get(state))) {
+				if (BlockTags.LOGS.contains(block)) {
 					visited.put(packedPos, POS_TYPE_LOG);
 
 					enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LOG_FROM_ABOVE, newDepth);
@@ -464,6 +464,8 @@ public class TreeCutter {
 		}
 	}
 
+	private final Predicate<BlockPos> suspender = p -> doomed.contains(p.asLong());
+
 	private void breakBlock(BlockPos pos, ServerWorld world) {
 		final BlockState blockState = world.getBlockState(pos);
 		final Block block = blockState.getBlock();
@@ -479,7 +481,7 @@ public class TreeCutter {
 		final BlockEntity blockEntity = block.hasBlockEntity() ? world.getBlockEntity(pos) : null;
 
 		dropHandler.doDrops(blockState, world, pos, blockEntity);
-		Dispatcher.suspend(p -> doomed.contains(p.asLong()));
+		Dispatcher.suspend(suspender);
 		world.setBlockState(pos, fluidState.getBlockState(), 3);
 		Dispatcher.resume();
 
