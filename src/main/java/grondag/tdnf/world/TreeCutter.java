@@ -372,6 +372,7 @@ public class TreeCutter {
 		if (prepIt.hasNext()) {
 			final Entry e = prepIt.next();
 			final byte type = e.getByteValue();
+
 			if (type != POS_TYPE_IGNORE) {
 				final long pos = e.getLongKey();
 				doomed.add(pos);
@@ -380,9 +381,10 @@ public class TreeCutter {
 					if (Configurator.keepLogsIntact) {
 						xSum += (BlockPos.unpackLongX(pos) - xStart);
 						zSum += (BlockPos.unpackLongZ(pos) - zStart);
+						leaves.enqueue(pos);
+					} else if (Configurator.fastLeafDecay) {
+						leaves.enqueue(pos);
 					}
-
-					leaves.enqueue(pos);
 				} else {
 					if (Configurator.keepLogsIntact) {
 						xSum += (BlockPos.unpackLongX(pos) - xStart) * LOG_FACTOR;
@@ -392,6 +394,7 @@ public class TreeCutter {
 					logs.enqueue(pos);
 				}
 			}
+
 			return this::doPreClearing;
 		} else {
 			// Confirm tool has adequate durability

@@ -7,6 +7,9 @@
 	"config.tdnf.value.fall_condition" : "Fall Condition",
 	"config.tdnf.help.fall_condition" : "When do trees break?",
 	
+	"config.tdnf.value.fast_leaf_decat" : "Fast Leaf Decay",
+	"config.tdnf.help.fast_leaf_decat" : "Leaves decay instantly. Ignored (enabled);when Keep Logs Intact is true.",
+	
 	"config.tdnf.value.keep_logs_intact" : "Keep Logs Intact",
 	"config.tdnf.help.keep_logs_intact" : "Log blocks fall to the ground instead of dropping;as items. Can be laggy.",
 	

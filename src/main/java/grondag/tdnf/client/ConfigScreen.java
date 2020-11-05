@@ -36,6 +36,7 @@ import static grondag.tdnf.Configurator.effectsPerSecond;
 import static grondag.tdnf.Configurator.fallCondition;
 import static grondag.tdnf.Configurator.fallingLogsBreakFragile;
 import static grondag.tdnf.Configurator.fallingLogsBreakPlants;
+import static grondag.tdnf.Configurator.fastLeafDecay;
 import static grondag.tdnf.Configurator.jobTimeoutTicks;
 import static grondag.tdnf.Configurator.keepLogsIntact;
 import static grondag.tdnf.Configurator.leafDurability;
@@ -79,6 +80,12 @@ public class ConfigScreen {
 			.setSaveConsumer(b -> fallCondition = b)
 			.setEnumNameProvider(a -> new LiteralText(a.toString()))
 			.setTooltip(parse("config.tdnf.help.fall_condition"))
+			.build());
+
+		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.fast_leaf_decat"), fastLeafDecay)
+			.setDefaultValue(DEFAULTS.fastLeafDecay)
+			.setSaveConsumer(b -> fastLeafDecay = b)
+			.setTooltip(parse("config.tdnf.help.fast_leaf_decat"))
 			.build());
 
 		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.keep_logs_intact"), keepLogsIntact)

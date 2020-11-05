@@ -67,7 +67,10 @@ public class Configurator {
 		@Comment("When do trees break? (NO_SUPPORT, LOG_BREAK, or USE_TOOL)")
 		public FallCondition fallCondition = FallCondition.NO_SUPPORT;
 
-		@Comment("Log blocks move to the ground instead of dropping as items. Can be laggy.")
+		@Comment("Leaves decay instantly. Ignored (leaves decay) when keepLogsIntact is true.")
+		public boolean fastLeafDecay = true;
+
+		@Comment("Log blocks move to the ground instead of dropping as items. Can be laggy. Leaves alwasy break when true.")
 		public boolean keepLogsIntact = false;
 
 		@Comment("Render falling logs? (Affects client side only.) Can be laggy.")
@@ -135,6 +138,7 @@ public class Configurator {
 
 	// BLOCKS
 	public static FallCondition fallCondition = DEFAULTS.fallCondition;
+	public static boolean fastLeafDecay = DEFAULTS.fastLeafDecay;
 	public static boolean keepLogsIntact = DEFAULTS.keepLogsIntact;
 	public static boolean renderFallingLogs = DEFAULTS.renderFallingLogs;
 	public static boolean fallingLogsBreakPlants = DEFAULTS.fallingLogsBreakPlants;
@@ -190,6 +194,7 @@ public class Configurator {
 
 		// BLOCKS
 		fallCondition = config.fallCondition;
+		fastLeafDecay = config.fastLeafDecay;
 		keepLogsIntact = config.keepLogsIntact;
 		renderFallingLogs = config.renderFallingLogs;
 		fallingLogsBreakPlants = config.fallingLogsBreakPlants;
@@ -241,6 +246,7 @@ public class Configurator {
 
 		// BLOCKS
 		config.fallCondition = fallCondition;
+		config.fastLeafDecay = fastLeafDecay;
 		config.keepLogsIntact = keepLogsIntact;
 		config.renderFallingLogs = renderFallingLogs;
 		config.fallingLogsBreakPlants = fallingLogsBreakPlants;
