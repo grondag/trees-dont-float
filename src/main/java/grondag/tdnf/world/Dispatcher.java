@@ -112,11 +112,11 @@ public class Dispatcher {
 	}
 
 	public static void enqueCheck(ServerWorld world, BlockPos pos, ServerPlayerEntity player) {
-		if (world.isClient || suspended || PlayerBreakHandler.isActive()) {
+		if (world.isClient || suspended || !PlayerBreakHandler.isActive()) {
 			return;
 		}
 
-		//System.out.println("Enqueue " + pos.toString() + " " + (player == null ? "null" : player.getEntityName()));
+		//		System.out.println("Enqueue " + pos.toString() + " " + (player == null ? "null" : player.getEntityName()));
 
 		WorldJobs jobs = worldJobs.get(world);
 		if (jobs == null) {

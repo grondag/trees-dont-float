@@ -29,45 +29,40 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class PlayerBreakHandler {
-	private static boolean isActive = false;
+	private static boolean isActive = true;
 
 	/**
-	 * True when player break action is active and non-player fall conditions should be ignored.
+	 * True when break condition should be honored because one of the following is true:
+	 * <ol>
+	 * <li> There is no player condition
+	 * <li> Player meets the condition
+	 * <li> Player is not involved
+	 * </ol>
+	 *
+	 * <p>Relies heavily on the single-threaded nature of server-side event processing.
 	 */
 	public static boolean isActive() {
 		return isActive;
 	}
 
 	public static boolean beforeBreak(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
-		if (player != null && LogTest.test(state)) {
-			isActive = true;
-		}
-
+		isActive = player != null && Configurator.activeWhen.test(player);
 		return true;
 	}
 
 	public static void onCanceled(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
-		isActive = false;
+		isActive = true;
 	}
 
-	public static void onBreak(World world, PlayerEntity playerEntity, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
-		isActive = false;
-
-		if (playerEntity != null && LogTest.test(state)) {
-			final ServerPlayerEntity player = (ServerPlayerEntity) playerEntity;
-
-			if (!Configurator.activeWhen.test(player)) {
-				return;
-			}
-
-			if (Configurator.fallCondition == FallCondition.USE_TOOL) {
-				if(DropHandler.hasAxe(player, player.getMainHandStack())) {
-					Dispatcher.enqueCheck((ServerWorld) world, pos, player);
+	public static void onBreak(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
+		if (isActive) {
+			if (LogTest.test(state)) {
+				if (Configurator.fallCondition != FallCondition.USE_TOOL || DropHandler.hasAxe(player, player.getMainHandStack())) {
+					Dispatcher.enqueCheck((ServerWorld) world, pos, (ServerPlayerEntity) player);
 				}
-			} else {
-				//            System.out.println("onBreak playerEntity = " + (playerEntity == null ? "NULL" : playerEntity.toString()));
-				Dispatcher.enqueCheck((ServerWorld) world, pos, player);
 			}
 		}
+
+		isActive = true;
 	}
 }
