@@ -18,23 +18,36 @@ package grondag.tdnf.world;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-
 import grondag.tdnf.Configurator;
 import grondag.tdnf.Configurator.FallCondition;
 
+import net.minecraft.item.ItemStack;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+
 public class TreeJob {
 	private TreeJob() {}
-
+	final TreeCutter cutter = new TreeCutter(this);
 	private long startPos;
 	private ServerPlayerEntity player;
 	private ItemStack stack;
 	private boolean hasAxe;
 	private boolean canCancel = true;
 	private boolean isTimedOut = false;
+	private int ticks = 0;
+
+	private void reset() {
+		isTimedOut = false;
+		ticks = 0;
+		cutter.reset();
+	}
+
+	/** returns true when complete or timed out */
+	public boolean tick(ServerWorld world) {
+		return cutter.tick(world) || ++ticks > Configurator.jobTimeoutTicks;
+	}
 
 	/** packed staring pos */
 	public long startPos() {
@@ -64,7 +77,7 @@ public class TreeJob {
 	}
 
 	/** Call when when changing tool or player status can no longer affect the outcome */
-	public void forceCompletion() {
+	public void disableCancel() {
 		canCancel = false;
 	}
 
@@ -82,11 +95,11 @@ public class TreeJob {
 	 */
 	public boolean isCancelled(World world) {
 		return canCancel
-				& (player == null
-				|| player.getMainHandStack() != stack
-				|| player.notInAnyWorld
-				|| player.world != world
-				|| !closeEnough(player.getBlockPos()));
+		& (player == null
+		|| player.getMainHandStack() != stack
+		|| player.notInAnyWorld
+		|| player.world != world
+		|| !closeEnough(player.getBlockPos()));
 	}
 
 	private final boolean closeEnough(BlockPos pos) {
@@ -108,7 +121,7 @@ public class TreeJob {
 		result.stack = stack;
 		result.hasAxe = DropHandler.hasAxe(player, stack);
 		result.canCancel = result.hasAxe && Configurator.fallCondition == FallCondition.USE_TOOL;
-		result.isTimedOut = false;
+		result.reset();
 		return result;
 	}
 }

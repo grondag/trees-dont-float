@@ -92,7 +92,7 @@ public class TreeCutter {
 	/** iterator traversed during pre-clearing */
 	private ObjectIterator<Entry> prepIt = null;
 
-	private TreeJob job = null;
+	private final TreeJob job;
 
 	private final DropHandler dropHandler = new DropHandler();
 
@@ -137,8 +137,11 @@ public class TreeCutter {
 		}
 	}
 
-	public void reset(TreeJob job) {
+	TreeCutter(TreeJob job) {
 		this.job = job;
+	}
+
+	public void reset() {
 		dropHandler.reset(job);
 		visited.clear();
 		doomed.clear();
@@ -578,7 +581,7 @@ public class TreeCutter {
 			fallingLogIndex = 0;
 			//FIXME: not in right place - what about logs partially completed - can abort then? See below also
 			// logs are all removed so should not stop after this
-			job.forceCompletion();
+			job.disableCancel();
 			return this::doLogDropping2;
 		}
 

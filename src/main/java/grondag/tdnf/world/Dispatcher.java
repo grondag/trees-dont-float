@@ -20,10 +20,7 @@ import java.util.IdentityHashMap;
 import java.util.function.Predicate;
 
 import com.google.common.base.Predicates;
-import grondag.tdnf.Configurator;
 import grondag.tdnf.PlayerBreakHandler;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
 
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -41,60 +38,6 @@ public class Dispatcher {
 		ServerTickEvents.END_WORLD_TICK.register(Dispatcher::routeTick);
 	}
 
-	private static class WorldJobs {
-		private final ObjectArrayFIFOQueue<TreeJob> jobList = new ObjectArrayFIFOQueue<>();
-		private final LongOpenHashSet queuedPositions = new LongOpenHashSet();
-
-		private TreeCutter cutter = null;
-		private TreeJob currentJob = null;
-		private int currentJobTicks = 0;
-
-		TreeCutter cutter() {
-			TreeCutter result = cutter;
-			if (result == null) {
-				result = new TreeCutter();
-				cutter = result;
-			}
-			return result;
-		}
-
-		public void run(ServerWorld world) {
-			TreeJob result = currentJob;
-
-			if (result == null & !jobList.isEmpty()) {
-				result = jobList.dequeue();
-				currentJob = result;
-				cutter().reset(result);
-				currentJobTicks = 0;
-			}
-
-			if (result != null) {
-				if (cutter.tick(world) || ++currentJobTicks > Configurator.jobTimeoutTicks) {
-					if (result.isTimedOut()) {
-						queuedPositions.remove(result.startPos());
-						result.release();
-						currentJob = null;
-					} else {
-						// give job one more tick to clean up
-						result.timeout();
-					}
-				}
-			}
-
-			assert queuedPositions.isEmpty() == (jobList.isEmpty() && currentJob == null);
-		}
-
-		// only add the first report - earlier reports are more reliable/valuable
-		// in particular, break block comes first and includes player
-		public void enqueue(long packedPosition, ServerPlayerEntity player) {
-			if(queuedPositions.add(packedPosition)) {
-				//                System.out.println("Enqueing: " + BlockPos.fromLong(packedPosition).toString() + " player = " +
-				//                        (player == null ? "NULL" : player.toString()));
-				jobList.enqueue(TreeJob.claim(packedPosition, player, player == null ? null : player.getMainHandStack()));
-			}
-		}
-	}
-
 	private static final IdentityHashMap<ServerWorld, WorldJobs> worldJobs = new IdentityHashMap<>();
 
 	public static void routeTick(ServerWorld world) {
@@ -103,6 +46,7 @@ public class Dispatcher {
 		}
 
 		final WorldJobs jobs = worldJobs.get(world);
+
 		if (jobs != null) {
 			jobs.run(world);
 		}
