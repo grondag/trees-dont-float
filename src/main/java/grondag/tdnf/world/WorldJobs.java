@@ -16,39 +16,71 @@
 
 package grondag.tdnf.world;
 
+import grondag.tdnf.Configurator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 
 class WorldJobs {
-	private final ObjectArrayFIFOQueue<TreeJob> jobList = new ObjectArrayFIFOQueue<>();
+	private final ObjectArrayFIFOQueue<TreeJob> waitingJobs = new ObjectArrayFIFOQueue<>();
 	private final LongOpenHashSet queuedPositions = new LongOpenHashSet();
-	private TreeJob currentJob = null;
+	private final ObjectArrayList<TreeJob> runningJobs = new ObjectArrayList<>();
 
 	public void run(ServerWorld world) {
-		TreeJob result = currentJob;
+		final ObjectArrayList<TreeJob> jobs = runningJobs;
+		final int jobLimit = Configurator.maxJobsPerWorld;
 
-		if (result == null & !jobList.isEmpty()) {
-			result = jobList.dequeue();
-			currentJob = result;
+		while (jobs.size() < jobLimit && !waitingJobs.isEmpty()) {
+			jobs.add(waitingJobs.dequeue());
 		}
 
-		if (result != null) {
-			if (result.tick(world)) {
-				if (result.isTimedOut()) {
-					queuedPositions.remove(result.startPos());
-					result.release();
-					currentJob = null;
+		final int limit = jobs.size();
+
+		for (int j = 0; j < limit; ++j) {
+			jobs.get(j).prepareForTick(world);
+		}
+
+		int i = 0;
+		boolean didRun = false;
+
+		while (true) {
+			if (jobs.isEmpty()) { // || !TickTimeLimiter.canRun()) {
+				break;
+			}
+
+			final TreeJob job = jobs.get(i);
+
+			if (job.canRun()) {
+				didRun = true;
+				job.tick(world);
+
+				if (job.isComplete()) {
+					queuedPositions.remove(job.startPos());
+					job.release();
+					jobs.remove(i);
 				} else {
-					// give job one more tick to clean up
-					result.timeout();
+					++i;
+				}
+			} else {
+				// skip jobs that have hit limits
+				++i;
+			}
+
+			// exit if all jobs have hit limits
+			if (i >= jobs.size()) {
+				if (didRun) {
+					didRun = false;
+					i = 0;
+				} else {
+					break;
 				}
 			}
 		}
 
-		assert queuedPositions.isEmpty() == (jobList.isEmpty() && currentJob == null);
+		assert queuedPositions.isEmpty() == (waitingJobs.isEmpty() && runningJobs.isEmpty());
 	}
 
 	// only add the first report - earlier reports are more reliable/valuable
@@ -57,7 +89,7 @@ class WorldJobs {
 		if(queuedPositions.add(packedPosition)) {
 			//                System.out.println("Enqueing: " + BlockPos.fromLong(packedPosition).toString() + " player = " +
 			//                        (player == null ? "NULL" : player.toString()));
-			jobList.enqueue(TreeJob.claim(packedPosition, player, player == null ? null : player.getMainHandStack()));
+			waitingJobs.enqueue(TreeJob.claim(packedPosition, player, player == null ? null : player.getMainHandStack()));
 		}
 	}
 }

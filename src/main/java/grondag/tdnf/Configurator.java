@@ -119,6 +119,9 @@ public class Configurator {
 		@Comment("Play particles and sounds? Number is max effects per second. 0-20")
 		public int effectsPerSecond = 4;
 
+		@Comment("Maximum number of concurrent breaking tasks in each world. 1-256")
+		public int maxJobsPerWorld = 16;
+
 		@Comment("Max log/leaf blocks to break per tick. 1 - 128")
 		public int maxBreaksPerTick = 32;
 
@@ -157,6 +160,7 @@ public class Configurator {
 	// PERFORMANCE
 	public static boolean stackDrops = DEFAULTS.stackDrops;
 	public static int effectsPerSecond = DEFAULTS.effectsPerSecond;
+	public static int maxJobsPerWorld = DEFAULTS.maxJobsPerWorld;
 	public static int maxBreaksPerTick = DEFAULTS.maxBreaksPerTick;
 	public static int tickBudget = DEFAULTS.tickBudget;
 	public static int maxFallingBlocks = DEFAULTS.maxFallingBlocks;
@@ -212,6 +216,7 @@ public class Configurator {
 
 		// PERFORMANCE
 		stackDrops = config.stackDrops;
+		maxJobsPerWorld = config.maxJobsPerWorld;
 		effectsPerSecond = config.effectsPerSecond;
 		maxBreaksPerTick = MathHelper.clamp(config.maxBreaksPerTick, 1, 128);
 		tickBudget = MathHelper.clamp(config.tickBudget, 1, 20);
@@ -264,6 +269,7 @@ public class Configurator {
 
 		// PERFORMANCE
 		config.stackDrops = stackDrops;
+		config.maxJobsPerWorld = maxJobsPerWorld;
 		config.effectsPerSecond = effectsPerSecond;
 		config.maxBreaksPerTick = maxBreaksPerTick;
 		config.tickBudget = tickBudget;

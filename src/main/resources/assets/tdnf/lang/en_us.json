@@ -55,6 +55,9 @@
 	"config.tdnf.value.consolidate_drops" : "Combine Stacks",
 	"config.tdnf.help.consolidate_drops" : "Consolidate item drops into stacks to prevent lag",
 	
+	"config.tdnf.value.max_jobs_per_world" : "Max Jobs Per World",
+	"config.tdnf.help.max_jobs_per_world" : "Maximum concurrent breaking tasks in each world.",
+	
 	"config.tdnf.value.effect_level" : "Effect Level",
 	"config.tdnf.help.effect_level" : "Spawn breaking particles and play sounds?;Number is max effects per second.",
 	
@@ -62,7 +65,7 @@
 	"config.tdnf.help.max_breaks_per_tick" : "Max log & leaf blocks to break per tick",
 	
 	"config.tdnf.value.tick_budget" : "Tick Budget",
-	"config.tdnf.help.tick_budget" : "Max percentage of each server tick;that can be used by TDNF.",
+	"config.tdnf.help.tick_budget" : "Max percentage of each server tick;that can be used in each world.",
 	
 	"config.tdnf.value.max_falling_blocks" : "Max Falling Blocks",
 	"config.tdnf.help.max_falling_blocks" : "Max number of active falling block entities.",

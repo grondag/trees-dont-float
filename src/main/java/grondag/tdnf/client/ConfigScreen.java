@@ -43,6 +43,7 @@ import static grondag.tdnf.Configurator.leafDurability;
 import static grondag.tdnf.Configurator.leafHunger;
 import static grondag.tdnf.Configurator.maxBreaksPerTick;
 import static grondag.tdnf.Configurator.maxFallingBlocks;
+import static grondag.tdnf.Configurator.maxJobsPerWorld;
 import static grondag.tdnf.Configurator.protectTools;
 import static grondag.tdnf.Configurator.renderFallingLogs;
 import static grondag.tdnf.Configurator.stackDrops;
@@ -66,8 +67,13 @@ public class ConfigScreen {
 	}
 
 	static Screen getScreen(Screen parent) {
+		final ConfigBuilder builder = ConfigBuilder.create()
+		.setParentScreen(parent)
+		.setTitle(new TranslatableText("config.tdnf.title"))
+		.setSavingRunnable(ConfigScreen::saveUserInput);
 
-		final ConfigBuilder builder = ConfigBuilder.create().setParentScreen(parent).setTitle(new TranslatableText("config.tdnf.title")).setSavingRunnable(ConfigScreen::saveUserInput);
+		builder.setGlobalized(true);
+		builder.setGlobalizedExpanded(false);
 
 		// BLOCKS
 		final ConfigCategory blocks = builder.getOrCreateCategory(new TranslatableText("config.tdnf.category.blocks"));
@@ -178,6 +184,11 @@ public class ConfigScreen {
 			.setTooltip(parse("config.tdnf.help.consolidate_drops"))
 			.build());
 
+		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.max_jobs_per_world"), maxJobsPerWorld, 1, 256)
+			.setDefaultValue(DEFAULTS.maxJobsPerWorld)
+			.setSaveConsumer(b -> maxJobsPerWorld = b)
+			.setTooltip(parse("config.tdnf.help.max_jobs_per_world"))
+			.build());
 
 		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.effect_level"), effectsPerSecond, 0, 60)
 			.setDefaultValue(DEFAULTS.effectsPerSecond)

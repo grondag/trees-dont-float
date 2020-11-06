@@ -47,7 +47,7 @@ public class DropHandler {
 	private final ObjectArrayList<ItemStack> drops = new ObjectArrayList<>();
 
 	private void doUnstackedDrops(ServerWorld world, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, @Nullable ServerPlayerEntity player, @Nullable ItemStack stack) {
-		if(Configurator.directDeposit) {
+		if(Configurator.directDeposit && job.closeEnough()) {
 			dropDirectDepositStacks(world, pos, state, blockEntity, player, stack);
 		} else if (hasAxe(player, stack) && Configurator.applyFortune) {
 			Block.dropStacks(state, world, pos, blockEntity, player, stack);
@@ -58,7 +58,7 @@ public class DropHandler {
 
 	public void doDrops(BlockState blockState, ServerWorld world, BlockPos pos, BlockEntity blockEntity) {
 		if (Configurator.stackDrops && !world.isClient) {
-			if (job.hasAxe() && Configurator.applyFortune) {
+			if (Configurator.applyFortune && job.hasAxe()) {
 				Block.getDroppedStacks(blockState, world, pos, blockEntity, job.player(), job.stack()).forEach(s -> consolidateDrops(world, s));
 				// XP, etc. - probably not needed for logs but just in case
 				blockState.onStacksDropped(world, pos, job.stack());
@@ -67,7 +67,6 @@ public class DropHandler {
 				// XP, etc. - probably not needed for logs but just in case
 				blockState.onStacksDropped(world, pos, ItemStack.EMPTY);
 			}
-
 		} else {
 			doUnstackedDrops(world, pos, blockState, blockEntity, job.player(), job.stack());
 		}
@@ -77,12 +76,13 @@ public class DropHandler {
 		if (!drops.isEmpty()) {
 			final BlockPos pos = searchPos.set(job.startPos());
 			final int limit = drops.size();
+
 			for (int i = 0; i < limit; i++) {
 				dropStack(world, pos, drops.get(i), job.player());
 			}
+
 			drops.clear();
 		}
-
 	}
 
 	public void reset(TreeJob job) {
@@ -109,7 +109,7 @@ public class DropHandler {
 	 * or otherwise drops near their feet.
 	 */
 	private void dropStack(World world, BlockPos pos, ItemStack stack, ServerPlayerEntity player) {
-		if(player == null || !Configurator.directDeposit) {
+		if(player == null || !(Configurator.directDeposit && job.closeEnough())) {
 			Block.dropStack(world, pos, stack);
 		} else if(!world.isClient && !stack.isEmpty() && world.getGameRules().getBoolean(GameRules.DO_TILE_DROPS)) {
 			if(!player.giveItemStack(stack)) {
@@ -164,4 +164,12 @@ public class DropHandler {
 			}
 		}
 	}
+
+	public final Operation opDoDrops = w -> {
+		if (Configurator.stackDrops) {
+			spawnDrops(w);
+		}
+
+		return Operation.COMPLETE;
+	};
 }

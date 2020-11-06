@@ -29,10 +29,13 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class PlayerBreakHandler {
-	private static boolean isActive = true;
+	private static boolean isLogInProgress = false;
+	private static boolean shouldCheckBreakEvents = true;
 
 	/**
-	 * True when break condition should be honored because one of the following is true:
+	 * True when break events should be tested against break condition because the block being
+	 * broken is not a log AND one of the following is true:
+	 *
 	 * <ol>
 	 * <li> There is no player condition
 	 * <li> Player meets the condition
@@ -41,28 +44,32 @@ public class PlayerBreakHandler {
 	 *
 	 * <p>Relies heavily on the single-threaded nature of server-side event processing.
 	 */
-	public static boolean isActive() {
-		return isActive;
+	public static boolean shouldCheckBreakEvents() {
+		return shouldCheckBreakEvents;
 	}
 
 	public static boolean beforeBreak(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
-		isActive = player != null && Configurator.activeWhen.test(player);
+		isLogInProgress = LogTest.test(state);
+		shouldCheckBreakEvents = !isLogInProgress && (player == null || Configurator.activeWhen.test(player));
 		return true;
 	}
 
 	public static void onCanceled(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
-		isActive = true;
+		isLogInProgress = false;
+		shouldCheckBreakEvents = true;
 	}
 
 	public static void onBreak(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
-		if (isActive) {
+		if (isLogInProgress) {
 			if (LogTest.test(state)) {
 				if (Configurator.fallCondition != FallCondition.USE_TOOL || DropHandler.hasAxe(player, player.getMainHandStack())) {
 					Dispatcher.enqueCheck((ServerWorld) world, pos, (ServerPlayerEntity) player);
 				}
 			}
+
+			isLogInProgress = false;
 		}
 
-		isActive = true;
+		shouldCheckBreakEvents = true;
 	}
 }

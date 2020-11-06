@@ -35,18 +35,24 @@ public class TreeJob {
 	private ItemStack stack;
 	private boolean hasAxe;
 	private boolean canCancel = true;
-	private boolean isTimedOut = false;
 	private int ticks = 0;
 
 	private void reset() {
-		isTimedOut = false;
 		ticks = 0;
 		cutter.reset();
 	}
 
-	/** returns true when complete or timed out */
-	public boolean tick(ServerWorld world) {
-		return cutter.tick(world) || ++ticks > Configurator.jobTimeoutTicks;
+	public void prepareForTick(ServerWorld world) {
+		cutter.prepareForTick(world);
+		++ticks;
+	}
+
+	public boolean canRun() {
+		return cutter.canRun();
+	}
+
+	public void tick(ServerWorld world) {
+		cutter.tick(world);
 	}
 
 	/** packed staring pos */
@@ -68,12 +74,12 @@ public class TreeJob {
 		return hasAxe && player.getMainHandStack() == stack && !stack.isEmpty();
 	}
 
-	public void timeout() {
-		isTimedOut = true;
+	public boolean isComplete() {
+		return cutter.isComplete();
 	}
 
 	public boolean isTimedOut() {
-		return isTimedOut;
+		return ticks > Configurator.jobTimeoutTicks;
 	}
 
 	/** Call when when changing tool or player status can no longer affect the outcome */
@@ -99,10 +105,15 @@ public class TreeJob {
 		|| player.getMainHandStack() != stack
 		|| player.notInAnyWorld
 		|| player.world != world
-		|| !closeEnough(player.getBlockPos()));
+		|| !closeEnough());
 	}
 
-	private final boolean closeEnough(BlockPos pos) {
+	public final boolean closeEnough() {
+		if (player == null) {
+			return false;
+		}
+
+		final BlockPos pos = player.getBlockPos();
 		final int dx = pos.getX() - BlockPos.unpackLongX(startPos);
 		final int dy = pos.getY() - BlockPos.unpackLongY(startPos);
 		final int dz = pos.getZ() - BlockPos.unpackLongZ(startPos);

@@ -20,7 +20,6 @@ import java.util.IdentityHashMap;
 import java.util.function.Predicate;
 
 import com.google.common.base.Predicates;
-import grondag.tdnf.PlayerBreakHandler;
 
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -48,6 +47,7 @@ public class Dispatcher {
 		final WorldJobs jobs = worldJobs.get(world);
 
 		if (jobs != null) {
+			TickTimeLimiter.reset();
 			jobs.run(world);
 		}
 
@@ -56,11 +56,11 @@ public class Dispatcher {
 	}
 
 	public static void enqueCheck(ServerWorld world, BlockPos pos, ServerPlayerEntity player) {
-		if (world.isClient || suspended || !PlayerBreakHandler.isActive()) {
+		if (world.isClient || suspended) {
 			return;
 		}
 
-		//		System.out.println("Enqueue " + pos.toString() + " " + (player == null ? "null" : player.getEntityName()));
+		System.out.println("Enqueue " + pos.toString() + " " + (player == null ? "null" : player.getEntityName()));
 
 		WorldJobs jobs = worldJobs.get(world);
 		if (jobs == null) {

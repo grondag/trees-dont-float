@@ -101,9 +101,6 @@ public class TreeCutter {
 	/** Counter for enforcing configured per-tick break max */
 	private int breakBudget = 0;
 
-	/** method reference to selected log handler (clear or drop) */
-	private Operation logHandler = Operation.COMPLETE;
-
 	// all below are used for center-of-mass and fall velocity handling
 	private final int LOG_FACTOR = 5; // logs worth this much more than leaves
 	private int xStart = 0;
@@ -156,50 +153,38 @@ public class TreeCutter {
 		xStart = BlockPos.unpackLongX(job.startPos());
 		zStart = BlockPos.unpackLongZ(job.startPos());
 		prepIt = null;
-		operation = this::startSearch;
+		operation = opStartSearch;
 		fallingLogIndex = 0;
 	}
 
-	/** return true when complete */
-	public boolean tick(ServerWorld world) {
-		if(job.isCancelled(world)) {
-			dropHandler.spawnDrops(world);
-			return true;
-		}
-
-		fx.tick();
+	public void prepareForTick(ServerWorld world) {
 		breakBudget = Configurator.maxBreaksPerTick;
+		fx.prepareForTick();
+	}
 
-
-
-		while(doOp(world) && TickTimeLimiter.canRun()) {}
-
+	public void tick(ServerWorld world) {
 		// if we have to end early, at least spawn drops
-		if (job.isTimedOut()) {
+		if(job.isCancelled(world) || job.isTimedOut()) {
 			dropHandler.spawnDrops(world);
+			operation = Operation.COMPLETE;
+		} else {
+			operation = operation.apply(world);
 		}
+	}
 
+	public boolean canRun() {
+		return breakBudget > 0;
+	}
+
+	public boolean isComplete() {
 		return operation == Operation.COMPLETE;
 	}
 
-	/** returns false if cannot process more this tick */
-	private boolean doOp(ServerWorld world) {
-		operation = operation.apply(world);
-
-		if (operation == Operation.COMPLETE) {
-			if (Configurator.stackDrops) {
-				dropHandler.spawnDrops(world);
-			}
-			return false;
-		} else {
-			return breakBudget > 0;
-		}
-	}
+	private final Operation opStartSearch = this::startSearch;
 
 	private Operation startSearch(World world) {
 		final long packedPos = job.startPos();
 		searchPos.set(packedPos);
-
 		final BlockState state = world.getBlockState(searchPos);
 
 		if (state.getBlock().isIn(BlockTags.LOGS)) {
@@ -231,12 +216,13 @@ public class TreeCutter {
 			enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
 			enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
 			enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-			return this::doSearch;
+			return opDoSearch;
 		} else {
 			return Operation.COMPLETE;
 		}
-
 	}
+
+	private final Operation opDoSearch = this::doSearch;
 
 	private Operation doSearch(World world) {
 		final Visit toVisit = this.toVisit.poll();
@@ -351,9 +337,9 @@ public class TreeCutter {
 
 		if (this.toVisit.isEmpty()) {
 			prepIt = visited.long2ByteEntrySet().iterator();
-			return this::doPreClearing;
+			return opDoPreClearing;
 		} else {
-			return this::doSearch;
+			return opDoSearch;
 		}
 	}
 
@@ -368,6 +354,8 @@ public class TreeCutter {
 
 		toVisit.offer(new Visit(packedPos, type, depth));
 	}
+
+	private final Operation opDoPreClearing = this::doPreClearing;
 
 	private Operation doPreClearing(World world) {
 		final ObjectIterator<Entry> prepIt = this.prepIt;
@@ -398,7 +386,7 @@ public class TreeCutter {
 				}
 			}
 
-			return this::doPreClearing;
+			return opDoPreClearing;
 		} else {
 			// Confirm tool has adequate durability
 			// This only matters when we have to protect the tool or when we are keeping logs intact.
@@ -424,9 +412,11 @@ public class TreeCutter {
 		}
 	}
 
+	private final Operation opDoLeafClearing = this::doLeafClearing;
+
 	private Operation doLeafClearing(ServerWorld world) {
 		if(leaves.isEmpty()) {
-			return Operation.COMPLETE;
+			return dropHandler.opDoDrops;
 		}
 
 		final long packedPos = leaves.dequeueLong();
@@ -439,12 +429,14 @@ public class TreeCutter {
 				breakBlock(pos, world);
 				breakBudget--;
 			} else {
-				return Operation.COMPLETE;
+				return dropHandler.opDoDrops;
 			}
 		}
 
-		return this::doLeafClearing;
+		return opDoLeafClearing;
 	}
+
+	private final Operation opDoLogClearing = this::doLogClearing;
 
 	private Operation doLogClearing(ServerWorld world) {
 		final long packedPos = fallingLogs.popLong();
@@ -457,16 +449,16 @@ public class TreeCutter {
 				breakBudget--;
 				breakBlock(pos, world);
 			} else {
-				return Operation.COMPLETE;
+				return dropHandler.opDoDrops;
 			}
 		}
 
 		if(fallingLogs.isEmpty()) {
 			// drop leaves now in case player doesn't want to wait for logs
 			dropHandler.spawnDrops(world);
-			return this::doLeafClearing;
+			return opDoLeafClearing;
 		} else {
-			return this::doLogClearing;
+			return opDoLogClearing;
 		}
 	}
 
@@ -526,7 +518,7 @@ public class TreeCutter {
 
 	private Operation prepareLogs() {
 		if (logs.isEmpty()) {
-			logHandler = Operation.COMPLETE;
+			return Operation.COMPLETE;
 		} else {
 			while (!logs.isEmpty()) {
 				fallingLogs.add(logs.dequeueLastLong());
@@ -535,8 +527,6 @@ public class TreeCutter {
 			fallingLogs.sort((l0, l1) -> Integer.compare(BlockPos.unpackLongY(l1), BlockPos.unpackLongY(l0)));
 
 			if (Configurator.keepLogsIntact) {
-				logHandler = this::doLogDropping1;
-
 				final double div = fallingLogs.size() * LOG_FACTOR + leaves.size();
 				final double xCenterOfMass = xStart + xSum / div;
 				final double zCenterOfMass = zStart + zSum / div;
@@ -558,21 +548,21 @@ public class TreeCutter {
 				xVelocity /= len;
 				zVelocity /= len;
 
-
+				return opDoLogDropping1;
 			} else {
-				logHandler = this::doLogClearing;
+				return opDoLogClearing;
 			}
 		}
-		return logHandler;
-
 	}
+
+	private final Operation opDoLogDropping1 = this::doLogDropping1;
 
 	//TODO: implement block break limits for falling logs
 	private Operation doLogDropping1(World world) {
 		final int limit = fallingLogs.size();
 
 		if (limit == 0) {
-			return Operation.COMPLETE;
+			return dropHandler.opDoDrops;
 		}
 
 		final int i = fallingLogIndex++;
@@ -582,7 +572,7 @@ public class TreeCutter {
 			//FIXME: not in right place - what about logs partially completed - can abort then? See below also
 			// logs are all removed so should not stop after this
 			job.disableCancel();
-			return this::doLogDropping2;
+			return opDoLogDropping2;
 		}
 
 		final long packedPos = fallingLogs.getLong(i);
@@ -595,11 +585,13 @@ public class TreeCutter {
 			world.setBlockState(pos, Blocks.AIR.getDefaultState());
 
 			breakBudget--;
-			return this::doLogDropping1;
+			return opDoLogDropping1;
 		} else {
-			return Operation.COMPLETE;
+			return dropHandler.opDoDrops;
 		}
 	}
+
+	private final Operation opDoLogDropping2 = this::doLogDropping2;
 
 	private Operation doLogDropping2(ServerWorld world) {
 		final int limit = fallingLogs.size();
@@ -607,7 +599,7 @@ public class TreeCutter {
 		if (limit == 0 || fallingLogIndex >= limit) {
 			// drop leaves now in case player doesn't want to wait for logs
 			dropHandler.spawnDrops(world);
-			return this::doLeafClearing;
+			return opDoLeafClearing;
 		}
 
 		if (job.isTimedOut()) {
@@ -645,7 +637,7 @@ public class TreeCutter {
 				breakBudget = 0;
 			}
 
-			return this::doLogDropping2;
+			return opDoLogDropping2;
 		}
 	}
 }

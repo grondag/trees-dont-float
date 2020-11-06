@@ -17,6 +17,7 @@ package grondag.tdnf.mixin;
 
 import grondag.tdnf.Configurator;
 import grondag.tdnf.Configurator.FallCondition;
+import grondag.tdnf.PlayerBreakHandler;
 import grondag.tdnf.world.Dispatcher;
 import grondag.tdnf.world.LogTest;
 import org.spongepowered.asm.mixin.Mixin;
@@ -62,9 +63,13 @@ public abstract class MixinAbstractBlock implements LogTest {
 
 	@Inject(at = @At("HEAD"), method = "neighborUpdate")
 	private void hookNeighborUpdate(BlockState blockState, World world, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify,  CallbackInfo ci) {
-		if (!world.isClient && isLog() && Configurator.fallCondition == FallCondition.NO_SUPPORT && otherPos.getY() == blockPos.getY() - 1) {
+		if (!world.isClient
+		&& PlayerBreakHandler.shouldCheckBreakEvents()
+		&& isLog() && Configurator.fallCondition == FallCondition.NO_SUPPORT
+		&& otherPos.getY() == blockPos.getY() - 1) {
 			//			System.out.println("neighborUpdate notify = " + notify);
 			final BlockState otherState = world.getBlockState(otherPos);
+
 			if (!Block.isFaceFullSquare(otherState.getCollisionShape(world, otherPos, ShapeContext.absent()), Direction.UP)) {
 				Dispatcher.enqueCheck((ServerWorld) world, otherPos, null);
 			}
@@ -75,6 +80,7 @@ public abstract class MixinAbstractBlock implements LogTest {
 	private void hookOnStateReplaced(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
 		if (isLog() && oldState.getBlock() != newState.getBlock()
 		&& !world.isClient
+		&& PlayerBreakHandler.shouldCheckBreakEvents()
 		&& Configurator.fallCondition != FallCondition.USE_TOOL
 		&& !Block.isFaceFullSquare(newState.getCollisionShape(world, blockPos, ShapeContext.absent()), Direction.UP)) {
 			//			System.out.println("onBlockRemoved notify = " + notify);
