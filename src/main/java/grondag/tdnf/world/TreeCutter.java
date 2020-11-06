@@ -170,9 +170,9 @@ public class TreeCutter {
 		fx.tick();
 		breakBudget = Configurator.maxBreaksPerTick;
 
-		final long maxTime = System.nanoTime() + 1000000000 / 100 * Configurator.tickBudget;
 
-		while(doOp(world) && System.nanoTime() < maxTime) {}
+
+		while(doOp(world) && TickTimeLimiter.canRun()) {}
 
 		// if we have to end early, at least spawn drops
 		if (job.isTimedOut()) {
@@ -491,7 +491,7 @@ public class TreeCutter {
 		world.setBlockState(pos, fluidState.getBlockState(), 3);
 		Dispatcher.resume();
 
-		if(fx.request(true)) {
+		if (fx.request(true)) {
 			world.syncWorldEvent(2001, pos, Block.getRawIdFromState(blockState));
 		}
 
@@ -499,10 +499,10 @@ public class TreeCutter {
 	}
 
 	private boolean checkDurability(World world, BlockState state, BlockPos pos) {
-		if(Configurator.consumeDurability && job.hasAxe() && !job.player().isCreative()) {
+		if (Configurator.consumeDurability && job.hasAxe() && !job.player().isCreative()) {
 			final ItemStack stack = job.stack();
 
-			if(Configurator.protectTools && stack.getDamage() >= stack.getMaxDamage() - 2) {
+			if (Configurator.protectTools && stack.getDamage() >= stack.getMaxDamage() - 2) {
 				return false;
 			}
 
@@ -514,10 +514,10 @@ public class TreeCutter {
 	}
 
 	private void applyHunger(boolean isLeaf, Block block) {
-		if(Configurator.applyHunger && (!isLeaf || Configurator.leafHunger)) {
+		if (Configurator.applyHunger && (!isLeaf || Configurator.leafHunger)) {
 			final ServerPlayerEntity player = job.player();
 
-			if(player != null && !player.isCreative()) {
+			if (player != null && !player.isCreative()) {
 				player.addExhaustion(0.005F);
 				player.incrementStat(Stats.MINED.getOrCreateStat(block));
 			}
