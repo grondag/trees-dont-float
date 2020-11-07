@@ -21,8 +21,8 @@ import java.util.function.Predicate;
 
 import grondag.tdnf.Configurator;
 import io.netty.util.internal.ThreadLocalRandom;
-import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
-import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2IntMap.Entry;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongHeapPriorityQueue;
@@ -52,6 +52,19 @@ import net.minecraft.world.World;
  * at the point and if it is not resting on solid blocks will destroy the tree.<p>
  *
  * Not thread-safe. Meant to be called from server thread. <p>
+ *
+ * Search algorithm:
+ * <ul>
+ * <li>Flood fill all logs, up to search limit.
+ * <li>During search support blocks directly under logs are marked.
+ * <li>If any support block is directly attached to the start position, search ends.
+ * <ii>"Directly attached" means only directly vertical/sideways connections.
+ * <li>If no support blocks are found, all found logs are broken.
+ * <li>If support blocks are found not directly attached to origin, search is made from each one...
+ * <li>During search, can go up, sideways, diagonal down, or diagonal up.
+ * <li>Diagonal can only continue sideways or in same diagonal direction.
+ * <li>All blocks marked in this second search are removed from the set.
+ * </ul>
  */
 public class TreeCutter {
 	private Operation operation = Operation.COMPLETE;
@@ -59,7 +72,7 @@ public class TreeCutter {
 	private final LongHeapPriorityQueue toVisit = new LongHeapPriorityQueue();
 
 	/** packed positions that have received a valid visit */
-	private final Long2ByteOpenHashMap visited = new Long2ByteOpenHashMap();
+	private final Long2IntOpenHashMap visited = new Long2IntOpenHashMap();
 
 	private final LongOpenHashSet doomed = new LongOpenHashSet();
 
@@ -107,16 +120,13 @@ public class TreeCutter {
 	private Axis fallAxis = Axis.X;
 
 	// all below are for compact representation of search space
-	private static final byte POS_TYPE_LOG_FROM_ABOVE = 0;
-	private static final byte POS_TYPE_LOG = 1;
-	private static final byte POS_TYPE_LOG_FROM_DIAGONAL_BELOW = 2;
-	private static final byte POS_TYPE_LOG_FROM_DIAGONAL_ABOVE = 3;
-	private static final byte POS_TYPE_SUPPORT = 4;
-	private static final byte POS_TYPE_LEAF = 5;
-	private static final byte POS_TYPE_IGNORE = 6;
-
-	// avoids littering code with (byte)0
-	private static final byte ZERO_BYTE = 0;
+	private static final int POS_TYPE_LOG_FROM_ABOVE = 0;
+	private static final int POS_TYPE_LOG = 1;
+	private static final int POS_TYPE_LOG_FROM_DIAGONAL_BELOW = 2;
+	private static final int POS_TYPE_LOG_FROM_DIAGONAL_ABOVE = 3;
+	private static final int POS_TYPE_SUPPORT = 4;
+	private static final int POS_TYPE_LEAF = 5;
+	private static final int POS_TYPE_IGNORE = 6;
 
 	TreeCutter(TreeJob job) {
 		this.job = job;
@@ -194,12 +204,14 @@ public class TreeCutter {
 		fx.prepareForTick();
 	}
 
+
 	public void tick(ServerWorld world) {
 		// if we have to end early, at least spawn drops
 		if(job.isCancelled(world) || job.isTimedOut()) {
 			dropHandler.spawnDrops(world);
 			operation = Operation.COMPLETE;
 		} else {
+			// PERF: do multiple operations per tick call, especially for fast operations like search
 			operation = operation.apply(world);
 		}
 	}
@@ -214,20 +226,6 @@ public class TreeCutter {
 
 	private final Operation opStartSearch = this::startSearch;
 
-	/**
-	 * Search algorithm:
-	 * <ul>
-	 * <li>Flood fill all logs, up to search limit.
-	 * <li>During search support blocks directly under logs are marked.
-	 * <li>If any support block is directly attached to the start position, search ends.
-	 * <ii>"Directly attached" means only directly vertical/sideways connections.
-	 * <li>If no support blocks are found, all found logs are broken.
-	 * <li>If support blocks are found not directly attached to origin, search is made from each one...
-	 * <li>During search, can go up, sideways, diagonal down, or diagonal up.
-	 * <li>Diagonal can only continue sideways or in same diagonal direction.
-	 * <li>All blocks marked in this second search are removed from the set.
-	 * </ul>
-	 */
 	private Operation startSearch(World world) {
 		final long packedPos = job.startPos();
 		searchPos.set(packedPos);
@@ -243,25 +241,25 @@ public class TreeCutter {
 			// reason we are doing this is the block below is (or was) non-supporting
 			visited.put(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_IGNORE);
 
-			enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LOG, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LOG, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LOG, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LOG, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LOG, ZERO_BYTE);
+			enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LOG, 0);
+			enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LOG, 0);
+			enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LOG, 0);
+			enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LOG, 0);
+			enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LOG, 0);
 
-			enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, ZERO_BYTE);
+			enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
+			enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
+			enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
+			enqueIfViable(BlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
 
-			enqueIfViable(BlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, ZERO_BYTE);
-			enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, ZERO_BYTE);
+			enqueIfViable(BlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
+			enqueIfViable(BlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
+			enqueIfViable(BlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
+			enqueIfViable(BlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
+			enqueIfViable(BlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
+			enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
+			enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
+			enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
 			return opDoSearch;
 		} else {
 			return Operation.COMPLETE;
@@ -277,9 +275,9 @@ public class TreeCutter {
 
 		searchPos.set(packedPos);
 
-		final byte fromType = (byte) getVisitPackedType(toVisit);
+		final int fromType = getVisitPackedType(toVisit);
 
-		byte newDepth = (byte) (getVisitPackedDepth(toVisit) + 1);
+		int newDepth = getVisitPackedDepth(toVisit) + 1;
 
 		if (!visited.containsKey(packedPos)) {
 			final BlockState state = world.getBlockState(searchPos);
@@ -382,19 +380,19 @@ public class TreeCutter {
 		}
 
 		if (this.toVisit.isEmpty()) {
-			prepIt = visited.long2ByteEntrySet().iterator();
+			prepIt = visited.long2IntEntrySet().iterator();
 			return opDoPreClearing;
 		} else {
 			return opDoSearch;
 		}
 	}
 
-	private void enqueIfViable(long packedPos, byte type, byte depth) {
+	private void enqueIfViable(long packedPos, int type, int depth) {
 		if (visited.containsKey(packedPos)) {
 			return;
 		}
 
-		if (depth == Byte.MAX_VALUE || depth < 0) {
+		if (depth >= 127 || depth < 0) {
 			return;
 		}
 
@@ -408,7 +406,7 @@ public class TreeCutter {
 
 		if (prepIt.hasNext()) {
 			final Entry e = prepIt.next();
-			final byte type = e.getByteValue();
+			final int type = e.getIntValue();
 
 			if (type != POS_TYPE_IGNORE) {
 				final long pos = e.getLongKey();

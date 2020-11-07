@@ -25,7 +25,6 @@ import net.minecraft.state.property.IntProperty;
 import net.minecraft.state.property.Property;
 
 public class LeafInfo implements ToIntFunction<BlockState> {
-
 	private static final LeafInfo INVALID = new LeafInfo(null);
 
 	public final int maxDistance;
@@ -41,11 +40,13 @@ public class LeafInfo implements ToIntFunction<BlockState> {
 	public static LeafInfo get(Block block) {
 		return MAP.computeIfAbsent(block, b -> {
 			final Collection<Property<?>> props = b.getStateManager().getProperties();
+
 			for (final Property<?> p : props) {
 				if (p.getType() == Integer.class && p.getName().equalsIgnoreCase("distance")) {
 					return new LeafInfo((IntProperty) p);
 				}
 			}
+
 			return INVALID;
 		});
 	}
