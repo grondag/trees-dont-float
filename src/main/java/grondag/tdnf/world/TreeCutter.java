@@ -187,7 +187,7 @@ public class TreeCutter {
 		searchPos.set(packedPos);
 		final BlockState state = world.getBlockState(searchPos);
 
-		if (state.getBlock().isIn(BlockTags.LOGS)) {
+		if (LogTest.test(state)) {
 			//            this.startState = state;
 			//            this.startBlock = state.getBlock();
 
@@ -298,7 +298,7 @@ public class TreeCutter {
 				}
 			} else if (fromType != POS_TYPE_LEAF) {
 				// visiting from wood (ignore type never added to queue)
-				if (BlockTags.LOGS.contains(block)) {
+				if (LogTest.test(state)) {
 					visited.put(packedPos, POS_TYPE_LOG);
 
 					enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LOG_FROM_ABOVE, newDepth);
@@ -442,9 +442,8 @@ public class TreeCutter {
 		final long packedPos = fallingLogs.popLong();
 		final BlockPos pos = searchPos.set(packedPos);
 		final BlockState state = world.getBlockState(pos);
-		final Block block = state.getBlock();
 
-		if (BlockTags.LOGS.contains(block)) {
+		if (LogTest.test(state)) {
 			if(checkDurability(world, state, pos)) {
 				breakBudget--;
 				breakBlock(pos, world);
@@ -469,7 +468,7 @@ public class TreeCutter {
 		final Block block = blockState.getBlock();
 		final boolean isLeaf = BlockTags.LEAVES.contains(block);
 
-		if (!BlockTags.LOGS.contains(block) && !isLeaf) {
+		if (!LogTest.test(blockState) && !isLeaf) {
 			// notify fx to increase chance because chance is based on totals reported earlier
 			fx.request(false);
 			return;

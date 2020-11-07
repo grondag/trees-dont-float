@@ -30,6 +30,7 @@ import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Material;
+import net.minecraft.block.MushroomBlock;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.tag.BlockTags;
@@ -50,6 +51,8 @@ public abstract class MixinAbstractBlock implements LogTest {
 		if(result == UNKNOWN) {
 
 			if(BlockTags.LOGS.contains((Block)(Object) this) && (material == Material.WOOD || material == Material.NETHER_WOOD)) {
+				result = LOG;
+			} else if (MushroomBlock.class.isInstance(this)) {
 				result = LOG;
 			} else {
 				result = OTHER;
