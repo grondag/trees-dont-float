@@ -119,14 +119,119 @@ public class TreeCutter {
 
 	private Axis fallAxis = Axis.X;
 
+	private static final int SEARCH_LOG_DOWN = 0;
+	private static final int SEARCH_LOG = 1;
+	private static final int SEARCH_LOG_DIAGONAL = 2;
+	private static final int SEARCH_LOG_DIAGONAL_DOWN = 3;
+	private static final int SEARCH_IGNORE = 4;
+	private static final int SEARCH_SUPPORT = 5;
+
 	// all below are for compact representation of search space
-	private static final int POS_TYPE_LOG_FROM_ABOVE = 0;
-	private static final int POS_TYPE_LOG = 1;
-	private static final int POS_TYPE_LOG_FROM_DIAGONAL_BELOW = 2;
-	private static final int POS_TYPE_LOG_FROM_DIAGONAL_ABOVE = 3;
-	private static final int POS_TYPE_SUPPORT = 4;
-	private static final int POS_TYPE_LEAF = 5;
-	private static final int POS_TYPE_IGNORE = 6;
+	// The meaning of LOG or LEAF is different in search queue vs. visited map and break queue.
+	// In search queue they describe how the position was reached, not the content of the search position
+	// In the visited map/break queues they describe the type of block at that position.
+	//	/**
+	//	 * Log (or search position) that was reached from a log above.
+	//	 * Separate for other non-diagonal logs so that we search downward
+	//	 * first and get early exit on big trees that have support near the
+	//	 * starting search position. <p>
+	//	 *
+	//	 * Also used to detect a support block (non-log solid block directly below a log.)<p>
+	//	 *
+	//	 * Can transmit support in any direction.
+	//	 */
+	//	private static final int POS_TYPE_LOG_DOWN = 0;
+	//
+	//	/**
+	//	 * Log (or search position) reached directly from the side or from below.
+	//	 * Can transmit support in any direction.
+	//	 */
+	//	private static final int POS_TYPE_LOG = 1;
+	//
+	//	/**
+	//	 * Log (or search position) reached sideways diagonally from another
+	//	 * sideways diagonal log or from a directly-adjacent log.<p>
+	//	 *
+	//	 * Can transmit support only to other diagonal logs or leaves.
+	//	 * This means child positions must either be another diagonal log or a leaf.
+	//	 */
+	//	private static final int POS_TYPE_LOG_DIAGONAL = 2;
+	//
+	//	/**
+	//	 * Log (or search position) reached diagonally up from another
+	//	 * sideways or up diagonal log or from a directly-adjacent log.<p>
+	//	 *
+	//	 * Can transmit support only to other up diagonal logs or leaves.
+	//	 * This means child positions must either be another up diagonal log or a leaf.
+	//	 * Sideways diagonal positions that originate from a up diagonal
+	//	 * are classified as up diagonals.
+	//	 */
+	//	private static final int POS_TYPE_LOG_DIAGONAL_UP = 3;
+	//
+	//	/**
+	//	 * Log (or search position) reached diagonally down from another
+	//	 * sideways or down diagonal log or from a directly-adjacent log.<p>
+	//	 *
+	//	 * Can transmit support only to other down diagonal logs or leaves.
+	//	 * This means child positions must either be another down diagonal log or a leaf.
+	//	 * Sideways diagonal positions that originate from a down diagonal
+	//	 * are classified as down diagonals.
+	//	 */
+	//	private static final int POS_TYPE_LOG_DIAGONAL_DOWN = 4;
+	//
+	//	private static final int POS_TYPE_LEAF = 5;
+	//
+	//	/**
+	//	 * Support block. Will end search when directly below a directly connected log.
+	//	 * Only saved to visited set when found under a diagonally connected log
+	//	 * to enable reverse search for non-breaking.
+	//	 */
+	//	private static final int POS_TYPE_SUPPORT = 6;
+	//	private static final int POS_TYPE_IGNORE = 7;
+
+	//	private static final int[] RULES = new int[8 * 8];
+
+	//	static {
+	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_LOG_DOWN << 3)] = POS_TYPE_LOG_DOWN;
+	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_LOG << 3)] = POS_TYPE_LOG;
+	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_LOG_DIAGONAL << 3)] = POS_TYPE_LOG_DIAGONAL;
+	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_LOG_DIAGONAL_UP << 3)] = POS_TYPE_IGNORE; // shouldn't be possible, right?
+	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_LOG_DIAGONAL_DOWN << 3)] = POS_TYPE_LOG_DIAGONAL_DOWN;
+	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_LEAF << 3)] = POS_TYPE_LEAF;
+	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_SUPPORT << 3)] = POS_TYPE_SUPPORT;
+	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_IGNORE << 3)] = POS_TYPE_IGNORE;
+	//
+	//		RULES[POS_TYPE_LOG | (POS_TYPE_LOG_DOWN << 3)] = POS_TYPE_LOG_DOWN;
+	//		RULES[POS_TYPE_LOG | (POS_TYPE_LOG << 3)] = POS_TYPE_LOG;
+	//		RULES[POS_TYPE_LOG | (POS_TYPE_LOG_DIAGONAL << 3)] = POS_TYPE_LOG_DIAGONAL;
+	//		RULES[POS_TYPE_LOG | (POS_TYPE_LOG_DIAGONAL_UP << 3)] = POS_TYPE_LOG_DIAGONAL_UP;
+	//		RULES[POS_TYPE_LOG | (POS_TYPE_LOG_DIAGONAL_DOWN << 3)] = POS_TYPE_LOG_DIAGONAL_DOWN;
+	//		RULES[POS_TYPE_LOG | (POS_TYPE_LEAF << 3)] = POS_TYPE_LEAF;
+	//		RULES[POS_TYPE_LOG | (POS_TYPE_SUPPORT << 3)] = POS_TYPE_SUPPORT;
+	//		RULES[POS_TYPE_LOG | (POS_TYPE_IGNORE << 3)] = POS_TYPE_IGNORE;
+	//
+	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_LOG_DOWN << 3)] = POS_TYPE_LOG_DIAGONAL;
+	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_LOG << 3)] = POS_TYPE_LOG_DIAGONAL;
+	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_LOG_DIAGONAL << 3)] = POS_TYPE_LOG_DIAGONAL;
+	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_LOG_DIAGONAL_UP << 3)] = POS_TYPE_LOG_DIAGONAL_UP;
+	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_LOG_DIAGONAL_DOWN << 3)] = POS_TYPE_LOG_DIAGONAL_DOWN;
+	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_LEAF << 3)] = POS_TYPE_LEAF;
+	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_SUPPORT << 3)] = POS_TYPE_SUPPORT;
+	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_IGNORE << 3)] = POS_TYPE_IGNORE;
+	//
+	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_LOG_DOWN << 3)] = POS_TYPE_IGNORE;
+	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_LOG << 3)] = POS_TYPE_LOG_DIAGONAL;
+	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_LOG_DIAGONAL << 3)] = POS_TYPE_LOG_DIAGONAL;
+	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_LOG_DIAGONAL_UP << 3)] = POS_TYPE_LOG_DIAGONAL_UP;
+	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_LOG_DIAGONAL_DOWN << 3)] = POS_TYPE_LOG_DIAGONAL_DOWN;
+	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_LEAF << 3)] = POS_TYPE_LEAF;
+	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_SUPPORT << 3)] = POS_TYPE_SUPPORT;
+	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_IGNORE << 3)] = POS_TYPE_IGNORE;
+	//	}
+
+	//	private static int propagateReverseSearch(int fromType, int toType) {
+	//		return RULES[fromType | (toType << 3)];
+	//	}
 
 	TreeCutter(TreeJob job) {
 		this.job = job;
@@ -235,155 +340,183 @@ public class TreeCutter {
 			//            this.startState = state;
 			//            this.startBlock = state.getBlock();
 
-			visited.put(packedPos, POS_TYPE_LOG);
+			visited.put(packedPos, SEARCH_LOG);
 
 			// shoudln't really be necessary, but reflect the
 			// reason we are doing this is the block below is (or was) non-supporting
-			visited.put(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_IGNORE);
+			visited.put(BlockPos.add(packedPos, 0, -1, 0), SEARCH_IGNORE);
 
-			enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LOG, 0);
-			enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LOG, 0);
-			enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LOG, 0);
-			enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LOG, 0);
-			enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LOG, 0);
+			enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), SEARCH_LOG, 0);
+			enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), SEARCH_LOG, 0);
+			enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), SEARCH_LOG, 0);
+			enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), SEARCH_LOG, 0);
+			enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), SEARCH_LOG, 0);
 
-			enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
-			enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
-			enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
-			enqueIfViable(BlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
+			enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), SEARCH_LOG_DIAGONAL, 0);
+			enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), SEARCH_LOG_DIAGONAL, 0);
+			enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), SEARCH_LOG_DIAGONAL, 0);
+			enqueIfViable(BlockPos.add(packedPos, 1, 0, 1), SEARCH_LOG_DIAGONAL, 0);
 
-			enqueIfViable(BlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
-			enqueIfViable(BlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
-			enqueIfViable(BlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
-			enqueIfViable(BlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
-			enqueIfViable(BlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
-			enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
-			enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
-			enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, 0);
-			return opDoSearch;
+			enqueIfViable(BlockPos.add(packedPos, -1, 1, -1), SEARCH_LOG_DIAGONAL, 0);
+			enqueIfViable(BlockPos.add(packedPos, -1, 1, 0), SEARCH_LOG_DIAGONAL, 0);
+			enqueIfViable(BlockPos.add(packedPos, -1, 1, 1), SEARCH_LOG_DIAGONAL, 0);
+			enqueIfViable(BlockPos.add(packedPos, 0, 1, -1), SEARCH_LOG_DIAGONAL, 0);
+			enqueIfViable(BlockPos.add(packedPos, 0, 1, 1), SEARCH_LOG_DIAGONAL, 0);
+			enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), SEARCH_LOG_DIAGONAL, 0);
+			enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), SEARCH_LOG_DIAGONAL, 0);
+			enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), SEARCH_LOG_DIAGONAL, 0);
+			return opDoForwardSearch;
 		} else {
 			return Operation.COMPLETE;
 		}
 	}
 
-	private final Operation opDoSearch = this::doSearch;
+	private final Operation opDoForwardSearch = this::doForwardSearch;
 
-	private Operation doSearch(World world) {
+	private Operation doForwardSearch(World world) {
 		final long toVisit = this.toVisit.dequeueLong();
 
 		final long packedPos = getVisitPackedPos(toVisit);
 
 		searchPos.set(packedPos);
 
-		final int fromType = getVisitPackedType(toVisit);
+		final int searchType = getVisitPackedType(toVisit);
 
-		int newDepth = getVisitPackedDepth(toVisit) + 1;
+		final int newDepth = getVisitPackedDepth(toVisit) + 1;
 
 		if (!visited.containsKey(packedPos)) {
 			final BlockState state = world.getBlockState(searchPos);
 
-			final Block block = state.getBlock();
+			//			final Block block = state.getBlock();
 
-			if (block.isIn(BlockTags.LEAVES)) {
-				boolean validVisit = false;
-				final LeafInfo inf = LeafInfo.get(block);
+			//			if (block.isIn(BlockTags.LEAVES)) {
+			//				boolean validVisit = false;
+			//				final LeafInfo inf = LeafInfo.get(block);
+			//
+			//				if (fromType == POS_TYPE_LEAF) {
+			//					// leaf visit only valid from leaves that were one less away than this one
+			//					if (inf.applyAsInt(state) == Math.min(inf.maxDistance, newDepth + 1)) {
+			//						validVisit = true;
+			//						visited.put(packedPos, POS_TYPE_LEAF);
+			//					}
+			//				} else { // assume coming from log
+			//
+			//					// leaf visits from logs always count as visited, even if will not be followed
+			//					visited.put(packedPos, POS_TYPE_LEAF);
+			//
+			//					// leaf visits coming from logs are expected to have distance = 1,
+			//					// otherwise they must belong to a different tree.
+			//					if (inf.applyAsInt(state) == 1) {
+			//						validVisit = true;
+			//
+			//						// restart depth of search when transitioning from log to leaf
+			//						newDepth = 0;
+			//					}
+			//				}
+			//
+			//				if (validVisit) {
+			//					enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LEAF, newDepth);
+			//
+			//					enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LEAF, newDepth);
+			//
+			//					enqueIfViable(BlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LEAF, newDepth);
+			//
+			//					enqueIfViable(BlockPos.add(packedPos, -1, -1, -1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, -1, -1, 0), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, -1, -1, 1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 0, -1, -1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 0, -1, 1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 1, -1, -1), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 1, -1, 0), POS_TYPE_LEAF, newDepth);
+			//					enqueIfViable(BlockPos.add(packedPos, 1, -1, 1), POS_TYPE_LEAF, newDepth);
+			//				}
+			//			} else if (fromType != POS_TYPE_LEAF) {
+			// visiting from wood (ignore type never added to queue)
+			if (LogTest.test(state)) {
+				assert searchType == SEARCH_LOG_DOWN || searchType == SEARCH_LOG || searchType == SEARCH_LOG_DIAGONAL || searchType == SEARCH_LOG_DIAGONAL_DOWN;
+				final boolean diagonal = searchType == SEARCH_LOG_DIAGONAL || searchType == SEARCH_LOG_DIAGONAL_DOWN;
+				visited.put(packedPos, diagonal ? SEARCH_LOG_DIAGONAL : SEARCH_LOG);
 
-				if (fromType == POS_TYPE_LEAF) {
-					// leaf visit only valid from leaves that were one less away than this one
-					if (inf.applyAsInt(state) == Math.min(inf.maxDistance, newDepth + 1)) {
-						validVisit = true;
-						visited.put(packedPos, POS_TYPE_LEAF);
-					}
-				} else { // assume coming from log
-
-					// leaf visits from logs always count as visited, even if will not be followed
-					visited.put(packedPos, POS_TYPE_LEAF);
-
-					// leaf visits coming from logs are expected to have distance = 1,
-					// otherwise they must belong to a different tree.
-					if (inf.applyAsInt(state) == 1) {
-						validVisit = true;
-
-						// restart depth of search when transitioning from log to leaf
-						newDepth = 0;
-					}
-				}
-
-				if (validVisit) {
-					enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LEAF, newDepth);
-
-					enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LEAF, newDepth);
-
-					enqueIfViable(BlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LEAF, newDepth);
-
-					enqueIfViable(BlockPos.add(packedPos, -1, -1, -1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, -1, -1, 0), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, -1, -1, 1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 0, -1, -1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 0, -1, 1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, -1, -1), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, -1, 0), POS_TYPE_LEAF, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, -1, 1), POS_TYPE_LEAF, newDepth);
-				}
-			} else if (fromType != POS_TYPE_LEAF) {
-				// visiting from wood (ignore type never added to queue)
-				if (LogTest.test(state)) {
-					visited.put(packedPos, POS_TYPE_LOG);
-
-					enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), POS_TYPE_LOG_FROM_ABOVE, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), POS_TYPE_LOG, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), POS_TYPE_LOG, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), POS_TYPE_LOG, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), POS_TYPE_LOG, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), POS_TYPE_LOG, newDepth);
-
-					enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, newDepth);
-
-					enqueIfViable(BlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, newDepth);
-					enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL_BELOW, newDepth);
+				if (diagonal) {
+					enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), SEARCH_LOG_DIAGONAL_DOWN, newDepth);
 				} else {
-					if (fromType == POS_TYPE_LOG_FROM_ABOVE) {
-						// if found a supporting block for a connected log
-						// then tree remains standing
-						if (Block.isFaceFullSquare(state.getCollisionShape(world, searchPos, ShapeContext.absent()), Direction.UP)) {
-							return Operation.COMPLETE;
-						}
-					}
-					visited.put(packedPos, POS_TYPE_IGNORE);
+					enqueIfViable(BlockPos.add(packedPos, 0, -1, 0), SEARCH_LOG_DOWN, newDepth);
 				}
 
+				final int newDirectType = diagonal ? SEARCH_LOG_DIAGONAL : SEARCH_LOG;
+
+				enqueIfViable(BlockPos.add(packedPos, 0, 1, 0), newDirectType, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, -1, 0, 0), newDirectType, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 1, 0, 0), newDirectType, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 0, 0, -1), newDirectType, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 0, 0, 1), newDirectType, newDepth);
+
+				enqueIfViable(BlockPos.add(packedPos, -1, 0, -1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, -1, 0, 1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 1, 0, -1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 1, 0, 1), SEARCH_LOG_DIAGONAL, newDepth);
+
+				enqueIfViable(BlockPos.add(packedPos, -1, 1, -1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, -1, 1, 0), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, -1, 1, 1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 0, 1, -1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 0, 1, 1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 1, 1, -1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 1, 1, 0), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 1, 1, 1), SEARCH_LOG_DIAGONAL, newDepth);
+
+				enqueIfViable(BlockPos.add(packedPos, -1, -1, -1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, -1, -1, 0), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, -1, -1, 1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 0, -1, -1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 0, -1, 1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 1, -1, -1), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 1, -1, 0), SEARCH_LOG_DIAGONAL, newDepth);
+				enqueIfViable(BlockPos.add(packedPos, 1, -1, 1), SEARCH_LOG_DIAGONAL, newDepth);
+			} else {
+				if (searchType == SEARCH_LOG_DOWN) {
+					// if found a supporting block for a directly connected log
+					// then tree remains standing
+					if (Block.isFaceFullSquare(state.getCollisionShape(world, searchPos, ShapeContext.absent()), Direction.UP)) {
+						return Operation.COMPLETE;
+					}
+				} else if (searchType == SEARCH_LOG_DIAGONAL_DOWN) {
+					// if found a supporting block for a diagonally connected log
+					// then record it for later reverse search
+					if (Block.isFaceFullSquare(state.getCollisionShape(world, searchPos, ShapeContext.absent()), Direction.UP)) {
+						visited.put(packedPos, SEARCH_SUPPORT);
+					} else {
+						visited.put(packedPos, SEARCH_IGNORE);
+					}
+				} else {
+					visited.put(packedPos, SEARCH_IGNORE);
+				}
 			}
+
+			//			}
 		}
 
 		if (this.toVisit.isEmpty()) {
 			prepIt = visited.long2IntEntrySet().iterator();
+
 			return opDoPreClearing;
 		} else {
-			return opDoSearch;
+			return opDoForwardSearch;
 		}
 	}
 
@@ -408,26 +541,26 @@ public class TreeCutter {
 			final Entry e = prepIt.next();
 			final int type = e.getIntValue();
 
-			if (type != POS_TYPE_IGNORE) {
+			if (type != SEARCH_IGNORE && type != SEARCH_SUPPORT) {
 				final long pos = e.getLongKey();
 				doomed.add(pos);
 
-				if (type == POS_TYPE_LEAF) {
-					if (Configurator.keepLogsIntact) {
-						xSum += (BlockPos.unpackLongX(pos) - xStart);
-						zSum += (BlockPos.unpackLongZ(pos) - zStart);
-						leaves.enqueue(pos);
-					} else if (Configurator.fastLeafDecay) {
-						leaves.enqueue(pos);
-					}
-				} else {
-					if (Configurator.keepLogsIntact) {
-						xSum += (BlockPos.unpackLongX(pos) - xStart) * LOG_FACTOR;
-						zSum += (BlockPos.unpackLongZ(pos) - zStart) * LOG_FACTOR;
-					}
-
-					logs.enqueue(pos);
+				//				if (type == POS_TYPE_LEAF) {
+				//					if (Configurator.keepLogsIntact) {
+				//						xSum += (BlockPos.unpackLongX(pos) - xStart);
+				//						zSum += (BlockPos.unpackLongZ(pos) - zStart);
+				//						leaves.enqueue(pos);
+				//					} else if (Configurator.fastLeafDecay) {
+				//						leaves.enqueue(pos);
+				//					}
+				//				} else {
+				if (Configurator.keepLogsIntact) {
+					xSum += (BlockPos.unpackLongX(pos) - xStart) * LOG_FACTOR;
+					zSum += (BlockPos.unpackLongZ(pos) - zStart) * LOG_FACTOR;
 				}
+
+				logs.enqueue(pos);
+				//				}
 			}
 
 			return opDoPreClearing;
