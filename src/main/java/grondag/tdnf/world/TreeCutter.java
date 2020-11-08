@@ -77,6 +77,9 @@ public class TreeCutter {
 	/** packed positions that have received a valid visit on leaf pass */
 	private final Long2IntOpenHashMap leafVisits = new Long2IntOpenHashMap();
 
+	/** packed positions of supports for inverse search - populated during forward search */
+	private final LongArrayFIFOQueue supports = new LongArrayFIFOQueue();
+
 	private final LongOpenHashSet doomed = new LongOpenHashSet();
 
 	/** packed positions of logs to be cleared - populated during pre-clearing */
@@ -122,123 +125,60 @@ public class TreeCutter {
 
 	private Axis fallAxis = Axis.X;
 
+	// Numeric order here drives priority queue
+
+	/** used in queue but not in visits */
 	private static final int SEARCH_LOG_DOWN = 0;
 	private static final int SEARCH_LOG = 1;
-	private static final int SEARCH_LOG_DIAGONAL = 2;
-	private static final int SEARCH_LOG_DIAGONAL_DOWN = 3;
+	/** used in queue but not in visits */
+	private static final int SEARCH_LOG_DIAGONAL_DOWN = 2;
+	private static final int SEARCH_LOG_DIAGONAL = 3;
 	private static final int SEARCH_IGNORE = 4;
 	private static final int SEARCH_SUPPORT = 5;
 	private static final int SEARCH_LEAF = 6;
 
-	// all below are for compact representation of search space
-	// The meaning of LOG or LEAF is different in search queue vs. visited map and break queue.
-	// In search queue they describe how the position was reached, not the content of the search position
-	// In the visited map/break queues they describe the type of block at that position.
-	//	/**
-	//	 * Log (or search position) that was reached from a log above.
-	//	 * Separate for other non-diagonal logs so that we search downward
-	//	 * first and get early exit on big trees that have support near the
-	//	 * starting search position. <p>
-	//	 *
-	//	 * Also used to detect a support block (non-log solid block directly below a log.)<p>
-	//	 *
-	//	 * Can transmit support in any direction.
-	//	 */
-	//	private static final int POS_TYPE_LOG_DOWN = 0;
-	//
-	//	/**
-	//	 * Log (or search position) reached directly from the side or from below.
-	//	 * Can transmit support in any direction.
-	//	 */
-	//	private static final int POS_TYPE_LOG = 1;
-	//
-	//	/**
-	//	 * Log (or search position) reached sideways diagonally from another
-	//	 * sideways diagonal log or from a directly-adjacent log.<p>
-	//	 *
-	//	 * Can transmit support only to other diagonal logs or leaves.
-	//	 * This means child positions must either be another diagonal log or a leaf.
-	//	 */
-	//	private static final int POS_TYPE_LOG_DIAGONAL = 2;
-	//
-	//	/**
-	//	 * Log (or search position) reached diagonally up from another
-	//	 * sideways or up diagonal log or from a directly-adjacent log.<p>
-	//	 *
-	//	 * Can transmit support only to other up diagonal logs or leaves.
-	//	 * This means child positions must either be another up diagonal log or a leaf.
-	//	 * Sideways diagonal positions that originate from a up diagonal
-	//	 * are classified as up diagonals.
-	//	 */
-	//	private static final int POS_TYPE_LOG_DIAGONAL_UP = 3;
-	//
-	//	/**
-	//	 * Log (or search position) reached diagonally down from another
-	//	 * sideways or down diagonal log or from a directly-adjacent log.<p>
-	//	 *
-	//	 * Can transmit support only to other down diagonal logs or leaves.
-	//	 * This means child positions must either be another down diagonal log or a leaf.
-	//	 * Sideways diagonal positions that originate from a down diagonal
-	//	 * are classified as down diagonals.
-	//	 */
-	//	private static final int POS_TYPE_LOG_DIAGONAL_DOWN = 4;
-	//
-	//	private static final int POS_TYPE_LEAF = 5;
-	//
-	//	/**
-	//	 * Support block. Will end search when directly below a directly connected log.
-	//	 * Only saved to visited set when found under a diagonally connected log
-	//	 * to enable reverse search for non-breaking.
-	//	 */
-	//	private static final int POS_TYPE_SUPPORT = 6;
-	//	private static final int POS_TYPE_IGNORE = 7;
+	/** default map return value - prevents ambiguity */
+	private static final int SEARCH_NOT_PRESENT = Integer.MAX_VALUE;
 
-	//	private static final int[] RULES = new int[8 * 8];
+	//	 All below are for compact representation of reverse search space
+	/**
+	 * Log (or search position) reached directly via adjacent sides.
+	 * Can transmit support in any direction.
+	 */
+	private static final int REVERSE_LOG = 0;
 
-	//	static {
-	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_LOG_DOWN << 3)] = POS_TYPE_LOG_DOWN;
-	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_LOG << 3)] = POS_TYPE_LOG;
-	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_LOG_DIAGONAL << 3)] = POS_TYPE_LOG_DIAGONAL;
-	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_LOG_DIAGONAL_UP << 3)] = POS_TYPE_IGNORE; // shouldn't be possible, right?
-	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_LOG_DIAGONAL_DOWN << 3)] = POS_TYPE_LOG_DIAGONAL_DOWN;
-	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_LEAF << 3)] = POS_TYPE_LEAF;
-	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_SUPPORT << 3)] = POS_TYPE_SUPPORT;
-	//		RULES[POS_TYPE_LOG_DOWN | (POS_TYPE_IGNORE << 3)] = POS_TYPE_IGNORE;
-	//
-	//		RULES[POS_TYPE_LOG | (POS_TYPE_LOG_DOWN << 3)] = POS_TYPE_LOG_DOWN;
-	//		RULES[POS_TYPE_LOG | (POS_TYPE_LOG << 3)] = POS_TYPE_LOG;
-	//		RULES[POS_TYPE_LOG | (POS_TYPE_LOG_DIAGONAL << 3)] = POS_TYPE_LOG_DIAGONAL;
-	//		RULES[POS_TYPE_LOG | (POS_TYPE_LOG_DIAGONAL_UP << 3)] = POS_TYPE_LOG_DIAGONAL_UP;
-	//		RULES[POS_TYPE_LOG | (POS_TYPE_LOG_DIAGONAL_DOWN << 3)] = POS_TYPE_LOG_DIAGONAL_DOWN;
-	//		RULES[POS_TYPE_LOG | (POS_TYPE_LEAF << 3)] = POS_TYPE_LEAF;
-	//		RULES[POS_TYPE_LOG | (POS_TYPE_SUPPORT << 3)] = POS_TYPE_SUPPORT;
-	//		RULES[POS_TYPE_LOG | (POS_TYPE_IGNORE << 3)] = POS_TYPE_IGNORE;
-	//
-	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_LOG_DOWN << 3)] = POS_TYPE_LOG_DIAGONAL;
-	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_LOG << 3)] = POS_TYPE_LOG_DIAGONAL;
-	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_LOG_DIAGONAL << 3)] = POS_TYPE_LOG_DIAGONAL;
-	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_LOG_DIAGONAL_UP << 3)] = POS_TYPE_LOG_DIAGONAL_UP;
-	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_LOG_DIAGONAL_DOWN << 3)] = POS_TYPE_LOG_DIAGONAL_DOWN;
-	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_LEAF << 3)] = POS_TYPE_LEAF;
-	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_SUPPORT << 3)] = POS_TYPE_SUPPORT;
-	//		RULES[POS_TYPE_LOG_DIAGONAL | (POS_TYPE_IGNORE << 3)] = POS_TYPE_IGNORE;
-	//
-	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_LOG_DOWN << 3)] = POS_TYPE_IGNORE;
-	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_LOG << 3)] = POS_TYPE_LOG_DIAGONAL;
-	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_LOG_DIAGONAL << 3)] = POS_TYPE_LOG_DIAGONAL;
-	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_LOG_DIAGONAL_UP << 3)] = POS_TYPE_LOG_DIAGONAL_UP;
-	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_LOG_DIAGONAL_DOWN << 3)] = POS_TYPE_LOG_DIAGONAL_DOWN;
-	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_LEAF << 3)] = POS_TYPE_LEAF;
-	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_SUPPORT << 3)] = POS_TYPE_SUPPORT;
-	//		RULES[POS_TYPE_LOG_DIAGONAL_UP | (POS_TYPE_IGNORE << 3)] = POS_TYPE_IGNORE;
-	//	}
+	/**
+	 * Log (or search position) reached sideways diagonally from another
+	 * sideways diagonal log or from a directly-connected log.<p>
+	 *
+	 * Can transmit support only to other diagonal logs.
+	 * This means child positions must also be diagonal.
+	 */
+	private static final int REVERSE_DIAGONAL = 1;
 
-	//	private static int propagateReverseSearch(int fromType, int toType) {
-	//		return RULES[fromType | (toType << 3)];
-	//	}
+	/**
+	 * Log (or search position) reached diagonally up from another
+	 * sideways or up diagonal log or from a directly-adjacent log.<p>
+	 *
+	 * Can transmit support only to other up diagonal logs.
+	 * Sideways diagonal positions that originate from an up diagonal
+	 * are classified as up diagonals.
+	 */
+	private static final int REVERSE_DIAGONAL_UP = 2;
+
+	/**
+	 * Log (or search position) reached diagonally down from another
+	 * sideways or down diagonal log or from a directly-adjacent log.<p>
+	 *
+	 * Can transmit support only to other down diagonal logs.
+	 * Sideways diagonal positions that originate from a down diagonal
+	 * are classified as down diagonals.
+	 */
+	private static final int REVERSE_DIAGONAL_DOWN = 3;
 
 	TreeCutter(TreeJob job) {
 		this.job = job;
+		forwardVisits.defaultReturnValue(SEARCH_NOT_PRESENT);
 	}
 
 	private long packedVisit(long packedPos, int depth, int type) {
@@ -253,16 +193,7 @@ public class TreeCutter {
 		final int py = y & 0xFF;
 		final int pz = (z + 255 - zStart) & 511;
 
-		final long result = px | (py << 9) | (pz << 17) | ((long) depth << 26) | ((long) type << 34);
-
-		//		final long testUnpack = getVisitPackedPos(result);
-		//		assert BlockPos.unpackLongX(testUnpack) == x;
-		//		assert BlockPos.unpackLongY(testUnpack) == y;
-		//		assert BlockPos.unpackLongZ(testUnpack) == z;
-		//		assert getVisitPackedDepth(result) == depth;
-		//		assert getVisitPackedType(result) == type;
-
-		return result;
+		return px | (py << 9) | (pz << 17) | ((long) depth << 26) | ((long) type << 34);
 	}
 
 	private int getVisitPackedDepth(long visit) {
@@ -293,6 +224,7 @@ public class TreeCutter {
 		dropHandler.reset(job);
 		forwardVisits.clear();
 		leafVisits.clear();
+		supports.clear();
 		doomed.clear();
 		toVisit.clear();
 		logs.clear();
@@ -438,12 +370,15 @@ public class TreeCutter {
 					// then tree remains standing
 					if (Block.isFaceFullSquare(state.getCollisionShape(world, searchPos, ShapeContext.absent()), Direction.UP)) {
 						return Operation.COMPLETE;
+					} else {
+						forwardVisits.put(packedPos, SEARCH_IGNORE);
 					}
 				} else if (searchType == SEARCH_LOG_DIAGONAL_DOWN) {
 					// if found a supporting block for a diagonally connected log
 					// then record it for later reverse search
 					if (Block.isFaceFullSquare(state.getCollisionShape(world, searchPos, ShapeContext.absent()), Direction.UP)) {
 						forwardVisits.put(packedPos, SEARCH_SUPPORT);
+						supports.enqueue(packedVisit(BlockPos.add(packedPos, 0, 1, 0), 0, REVERSE_LOG));
 					} else {
 						forwardVisits.put(packedPos, SEARCH_IGNORE);
 					}
@@ -454,9 +389,12 @@ public class TreeCutter {
 		}
 
 		if (this.toVisit.isEmpty()) {
-			visitIterator = forwardVisits.long2IntEntrySet().iterator();
-
-			return opPreProcessLogs;
+			if (supports.isEmpty()) {
+				visitIterator = forwardVisits.long2IntEntrySet().iterator();
+				return opPreProcessLogs;
+			} else {
+				return opReverseSearch;
+			}
 		} else {
 			return opForwardSearch;
 		}
@@ -474,6 +412,83 @@ public class TreeCutter {
 		toVisit.enqueue(packedVisit(packedPos, depth, type));
 	}
 
+	private final Operation opReverseSearch = this::reverseSearch;
+
+	private boolean canReverseSearchRemove(long packedPos) {
+		// must be a log at search position for us to do anything
+		// log may have been removed by an earlier iteration
+		// never remove directly connected logs
+		return forwardVisits.get(packedPos) == SEARCH_LOG_DIAGONAL;
+	}
+
+	/**
+	 * Searches backwards from supports and removes logs with support and weak connections to break start.
+	 */
+	private Operation reverseSearch(World world) {
+		long visit;
+
+		if (toVisit.isEmpty()) {
+			if (supports.isEmpty()) {
+				visitIterator = forwardVisits.long2IntEntrySet().iterator();
+				return opPreProcessLogs;
+			} else {
+				visit = supports.dequeueLong();
+			}
+		} else {
+			visit = toVisit.dequeueLong();
+		}
+
+		final long packedPos = getVisitPackedPos(visit);
+		final int searchType = getVisitPackedType(visit);
+
+		if (canReverseSearchRemove(packedPos)) {
+			forwardVisits.remove(packedPos);
+
+			enqueReverseIfViable(BlockPos.add(packedPos, 0, 1, 0), searchType);
+			enqueReverseIfViable(BlockPos.add(packedPos, -1, 0, 0), searchType);
+			enqueReverseIfViable(BlockPos.add(packedPos, 1, 0, 0), searchType);
+			enqueReverseIfViable(BlockPos.add(packedPos, 0, 0, -1), searchType);
+			enqueReverseIfViable(BlockPos.add(packedPos, 0, 0, 1), searchType);
+
+			final int newType = searchType == REVERSE_LOG ? REVERSE_DIAGONAL : searchType;
+
+			enqueReverseIfViable(BlockPos.add(packedPos, -1, 0, -1), newType);
+			enqueReverseIfViable(BlockPos.add(packedPos, -1, 0, 1), newType);
+			enqueReverseIfViable(BlockPos.add(packedPos, 1, 0, -1), newType);
+			enqueReverseIfViable(BlockPos.add(packedPos, 1, 0, 1), newType);
+
+			if (searchType != REVERSE_DIAGONAL_DOWN) {
+				enqueReverseIfViable(BlockPos.add(packedPos, -1, 1, -1), REVERSE_DIAGONAL_UP);
+				enqueReverseIfViable(BlockPos.add(packedPos, -1, 1, 0), REVERSE_DIAGONAL_UP);
+				enqueReverseIfViable(BlockPos.add(packedPos, -1, 1, 1), REVERSE_DIAGONAL_UP);
+				enqueReverseIfViable(BlockPos.add(packedPos, 0, 1, -1), REVERSE_DIAGONAL_UP);
+				enqueReverseIfViable(BlockPos.add(packedPos, 0, 1, 1), REVERSE_DIAGONAL_UP);
+				enqueReverseIfViable(BlockPos.add(packedPos, 1, 1, -1), REVERSE_DIAGONAL_UP);
+				enqueReverseIfViable(BlockPos.add(packedPos, 1, 1, 0), REVERSE_DIAGONAL_UP);
+				enqueReverseIfViable(BlockPos.add(packedPos, 1, 1, 1), REVERSE_DIAGONAL_UP);
+			}
+
+			if (searchType != REVERSE_DIAGONAL_UP) {
+				enqueReverseIfViable(BlockPos.add(packedPos, -1, -1, -1), REVERSE_DIAGONAL_DOWN);
+				enqueReverseIfViable(BlockPos.add(packedPos, -1, -1, 0), REVERSE_DIAGONAL_DOWN);
+				enqueReverseIfViable(BlockPos.add(packedPos, -1, -1, 1), REVERSE_DIAGONAL_DOWN);
+				enqueReverseIfViable(BlockPos.add(packedPos, 0, -1, -1), REVERSE_DIAGONAL_DOWN);
+				enqueReverseIfViable(BlockPos.add(packedPos, 0, -1, 1), REVERSE_DIAGONAL_DOWN);
+				enqueReverseIfViable(BlockPos.add(packedPos, 1, -1, -1), REVERSE_DIAGONAL_DOWN);
+				enqueReverseIfViable(BlockPos.add(packedPos, 1, -1, 0), REVERSE_DIAGONAL_DOWN);
+				enqueReverseIfViable(BlockPos.add(packedPos, 1, -1, 1), REVERSE_DIAGONAL_DOWN);
+			}
+		}
+
+		return opReverseSearch;
+	}
+
+	private void enqueReverseIfViable(long packedPos, int type) {
+		if (canReverseSearchRemove(packedPos)) {
+			toVisit.enqueue(packedVisit(packedPos, 0, type));
+		}
+	}
+
 	private final Operation opPreProcessLogs = this::preProcessLogs;
 
 	/**
@@ -481,6 +496,8 @@ public class TreeCutter {
 	 */
 	private Operation preProcessLogs(World world) {
 		final ObjectIterator<Entry> it = visitIterator;
+
+		// TODO: add break range limits based on tool tier/enchantment/config
 
 		if (it.hasNext()) {
 			final Entry e = it.next();
@@ -570,8 +587,6 @@ public class TreeCutter {
 			if (block.isIn(BlockTags.LEAVES)) {
 				final LeafInfo inf = LeafInfo.get(block);
 				final int actualDepth = inf.applyAsInt(state);
-				// TODO: <= ?
-				System.out.println("Expected: " + expectedDepth + "   Actual: " + inf.applyAsInt(state));
 
 				// Leaves directly adjacent always included
 				// Otherwise must have expected distance
