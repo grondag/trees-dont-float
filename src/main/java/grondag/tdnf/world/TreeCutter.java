@@ -252,8 +252,11 @@ public class TreeCutter {
 			dropHandler.spawnDrops(world);
 			operation = Operation.COMPLETE;
 		} else {
+			int i = 0;
 			// PERF: do multiple operations per tick call, especially for fast operations like search
-			operation = operation.apply(world);
+			do {
+				operation = operation.apply(world);
+			} while (++i <= 8 && canRun() && operation != Operation.COMPLETE);
 		}
 	}
 
@@ -364,6 +367,8 @@ public class TreeCutter {
 				enqueForwardIfViable(BlockPos.add(packedPos, 1, -1, -1), SEARCH_LOG_DIAGONAL, newDepth);
 				enqueForwardIfViable(BlockPos.add(packedPos, 1, -1, 0), SEARCH_LOG_DIAGONAL, newDepth);
 				enqueForwardIfViable(BlockPos.add(packedPos, 1, -1, 1), SEARCH_LOG_DIAGONAL, newDepth);
+			} else if (state.getBlock().isIn(BlockTags.LEAVES)) {
+				forwardVisits.put(packedPos, SEARCH_IGNORE);
 			} else {
 				if (searchType == SEARCH_LOG_DOWN) {
 					// if found a supporting block for a directly connected log
@@ -601,7 +606,7 @@ public class TreeCutter {
 						leaves.enqueue(packedPos);
 					}
 
-					expectedDepth = actualDepth + 1;
+					expectedDepth = Math.min(inf.maxDistance, actualDepth + 1);
 					enqueLeafIfViable(BlockPos.add(packedPos, 0, -1, 0), SEARCH_LEAF, expectedDepth);
 					enqueLeafIfViable(BlockPos.add(packedPos, 0, 1, 0), SEARCH_LEAF, expectedDepth);
 					enqueLeafIfViable(BlockPos.add(packedPos, -1, 0, 0), SEARCH_LEAF, expectedDepth);
@@ -610,7 +615,7 @@ public class TreeCutter {
 					enqueLeafIfViable(BlockPos.add(packedPos, 0, 0, 1), SEARCH_LEAF, expectedDepth);
 
 					// diagonals are one more - Manhattan distance
-					++expectedDepth;
+					expectedDepth = Math.min(inf.maxDistance, expectedDepth + 1);
 					enqueLeafIfViable(BlockPos.add(packedPos, -1, 0, -1), SEARCH_LEAF, expectedDepth);
 					enqueLeafIfViable(BlockPos.add(packedPos, -1, 0, 1), SEARCH_LEAF, expectedDepth);
 					enqueLeafIfViable(BlockPos.add(packedPos, 1, 0, -1), SEARCH_LEAF, expectedDepth);
@@ -633,9 +638,9 @@ public class TreeCutter {
 					enqueLeafIfViable(BlockPos.add(packedPos, 1, -1, -1), SEARCH_LEAF, expectedDepth);
 					enqueLeafIfViable(BlockPos.add(packedPos, 1, -1, 0), SEARCH_LEAF, expectedDepth);
 					enqueLeafIfViable(BlockPos.add(packedPos, 1, -1, 1), SEARCH_LEAF, expectedDepth);
-				} else {
-					leafVisits.put(packedPos, SEARCH_IGNORE);
 				}
+
+				// Don't ignore leaves if distance doesn't match - may be matched via a different path
 			} else {
 				leafVisits.put(packedPos, SEARCH_IGNORE);
 			}
