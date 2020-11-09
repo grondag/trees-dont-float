@@ -18,14 +18,28 @@ package grondag.tdnf.world;
 
 import net.minecraft.block.BlockState;
 
-public interface LogTest {
-	int LOG = 0;
-	int UNKNOWN = 1;
-	int OTHER = 2;
+public interface TreeBlock {
+	int UNKNOWN = 0;
+	int LOG = 1;
+	int FUNGUS_LOG = 2;
+	int FUNGUS_LEAF = 4;
+	int OTHER = 8;
 
-	boolean isLog();
+	int LOG_MASK = LOG | FUNGUS_LOG;
 
-	static boolean test(BlockState blockState) {
-		return ((LogTest) blockState.getBlock()).isLog();
+	int FUNGUS_MASK = FUNGUS_LOG | FUNGUS_LEAF;
+
+	int treeBlockType();
+
+	default boolean isLog() {
+		return (treeBlockType() & LOG_MASK) != 0;
+	}
+
+	static int getType(BlockState blockState) {
+		return ((TreeBlock) blockState.getBlock()).treeBlockType();
+	}
+
+	static boolean isLog(BlockState blockState) {
+		return ((TreeBlock) blockState.getBlock()).isLog();
 	}
 }

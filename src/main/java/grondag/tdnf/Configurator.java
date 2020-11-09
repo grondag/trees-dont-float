@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import blue.endless.jankson.Comment;
 import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonObject;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -133,6 +134,28 @@ public class Configurator {
 
 		@Comment("Tree cutting jobs will be abandoned if they take longer than tnis number of ticks. 20-2400")
 		public int jobTimeoutTicks = 200;
+
+		@Comment("IDs of modded blocks to be handled the same as Minecraft big mushrooms. Not strictly needed if the block is in the LOGS tag or is a subtype of MushroomBlock.")
+		public String[] moddedMushroomBlocks = {
+		"byg:weeping_milkcap_mushroom_block",
+		"byg:green_mushroom_block",
+		"byg:soul_shroom_stem",
+		"byg:death_cap_mushroom_block"
+		};
+
+		@Comment("IDs of modded blocks to handle the same as vanilla Warped/Crimson stems. Activates dropping of wart blocks / shroomlights.")
+		public String[] moddedFungusLogs = {
+		"cinderscapes:umbral_stem",
+		"byg:sythian_stems"
+		};
+
+		@Comment("IDs of modded blocks to handle the same as vanilla Warped/Crimson wart blocks and shroomlights.")
+		public String[] moddedFungusLeaves = {
+		"cinderscapes:umbral_flesh_block",
+		"cinderscapes:umbral_wart_block",
+		"byg:sythian_wart_block",
+		"byg:shulkren_wart_block"
+		};
 	}
 
 	public static final ConfigData DEFAULTS = new ConfigData();
@@ -147,6 +170,9 @@ public class Configurator {
 	public static boolean fallingLogsBreakPlants = DEFAULTS.fallingLogsBreakPlants;
 	public static boolean fallingLogsBreakFragile = DEFAULTS.fallingLogsBreakFragile;
 	public static ActiveWhen activeWhen = DEFAULTS.activeWhen;
+	public static ImmutableSet<String> moddedMushroomBlocks = ImmutableSet.copyOf(DEFAULTS.moddedMushroomBlocks);
+	public static ImmutableSet<String> moddedFungusLogs = ImmutableSet.copyOf(DEFAULTS.moddedFungusLogs);
+	public static ImmutableSet<String> moddedFungusLeaves = ImmutableSet.copyOf(DEFAULTS.moddedFungusLeaves);
 
 	// PLAYERS
 	public static boolean directDeposit = DEFAULTS.directDeposit;
@@ -176,7 +202,7 @@ public class Configurator {
 
 
 	public static void init() {
-		configFile = new File(FabricLoader.getInstance().getConfigDir().toFile(), "trees-do-not-float.json5");
+		configFile = new File(FabricLoader.getInstance().getConfigDir().toFile(), "tdnf2.json5");
 
 		if (configFile.exists()) {
 			loadConfig();
@@ -204,6 +230,9 @@ public class Configurator {
 		fallingLogsBreakPlants = config.fallingLogsBreakPlants;
 		fallingLogsBreakFragile = config.fallingLogsBreakFragile;
 		activeWhen = config.activeWhen;
+		moddedMushroomBlocks = ImmutableSet.copyOf(config.moddedMushroomBlocks);
+		moddedFungusLogs = ImmutableSet.copyOf(config.moddedFungusLogs);
+		moddedFungusLeaves = ImmutableSet.copyOf(config.moddedFungusLeaves);
 
 		// PLAYERS
 		directDeposit = config.directDeposit;

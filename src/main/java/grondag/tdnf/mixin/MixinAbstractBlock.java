@@ -19,7 +19,7 @@ import grondag.tdnf.Configurator;
 import grondag.tdnf.Configurator.FallCondition;
 import grondag.tdnf.PlayerBreakHandler;
 import grondag.tdnf.world.Dispatcher;
-import grondag.tdnf.world.LogTest;
+import grondag.tdnf.world.TreeBlock;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,6 +29,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.Material;
 import net.minecraft.block.MushroomBlock;
 import net.minecraft.block.ShapeContext;
@@ -36,32 +37,44 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 
 @Mixin(AbstractBlock.class)
-public abstract class MixinAbstractBlock implements LogTest {
+public abstract class MixinAbstractBlock implements TreeBlock {
 	private int blockType = UNKNOWN;
 
 	@Shadow protected Material material;
 
 	@Override
-	public boolean isLog() {
+	public int treeBlockType() {
 		int result = blockType;
 
 		if(result == UNKNOWN) {
+			final Block self = (Block)(Object) this;
 
-			if(BlockTags.LOGS.contains((Block)(Object) this) && (material == Material.WOOD || material == Material.NETHER_WOOD)) {
-				result = LOG;
-			} else if (MushroomBlock.class.isInstance(this)) {
-				result = LOG;
+			if(BlockTags.LOGS.contains(self) && (material == Material.WOOD || material == Material.NETHER_WOOD)) {
+				if (self == Blocks.CRIMSON_STEM || self == Blocks.WARPED_STEM || Configurator.moddedFungusLogs.contains(Registry.BLOCK.getId(self).toString())) {
+					result = FUNGUS_LOG;
+				} else {
+					result = LOG;
+				}
+			} else if (MushroomBlock.class.isInstance(this) || Configurator.moddedMushroomBlocks.contains(Registry.BLOCK.getId(self).toString())) {
+				result = FUNGUS_LOG;
+			} else if (self == Blocks.NETHER_WART_BLOCK || self == Blocks.WARPED_WART_BLOCK || self == Blocks.SHROOMLIGHT
+			|| Configurator.moddedFungusLeaves.contains(Registry.BLOCK.getId(self).toString())) {
+				result = FUNGUS_LEAF;
 			} else {
 				result = OTHER;
 			}
 
+			// TODO: remove
+			System.out.println("BlockType for " + Registry.BLOCK.getId(self).toString() + " is " + result);
+
 			blockType = result;
 		}
 
-		return result == LOG;
+		return result;
 	}
 
 	@Inject(at = @At("HEAD"), method = "neighborUpdate")

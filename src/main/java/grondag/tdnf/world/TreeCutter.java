@@ -111,6 +111,8 @@ public class TreeCutter {
 
 	private final FxManager fx = new FxManager();
 
+	private int logMask;
+
 	/** Counter for enforcing configured per-tick break max */
 	private int breakBudget = 0;
 
@@ -275,7 +277,10 @@ public class TreeCutter {
 		searchPos.set(packedPos);
 		final BlockState state = world.getBlockState(searchPos);
 
-		if (LogTest.test(state)) {
+		final int logType = TreeBlock.getType(state);
+
+		if ((logType & TreeBlock.LOG_MASK) != 0) {
+			logMask = logType == TreeBlock.LOG ? TreeBlock.LOG : TreeBlock.FUNGUS_MASK;
 			//            this.startState = state;
 			//            this.startBlock = state.getBlock();
 
@@ -326,7 +331,7 @@ public class TreeCutter {
 		if (!forwardVisits.containsKey(packedPos)) {
 			final BlockState state = world.getBlockState(searchPos);
 
-			if (LogTest.test(state)) {
+			if ((TreeBlock.getType(state) & logMask) != 0) {
 				assert searchType == SEARCH_LOG_DOWN || searchType == SEARCH_LOG || searchType == SEARCH_LOG_DIAGONAL || searchType == SEARCH_LOG_DIAGONAL_DOWN;
 				final boolean diagonal = searchType == SEARCH_LOG_DIAGONAL || searchType == SEARCH_LOG_DIAGONAL_DOWN;
 				forwardVisits.put(packedPos, diagonal ? SEARCH_LOG_DIAGONAL : SEARCH_LOG);
@@ -753,7 +758,7 @@ public class TreeCutter {
 		final BlockPos pos = searchPos.set(packedPos);
 		final BlockState state = world.getBlockState(pos);
 
-		if (LogTest.test(state)) {
+		if ((TreeBlock.getType(state) & logMask) != 0) {
 			if(checkDurability(world, state, pos)) {
 				breakBudget--;
 				breakBlock(pos, world);
@@ -778,7 +783,7 @@ public class TreeCutter {
 		final Block block = blockState.getBlock();
 		final boolean isLeaf = BlockTags.LEAVES.contains(block);
 
-		if (!LogTest.test(blockState) && !isLeaf) {
+		if ((TreeBlock.getType(blockState) & logMask) == 0 && !isLeaf) {
 			// notify fx to increase chance because chance is based on totals reported earlier
 			fx.request(false);
 			return;

@@ -18,7 +18,7 @@ package grondag.tdnf;
 import grondag.tdnf.Configurator.FallCondition;
 import grondag.tdnf.world.Dispatcher;
 import grondag.tdnf.world.DropHandler;
-import grondag.tdnf.world.LogTest;
+import grondag.tdnf.world.TreeBlock;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -49,7 +49,7 @@ public class PlayerBreakHandler {
 	}
 
 	public static boolean beforeBreak(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
-		isLogInProgress = LogTest.test(state);
+		isLogInProgress = TreeBlock.isLog(state);
 		shouldCheckBreakEvents = !isLogInProgress && (player == null || Configurator.activeWhen.test(player));
 		return true;
 	}
@@ -61,7 +61,7 @@ public class PlayerBreakHandler {
 
 	public static void onBreak(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
 		if (isLogInProgress) {
-			if (LogTest.test(state)) {
+			if (TreeBlock.isLog(state)) {
 				if (Configurator.fallCondition != FallCondition.USE_TOOL || DropHandler.hasAxe(player, player.getMainHandStack())) {
 					Dispatcher.enqueCheck((ServerWorld) world, pos, (ServerPlayerEntity) player);
 				}
