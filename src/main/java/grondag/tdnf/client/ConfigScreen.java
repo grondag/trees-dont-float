@@ -37,11 +37,12 @@ import static grondag.tdnf.Configurator.fallCondition;
 import static grondag.tdnf.Configurator.fallingLogsBreakFragile;
 import static grondag.tdnf.Configurator.fallingLogsBreakPlants;
 import static grondag.tdnf.Configurator.fastLeafDecay;
+import static grondag.tdnf.Configurator.jobTimeoutSeconds;
 import static grondag.tdnf.Configurator.jobTimeoutTicks;
 import static grondag.tdnf.Configurator.keepLogsIntact;
 import static grondag.tdnf.Configurator.leafDurability;
 import static grondag.tdnf.Configurator.leafHunger;
-import static grondag.tdnf.Configurator.maxBreaksPerTick;
+import static grondag.tdnf.Configurator.maxBreaksPerSecond;
 import static grondag.tdnf.Configurator.maxFallingBlocks;
 import static grondag.tdnf.Configurator.maxJobsPerWorld;
 import static grondag.tdnf.Configurator.protectTools;
@@ -190,16 +191,16 @@ public class ConfigScreen {
 			.setTooltip(parse("config.tdnf.help.max_jobs_per_world"))
 			.build());
 
-		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.effect_level"), effectsPerSecond, 0, 60)
+		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.effect_level"), effectsPerSecond, 0, 20)
 			.setDefaultValue(DEFAULTS.effectsPerSecond)
 			.setSaveConsumer(b -> effectsPerSecond = b)
 			.setTooltip(parse("config.tdnf.help.effect_level"))
 			.build());
 
-		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.max_breaks_per_tick"), maxBreaksPerTick, 1, 128)
-			.setDefaultValue(DEFAULTS.maxBreaksPerTick)
-			.setSaveConsumer(b -> maxBreaksPerTick = b)
-			.setTooltip(parse("config.tdnf.help.max_breaks_per_tick"))
+		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.max_breaks_per_second"), maxBreaksPerSecond, 1, 2560)
+			.setDefaultValue(DEFAULTS.maxBreaksPerSecond)
+			.setSaveConsumer(b -> maxBreaksPerSecond = b)
+			.setTooltip(parse("config.tdnf.help.max_breaks_per_second"))
 			.build());
 
 		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.tick_budget"), tickBudget, 1, 5)
@@ -214,10 +215,10 @@ public class ConfigScreen {
 			.setTooltip(parse("config.tdnf.help.max_falling_blocks"))
 			.build());
 
-		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.job_timeout_ticks"), jobTimeoutTicks, 20, 2400)
-			.setDefaultValue(DEFAULTS.jobTimeoutTicks)
-			.setSaveConsumer(b -> jobTimeoutTicks = b)
-			.setTooltip(parse("config.tdnf.help.job_timeout_ticks"))
+		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.job_timeout_seconds"), jobTimeoutSeconds, 20, 2400)
+			.setDefaultValue(DEFAULTS.jobTimeoutSeconds)
+			.setSaveConsumer(b -> { jobTimeoutSeconds = b; jobTimeoutTicks = b * 20; })
+			.setTooltip(parse("config.tdnf.help.job_timeout_seconds"))
 			.build());
 
 		builder.setDoesConfirmSave(false);

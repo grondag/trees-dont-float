@@ -68,9 +68,6 @@ public abstract class MixinAbstractBlock implements TreeBlock {
 				result = OTHER;
 			}
 
-			// TODO: remove
-			System.out.println("BlockType for " + Registry.BLOCK.getId(self).toString() + " is " + result);
-
 			blockType = result;
 		}
 

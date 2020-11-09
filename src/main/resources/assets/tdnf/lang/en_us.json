@@ -61,8 +61,8 @@
 	"config.tdnf.value.effect_level" : "Effect Level",
 	"config.tdnf.help.effect_level" : "Spawn breaking particles and play sounds?;Number is max effects per second.",
 	
-	"config.tdnf.value.max_breaks_per_tick" : "Max Breaks per Tick",
-	"config.tdnf.help.max_breaks_per_tick" : "Max log & leaf blocks to break per tick",
+	"config.tdnf.value.max_breaks_per_second" : "Break Speed",
+	"config.tdnf.help.max_breaks_per_second" : "Max log & leaf blocks to break per second",
 	
 	"config.tdnf.value.tick_budget" : "Tick Budget",
 	"config.tdnf.help.tick_budget" : "Max percentage of each server tick;that can be used in each world.",
@@ -73,7 +73,6 @@
 	"config.tdnf.value.support_surface" : "Minimum Support Surface",
 	"config.tdnf.help.support_surface" : "What counts as support for logs?",
 	
-	"config.tdnf.value.job_timeout_ticks" : "Job Timeout Ticks",
-	"config.tdnf.help.job_timeout_ticks" : "Jobs taking longer than this are abandoned.;20 ticks/second."
-	
+	"config.tdnf.value.job_timeout_seconds" : "Job Timeout Seconds",
+	"config.tdnf.help.job_timeout_seconds" : "Jobs taking longer than this are abandoned.;Use larger values with slow breaking speeds."
 }

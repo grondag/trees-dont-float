@@ -57,7 +57,7 @@ public class FxManager {
 		if(dirtyForecast) {
 			if(fxBudget > 0) {
 				final int estimatedTicks = Math.round((fxClockEnd - System.currentTimeMillis()) / 50);
-				final int expectedBreaksThisSecond = Math.min(expectedTotalBreaks, Configurator.maxBreaksPerTick * estimatedTicks);
+				final int expectedBreaksThisSecond = Math.min(expectedTotalBreaks, Configurator.maxBreaksPerSecond * estimatedTicks);
 				fxChance = MathHelper.clamp((float)fxBudget / expectedBreaksThisSecond, 0f, 1f);
 			} else {
 				fxChance = 0;

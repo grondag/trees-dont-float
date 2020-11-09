@@ -113,7 +113,7 @@ public class TreeCutter {
 
 	private int logMask;
 
-	/** Counter for enforcing configured per-tick break max */
+	/** Counter for enforcing configured per-second break max */
 	private int breakBudget = 0;
 
 	private int xStart = 0;
@@ -244,7 +244,9 @@ public class TreeCutter {
 	}
 
 	public void prepareForTick(ServerWorld world) {
-		breakBudget = Configurator.maxBreaksPerTick;
+		final int max = Configurator.maxBreaksPerSecond;
+		breakBudget += max;
+		breakBudget = breakBudget > max ? max : breakBudget;
 		fx.prepareForTick();
 	}
 
@@ -255,7 +257,7 @@ public class TreeCutter {
 			operation = Operation.COMPLETE;
 		} else {
 			int i = 0;
-			// PERF: do multiple operations per tick call, especially for fast operations like search
+
 			do {
 				operation = operation.apply(world);
 			} while (++i <= 8 && canRun() && operation != Operation.COMPLETE);
@@ -742,7 +744,7 @@ public class TreeCutter {
 		if (BlockTags.LEAVES.contains(block)) {
 			if(!Configurator.leafDurability || checkDurability(world, state, pos)) {
 				breakBlock(pos, world);
-				breakBudget--;
+				breakBudget -= 20;
 			} else {
 				return dropHandler.opDoDrops;
 			}
@@ -760,7 +762,7 @@ public class TreeCutter {
 
 		if ((TreeBlock.getType(state) & logMask) != 0) {
 			if(checkDurability(world, state, pos)) {
-				breakBudget--;
+				breakBudget -= 20;
 				breakBlock(pos, world);
 			} else {
 				return dropHandler.opDoDrops;
@@ -859,7 +861,7 @@ public class TreeCutter {
 			applyHunger(false, state.getBlock());
 			world.setBlockState(pos, Blocks.AIR.getDefaultState());
 
-			breakBudget--;
+			breakBudget -= 20;
 			return opDoLogDropping1;
 		} else {
 			return dropHandler.opDoDrops;
@@ -909,7 +911,7 @@ public class TreeCutter {
 				world.spawnEntity(entity);
 			} else {
 				// force exit till next tick
-				breakBudget = 0;
+				breakBudget = breakBudget > 0 ? 0 : breakBudget;
 			}
 
 			return opDoLogDropping2;

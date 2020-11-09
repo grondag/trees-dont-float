@@ -60,9 +60,8 @@ public class Dispatcher {
 			return;
 		}
 
-		System.out.println("Enqueue " + pos.toString() + " " + (player == null ? "null" : player.getEntityName()));
-
 		WorldJobs jobs = worldJobs.get(world);
+
 		if (jobs == null) {
 			jobs = new WorldJobs();
 			worldJobs.put(world, jobs);

@@ -123,17 +123,17 @@ public class Configurator {
 		@Comment("Maximum number of concurrent breaking tasks in each world. 1-256")
 		public int maxJobsPerWorld = 16;
 
-		@Comment("Max log/leaf blocks to break per tick. 1 - 128")
-		public int maxBreaksPerTick = 32;
+		@Comment("Max log/leaf blocks to break per second, per tree. 1 - 2560")
+		public int maxBreaksPerSecond = 640;
 
-		@Comment("Max percentage of each server tick that can be used by TDNF. 1 - 5")
+		@Comment("Max percentage of each server tick that can be used by TDNF in each world. 1 - 5")
 		public int tickBudget = 1;
 
 		@Comment("Max number of active falling block entities. 1 - 64")
 		public int maxFallingBlocks = 16;
 
-		@Comment("Tree cutting jobs will be abandoned if they take longer than tnis number of ticks. 20-2400")
-		public int jobTimeoutTicks = 200;
+		@Comment("Tree cutting jobs will be abandoned if they take longer than this number of seconds. Use larger values if breaking speed is slow. 20-1800")
+		public int jobTimeoutSeconds = 360;
 
 		@Comment("IDs of modded blocks to be handled the same as Minecraft big mushrooms. Not strictly needed if the block is in the LOGS tag or is a subtype of MushroomBlock.")
 		public String[] moddedMushroomBlocks = {
@@ -187,10 +187,11 @@ public class Configurator {
 	public static boolean stackDrops = DEFAULTS.stackDrops;
 	public static int effectsPerSecond = DEFAULTS.effectsPerSecond;
 	public static int maxJobsPerWorld = DEFAULTS.maxJobsPerWorld;
-	public static int maxBreaksPerTick = DEFAULTS.maxBreaksPerTick;
+	public static int maxBreaksPerSecond = DEFAULTS.maxBreaksPerSecond;
 	public static int tickBudget = DEFAULTS.tickBudget;
 	public static int maxFallingBlocks = DEFAULTS.maxFallingBlocks;
-	public static int jobTimeoutTicks = DEFAULTS.jobTimeoutTicks;
+	public static int jobTimeoutSeconds = DEFAULTS.jobTimeoutSeconds;
+	public static int jobTimeoutTicks = jobTimeoutSeconds * 20;
 
 	public static boolean hasBreaking = fallingLogsBreakPlants || fallingLogsBreakFragile;
 
@@ -213,6 +214,7 @@ public class Configurator {
 
 	private static void loadConfig() {
 		ConfigData config = new ConfigData();
+
 		try {
 			final JsonObject configJson = JANKSON.load(configFile);
 			final String regularized = configJson.toJson(false, false, 0);
@@ -245,12 +247,12 @@ public class Configurator {
 
 		// PERFORMANCE
 		stackDrops = config.stackDrops;
-		maxJobsPerWorld = config.maxJobsPerWorld;
-		effectsPerSecond = config.effectsPerSecond;
-		maxBreaksPerTick = MathHelper.clamp(config.maxBreaksPerTick, 1, 128);
-		tickBudget = MathHelper.clamp(config.tickBudget, 1, 20);
+		maxJobsPerWorld = MathHelper.clamp(config.maxJobsPerWorld, 1, 256);
+		effectsPerSecond = MathHelper.clamp(config.effectsPerSecond, 0, 20);
+		maxBreaksPerSecond = MathHelper.clamp(config.maxBreaksPerSecond, 1, 2560);
+		tickBudget = MathHelper.clamp(config.tickBudget, 1, 5);
 		maxFallingBlocks = MathHelper.clamp(config.maxFallingBlocks, 1, 64);
-		jobTimeoutTicks = MathHelper.clamp(config.jobTimeoutTicks, 20, 2400);
+		jobTimeoutSeconds = MathHelper.clamp(config.jobTimeoutSeconds, 20, 1800);
 		computeDerived();
 		//        logSupportSurface = config.minimumSupportSurface;
 	}
@@ -258,6 +260,7 @@ public class Configurator {
 	public static void computeDerived() {
 		hasBreaking = fallingLogsBreakPlants || fallingLogsBreakFragile;
 		BREAKABLES.clear();
+
 		if (fallingLogsBreakPlants) {
 			BREAKABLES.add(Material.BAMBOO);
 			BREAKABLES.add(Material.BAMBOO_SAPLING);
@@ -273,6 +276,8 @@ public class Configurator {
 			BREAKABLES.add(Material.GLASS);
 			BREAKABLES.add(Material.SUPPORTED);
 		}
+
+		jobTimeoutTicks = jobTimeoutSeconds * 20;
 	}
 
 	public static void saveConfig() {
@@ -300,10 +305,10 @@ public class Configurator {
 		config.stackDrops = stackDrops;
 		config.maxJobsPerWorld = maxJobsPerWorld;
 		config.effectsPerSecond = effectsPerSecond;
-		config.maxBreaksPerTick = maxBreaksPerTick;
+		config.maxBreaksPerSecond = maxBreaksPerSecond;
 		config.tickBudget = tickBudget;
 		config.maxFallingBlocks = maxFallingBlocks;
-		config.jobTimeoutTicks = jobTimeoutTicks;
+		config.jobTimeoutSeconds = jobTimeoutSeconds;
 
 		//        config.minimumSupportSurface = logSupportSurface;
 
