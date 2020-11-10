@@ -25,6 +25,8 @@
 	"config.tdnf.value.active_when" : "Active When",
 	"config.tdnf.help.active_when" : "Players can sneak (or not sneak) to disable mod for building.",
 	
+	"config.tdnf.value.break_fungal_leaves" : "Break Fungal Leaves",
+	"config.tdnf.help.break_fungal_leaves" : "Break large fungal wart blocks and Shroomlamps.",
 	
 	"config.tdnf.category.players" : "Players",
 	

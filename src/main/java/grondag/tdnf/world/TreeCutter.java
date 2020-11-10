@@ -288,7 +288,7 @@ public class TreeCutter {
 		final int logType = TreeBlock.getType(state);
 
 		if ((logType & TreeBlock.LOG_MASK) != 0) {
-			logMask = logType == TreeBlock.LOG ? TreeBlock.LOG : TreeBlock.FUNGUS_MASK;
+			logMask = logType == TreeBlock.LOG ? TreeBlock.LOG : (Configurator.breakFungalLeaves ? TreeBlock.FUNGUS_MASK : TreeBlock.FUNGUS_LOG);
 			//            this.startState = state;
 			//            this.startBlock = state.getBlock();
 

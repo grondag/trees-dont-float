@@ -86,6 +86,9 @@ public class Configurator {
 		@Comment("Players can sneak (or not sneak) to disable mod for building. (SNEAKING, NOT_SNEAKING, or ALWAYS)")
 		public ActiveWhen activeWhen = ActiveWhen.NOT_SNEAKING;
 
+		@Comment("Break large fungal wart blocks and Shroomlamps")
+		public boolean breakFungalLeaves = true;
+
 		// PLAYERS
 
 		@Comment("Place dropped items directly into player inventory. (Good for skyblock)")
@@ -186,6 +189,7 @@ public class Configurator {
 	public static ImmutableSet<String> moddedMushroomBlocks = ImmutableSet.copyOf(DEFAULTS.moddedMushroomBlocks);
 	public static ImmutableSet<String> moddedFungusLogs = ImmutableSet.copyOf(DEFAULTS.moddedFungusLogs);
 	public static ImmutableSet<String> moddedFungusLeaves = ImmutableSet.copyOf(DEFAULTS.moddedFungusLeaves);
+	public static boolean breakFungalLeaves = DEFAULTS.breakFungalLeaves;
 
 	// PLAYERS
 	public static boolean directDeposit = DEFAULTS.directDeposit;
@@ -252,6 +256,7 @@ public class Configurator {
 		moddedMushroomBlocks = ImmutableSet.copyOf(config.moddedMushroomBlocks);
 		moddedFungusLogs = ImmutableSet.copyOf(config.moddedFungusLogs);
 		moddedFungusLeaves = ImmutableSet.copyOf(config.moddedFungusLeaves);
+		breakFungalLeaves = config.breakFungalLeaves;
 
 		// PLAYERS
 		directDeposit = config.directDeposit;
@@ -312,6 +317,7 @@ public class Configurator {
 		config.fallingLogsBreakPlants = fallingLogsBreakPlants;
 		config.fallingLogsBreakFragile = fallingLogsBreakFragile;
 		config.activeWhen = activeWhen;
+		config.breakFungalLeaves = breakFungalLeaves;
 
 		// PLAYERS
 		config.directDeposit = directDeposit;

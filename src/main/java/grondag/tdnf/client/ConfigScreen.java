@@ -30,6 +30,7 @@ import static grondag.tdnf.Configurator.DEFAULTS;
 import static grondag.tdnf.Configurator.activeWhen;
 import static grondag.tdnf.Configurator.applyFortune;
 import static grondag.tdnf.Configurator.applyHunger;
+import static grondag.tdnf.Configurator.breakFungalLeaves;
 import static grondag.tdnf.Configurator.consumeDurability;
 import static grondag.tdnf.Configurator.directDeposit;
 import static grondag.tdnf.Configurator.effectsPerSecond;
@@ -131,6 +132,12 @@ public class ConfigScreen {
 			.setSaveConsumer(b -> activeWhen = b)
 			.setEnumNameProvider(a -> new LiteralText(a.toString()))
 			.setTooltip(parse("config.tdnf.help.active_when"))
+			.build());
+
+		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.break_fungal_leaves"), breakFungalLeaves)
+			.setDefaultValue(DEFAULTS.breakFungalLeaves)
+			.setSaveConsumer(b -> breakFungalLeaves = b)
+			.setTooltip(parse("config.tdnf.help.break_fungal_leaves"))
 			.build());
 
 
