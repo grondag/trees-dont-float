@@ -113,10 +113,10 @@ public class Configurator {
 		public int nonPlayerLogLimit = 64;
 
 		@Comment("Logs that can be broken by a player without using a tool.")
-		public int playerBaseLogLimit = 4;
+		public int playerBaseLogLimit = 5;
 
 		@Comment("Additional logs that can be broken when player uses a tool, per tier of tool. Set zero to disable.")
-		public int toolTierLogBonus = 4;
+		public int toolTierLogBonus = 5;
 
 		@Comment("When true, log breaking limit is multiplied by Efficency enchantment level.")
 		public boolean enableEfficiencyLogMultiplier = true;
@@ -261,9 +261,9 @@ public class Configurator {
 		protectTools = config.protectTools;
 		applyHunger = config.applyHunger;
 		leafHunger = config.leafHunger;
-		nonPlayerLogLimit = MathHelper.clamp(config.nonPlayerLogLimit, 0, 4096);
-		playerBaseLogLimit = MathHelper.clamp(config.playerBaseLogLimit, 0, 4096);
-		toolTierLogBonus = MathHelper.clamp(config.toolTierLogBonus, 0, 256);
+		nonPlayerLogLimit = MathHelper.clamp(config.nonPlayerLogLimit, 0, 256);
+		playerBaseLogLimit = MathHelper.clamp(config.playerBaseLogLimit, 0, 256);
+		toolTierLogBonus = MathHelper.clamp(config.toolTierLogBonus, 0, 64);
 		enableEfficiencyLogMultiplier = config.enableEfficiencyLogMultiplier;
 
 		// PERFORMANCE
