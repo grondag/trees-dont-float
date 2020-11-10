@@ -109,6 +109,19 @@ public class Configurator {
 		@Comment("Players gain hunger from leaves in addition to logs.")
 		public boolean leafHunger = false;
 
+		@Comment("Max logs that can be broken by non-player mechanics like pistons, fire and TNT.")
+		public int nonPlayerLogLimit = 64;
+
+		@Comment("Logs that can be broken by a player without using a tool.")
+		public int playerBaseLogLimit = 4;
+
+		@Comment("Additional logs that can be broken when player uses a tool, per tier of tool. Set zero to disable.")
+		public int toolTierLogBonus = 4;
+
+		@Comment("When true, log breaking limit is multiplied by Efficency enchantment level.")
+		public boolean enableEfficiencyLogMultiplier = true;
+
+
 		// PERFORMANCE
 
 		@Comment("Consolidate item drops into stacks to prevent lag.")
@@ -182,6 +195,11 @@ public class Configurator {
 	public static boolean protectTools = DEFAULTS.protectTools;
 	public static boolean applyHunger = DEFAULTS.applyHunger;
 	public static boolean leafHunger = DEFAULTS.leafHunger;
+	public static int nonPlayerLogLimit = DEFAULTS.nonPlayerLogLimit;
+	public static int playerBaseLogLimit = DEFAULTS.playerBaseLogLimit;
+	public static int toolTierLogBonus = DEFAULTS.toolTierLogBonus;
+	public static boolean enableEfficiencyLogMultiplier = DEFAULTS.enableEfficiencyLogMultiplier;
+
 
 	// PERFORMANCE
 	public static boolean stackDrops = DEFAULTS.stackDrops;
@@ -200,7 +218,6 @@ public class Configurator {
 	public static final ObjectOpenHashSet<Material> BREAKABLES = new ObjectOpenHashSet<>();
 
 	private static File configFile;
-
 
 	public static void init() {
 		configFile = new File(FabricLoader.getInstance().getConfigDir().toFile(), "tdnf2.json5");
@@ -244,6 +261,10 @@ public class Configurator {
 		protectTools = config.protectTools;
 		applyHunger = config.applyHunger;
 		leafHunger = config.leafHunger;
+		nonPlayerLogLimit = MathHelper.clamp(config.nonPlayerLogLimit, 0, 4096);
+		playerBaseLogLimit = MathHelper.clamp(config.playerBaseLogLimit, 0, 4096);
+		toolTierLogBonus = MathHelper.clamp(config.toolTierLogBonus, 0, 256);
+		enableEfficiencyLogMultiplier = config.enableEfficiencyLogMultiplier;
 
 		// PERFORMANCE
 		stackDrops = config.stackDrops;
@@ -300,6 +321,10 @@ public class Configurator {
 		config.protectTools = protectTools;
 		config.applyHunger = applyHunger;
 		config.leafHunger = leafHunger;
+		config.nonPlayerLogLimit = nonPlayerLogLimit;
+		config.playerBaseLogLimit = playerBaseLogLimit;
+		config.toolTierLogBonus = toolTierLogBonus;
+		config.enableEfficiencyLogMultiplier = enableEfficiencyLogMultiplier;
 
 		// PERFORMANCE
 		config.stackDrops = stackDrops;

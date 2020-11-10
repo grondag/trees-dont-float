@@ -32,7 +32,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
-import net.fabricmc.fabric.api.tools.FabricToolTags;
+import net.fabricmc.fabric.api.tool.attribute.v1.FabricToolTags;
+
 
 public class DropHandler {
 	public static boolean hasAxe(PlayerEntity player, ItemStack stack) {

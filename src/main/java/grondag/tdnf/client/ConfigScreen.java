@@ -33,6 +33,7 @@ import static grondag.tdnf.Configurator.applyHunger;
 import static grondag.tdnf.Configurator.consumeDurability;
 import static grondag.tdnf.Configurator.directDeposit;
 import static grondag.tdnf.Configurator.effectsPerSecond;
+import static grondag.tdnf.Configurator.enableEfficiencyLogMultiplier;
 import static grondag.tdnf.Configurator.fallCondition;
 import static grondag.tdnf.Configurator.fallingLogsBreakFragile;
 import static grondag.tdnf.Configurator.fallingLogsBreakPlants;
@@ -45,10 +46,13 @@ import static grondag.tdnf.Configurator.leafHunger;
 import static grondag.tdnf.Configurator.maxBreaksPerSecond;
 import static grondag.tdnf.Configurator.maxFallingBlocks;
 import static grondag.tdnf.Configurator.maxJobsPerWorld;
+import static grondag.tdnf.Configurator.nonPlayerLogLimit;
+import static grondag.tdnf.Configurator.playerBaseLogLimit;
 import static grondag.tdnf.Configurator.protectTools;
 import static grondag.tdnf.Configurator.renderFallingLogs;
 import static grondag.tdnf.Configurator.stackDrops;
 import static grondag.tdnf.Configurator.tickBudget;
+import static grondag.tdnf.Configurator.toolTierLogBonus;
 
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.resource.language.I18n;
@@ -175,6 +179,29 @@ public class ConfigScreen {
 			.setTooltip(parse("config.tdnf.help.leaf_hunger"))
 			.build());
 
+		players.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.non_player_log_limit"), nonPlayerLogLimit, 0, 4096)
+			.setDefaultValue(DEFAULTS.nonPlayerLogLimit)
+			.setSaveConsumer(b -> nonPlayerLogLimit = b)
+			.setTooltip(parse("config.tdnf.help.non_player_log_limit"))
+			.build());
+
+		players.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.player_base_log_limit"), playerBaseLogLimit, 0, 4096)
+			.setDefaultValue(DEFAULTS.playerBaseLogLimit)
+			.setSaveConsumer(b -> playerBaseLogLimit = b)
+			.setTooltip(parse("config.tdnf.help.player_base_log_limit"))
+			.build());
+
+		players.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableText("config.tdnf.value.tool_tier_log_bonus"), toolTierLogBonus, 0, 256)
+			.setDefaultValue(DEFAULTS.toolTierLogBonus)
+			.setSaveConsumer(b -> toolTierLogBonus = b)
+			.setTooltip(parse("config.tdnf.help.tool_tier_log_bonus"))
+			.build());
+
+		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableText("config.tdnf.value.enable_efficiency_log_multiplier"), enableEfficiencyLogMultiplier)
+			.setDefaultValue(DEFAULTS.enableEfficiencyLogMultiplier)
+			.setSaveConsumer(b -> enableEfficiencyLogMultiplier = b)
+			.setTooltip(parse("config.tdnf.help.enable_efficiency_log_multiplier"))
+			.build());
 
 		// PERFORMANCE
 		final ConfigCategory performance = builder.getOrCreateCategory(new TranslatableText("config.tdnf.category.performance"));

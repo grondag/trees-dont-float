@@ -25,6 +25,7 @@ import it.unimi.dsi.fastutil.longs.Long2IntMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongComparators;
 import it.unimi.dsi.fastutil.longs.LongHeapPriorityQueue;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -36,8 +37,12 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.PillarBlock;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ToolItem;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.stat.Stats;
@@ -71,8 +76,16 @@ public class TreeCutter {
 
 	private final LongHeapPriorityQueue toVisit = new LongHeapPriorityQueue();
 
-	/** packed positions that have received a valid visit on forward pass */
+	/**
+	 * Packed positions that have received a valid visit on forward pass.
+	 * Values are one of the SEARCH_ constants and when the value indicates a log
+	 * the depth of the log is also stored in the upper bits of the value.
+	 * This enables sorting of logs by depth order later on.
+	 */
 	private final Long2IntOpenHashMap forwardVisits = new Long2IntOpenHashMap();
+
+	private static final int VISIT_TYPE_MASK = 0xFF;
+	private static final int VISIT_DEPTH_SHIFT = 8;
 
 	/** packed positions that have received a valid visit on leaf pass */
 	private final Long2IntOpenHashMap leafVisits = new Long2IntOpenHashMap();
@@ -83,13 +96,7 @@ public class TreeCutter {
 	private final LongOpenHashSet doomed = new LongOpenHashSet();
 
 	/** packed positions of logs to be cleared - populated during pre-clearing */
-	private final LongArrayFIFOQueue logs = new LongArrayFIFOQueue();
-
-	/**
-	 * packed positions of logs to fall - sorted by Y - needed cuz can't sort FIFO
-	 * Queue
-	 */
-	private final LongArrayList fallingLogs = new LongArrayList();
+	private final LongArrayList logs = new LongArrayList();
 
 	private final ObjectArrayList<BlockState> fallingLogStates = new ObjectArrayList<>();
 
@@ -230,7 +237,6 @@ public class TreeCutter {
 		doomed.clear();
 		toVisit.clear();
 		logs.clear();
-		fallingLogs.clear();
 		fallingLogStates.clear();
 		leaves.clear();
 		fx.reset();
@@ -286,6 +292,7 @@ public class TreeCutter {
 			//            this.startState = state;
 			//            this.startBlock = state.getBlock();
 
+			// don't need to mix in depth because will be zero
 			forwardVisits.put(packedPos, SEARCH_LOG);
 
 			// shoudln't really be necessary, but reflect the
@@ -336,7 +343,7 @@ public class TreeCutter {
 			if ((TreeBlock.getType(state) & logMask) != 0) {
 				assert searchType == SEARCH_LOG_DOWN || searchType == SEARCH_LOG || searchType == SEARCH_LOG_DIAGONAL || searchType == SEARCH_LOG_DIAGONAL_DOWN;
 				final boolean diagonal = searchType == SEARCH_LOG_DIAGONAL || searchType == SEARCH_LOG_DIAGONAL_DOWN;
-				forwardVisits.put(packedPos, diagonal ? SEARCH_LOG_DIAGONAL : SEARCH_LOG);
+				forwardVisits.put(packedPos, (diagonal ? SEARCH_LOG_DIAGONAL : SEARCH_LOG) | (newDepth << VISIT_DEPTH_SHIFT));
 
 				if (diagonal) {
 					enqueForwardIfViable(BlockPos.add(packedPos, 0, -1, 0), SEARCH_LOG_DIAGONAL_DOWN, newDepth);
@@ -402,8 +409,7 @@ public class TreeCutter {
 
 		if (this.toVisit.isEmpty()) {
 			if (supports.isEmpty()) {
-				visitIterator = forwardVisits.long2IntEntrySet().iterator();
-				return opPreProcessLogs;
+				return opPreProcessLogs1;
 			} else {
 				return opReverseSearch;
 			}
@@ -430,7 +436,7 @@ public class TreeCutter {
 		// must be a log at search position for us to do anything
 		// log may have been removed by an earlier iteration
 		// never remove directly connected logs
-		return forwardVisits.get(packedPos) == SEARCH_LOG_DIAGONAL;
+		return (forwardVisits.get(packedPos) & VISIT_TYPE_MASK) == SEARCH_LOG_DIAGONAL;
 	}
 
 	/**
@@ -441,8 +447,7 @@ public class TreeCutter {
 
 		if (toVisit.isEmpty()) {
 			if (supports.isEmpty()) {
-				visitIterator = forwardVisits.long2IntEntrySet().iterator();
-				return opPreProcessLogs;
+				return opPreProcessLogs1;
 			} else {
 				visit = supports.dequeueLong();
 			}
@@ -501,42 +506,70 @@ public class TreeCutter {
 		}
 	}
 
-	private final Operation opPreProcessLogs = this::preProcessLogs;
+	private final Operation opPreProcessLogs1 = this::preProcessLogs1;
 
 	/**
 	 * Adds logs to doomed/log collection and enqueues adjacent spaces for leaf search.
 	 */
-	private Operation preProcessLogs(World world) {
-		final ObjectIterator<Entry> it = visitIterator;
+	private Operation preProcessLogs1(World world) {
+		final ObjectIterator<Entry> it = forwardVisits.long2IntEntrySet().iterator();
 
-		// TODO: add break range limits based on tool tier/enchantment/config
-
-		if (it.hasNext()) {
+		while (it.hasNext()) {
 			final Entry e = it.next();
-			final int type = e.getIntValue();
+			final int packedType = e.getIntValue();
+			final int type = packedType & VISIT_TYPE_MASK;
 
 			if (type != SEARCH_IGNORE && type != SEARCH_SUPPORT) {
-				final long pos = e.getLongKey();
-				doomed.add(pos);
-
-				if (Configurator.keepLogsIntact) {
-					xSum += (BlockPos.unpackLongX(pos) - xStart) * LOG_FACTOR;
-					zSum += (BlockPos.unpackLongZ(pos) - zStart) * LOG_FACTOR;
-				}
-
-				logs.enqueue(pos);
-				leafVisits.put(pos, SEARCH_LOG);
-			}
-
-			return opPreProcessLogs;
-		} else {
-			if (logs.isEmpty()) {
-				return Operation.COMPLETE;
-			} else {
-				visitIterator = leafVisits.long2IntEntrySet().iterator();
-				return opFindLeavesPre;
+				logs.add(packedVisit(e.getLongKey(), packedType >>> VISIT_DEPTH_SHIFT, 0));
 			}
 		}
+
+		if (logs.isEmpty()) {
+			return Operation.COMPLETE;
+		} else {
+			logs.sort(LongComparators.NATURAL_COMPARATOR);
+			return opPreProcessLogs2;
+		}
+	}
+
+	private final Operation opPreProcessLogs2 = this::preProcessLogs2;
+
+	/**
+	 * Adds logs to doomed/log collection and enqueues adjacent spaces for leaf search.
+	 */
+	private Operation preProcessLogs2(World world) {
+		// trim logs to size
+		int excess = logs.size() - computeLogLimit(world);
+
+		while (excess-- > 0) {
+			logs.popLong();
+		}
+
+		final int limit = logs.size();
+
+		if (limit == 0) {
+			return Operation.COMPLETE;
+		}
+
+		for (int i = 0; i < limit; ++i) {
+			// replace relative-packed with depth used for sorting with full packed pos
+			final long packed = logs.getLong(i);
+			final long packedPos = getVisitPackedPos(packed);
+			logs.set(i, packedPos);
+
+			if (Configurator.keepLogsIntact) {
+				xSum += (BlockPos.unpackLongX(packedPos) - xStart) * LOG_FACTOR;
+				zSum += (BlockPos.unpackLongZ(packedPos) - zStart) * LOG_FACTOR;
+			}
+
+			leafVisits.put(packedPos, SEARCH_LOG);
+			doomed.add(packedPos);
+		}
+
+		// sort logs bottom-up for falling purposes
+		logs.sort((l0, l1) -> Integer.compare(BlockPos.unpackLongY(l1), BlockPos.unpackLongY(l0)));
+		visitIterator = leafVisits.long2IntEntrySet().iterator();
+		return opFindLeavesPre;
 	}
 
 	private final Operation opFindLeavesPre = this::findLeavesPre;
@@ -695,14 +728,8 @@ public class TreeCutter {
 			fx.addExpected(logs.size());
 		}
 
-		while (!logs.isEmpty()) {
-			fallingLogs.add(logs.dequeueLastLong());
-		}
-
-		fallingLogs.sort((l0, l1) -> Integer.compare(BlockPos.unpackLongY(l1), BlockPos.unpackLongY(l0)));
-
 		if (Configurator.keepLogsIntact) {
-			final double div = fallingLogs.size() * LOG_FACTOR + leaves.size();
+			final double div = logs.size() * LOG_FACTOR + leaves.size();
 			final double xCenterOfMass = xStart + xSum / div;
 			final double zCenterOfMass = zStart + zSum / div;
 			final Random r = ThreadLocalRandom.current();
@@ -723,7 +750,10 @@ public class TreeCutter {
 			xVelocity /= len;
 			zVelocity /= len;
 
-			return opDoLogDropping1;
+			// first pass for entities is top to bottom, positive index good for building state list
+			fallingLogIndex = 0;
+
+			return logs.isEmpty() ? dropHandler.opDoDrops : opDoLogDropping1;
 		} else {
 			return opDoLogClearing;
 		}
@@ -756,7 +786,7 @@ public class TreeCutter {
 	private final Operation opDoLogClearing = this::doLogClearing;
 
 	private Operation doLogClearing(ServerWorld world) {
-		final long packedPos = fallingLogs.popLong();
+		final long packedPos = logs.popLong();
 		final BlockPos pos = searchPos.set(packedPos);
 		final BlockState state = world.getBlockState(pos);
 
@@ -769,7 +799,7 @@ public class TreeCutter {
 			}
 		}
 
-		if(fallingLogs.isEmpty()) {
+		if(logs.isEmpty()) {
 			// drop leaves now in case player doesn't want to wait for logs
 			dropHandler.spawnDrops(world);
 			return opDoLeafClearing;
@@ -836,23 +866,19 @@ public class TreeCutter {
 
 	//TODO: implement block break limits for falling logs
 	private Operation doLogDropping1(World world) {
-		final int limit = fallingLogs.size();
-
-		if (limit == 0) {
-			return dropHandler.opDoDrops;
-		}
-
 		final int i = fallingLogIndex++;
 
-		if (i >= limit) {
-			fallingLogIndex = 0;
+		if (i >= logs.size()) {
+			// second pass is bottom to top - negative index iteration avoids array re-shuffle each pass
+			fallingLogIndex = logs.size();
+
 			//FIXME: not in right place - what about logs partially completed - can abort then? See below also
 			// logs are all removed so should not stop after this
 			job.disableCancel();
 			return opDoLogDropping2;
 		}
 
-		final long packedPos = fallingLogs.getLong(i);
+		final long packedPos = logs.getLong(i);
 		final BlockPos pos = searchPos.set(packedPos);
 		final BlockState state = world.getBlockState(pos);
 		fallingLogStates.add(state);
@@ -871,18 +897,17 @@ public class TreeCutter {
 	private final Operation opDoLogDropping2 = this::doLogDropping2;
 
 	private Operation doLogDropping2(ServerWorld world) {
-		final int limit = fallingLogs.size();
+		int i = --fallingLogIndex;
 
-		if (limit == 0 || fallingLogIndex >= limit) {
+		if (i < 0) {
 			// drop leaves now in case player doesn't want to wait for logs
 			dropHandler.spawnDrops(world);
 			return opDoLeafClearing;
 		}
 
 		if (job.isTimedOut()) {
-			while(fallingLogIndex < limit) {
-				final int  i = fallingLogIndex++;
-				final long packedPos = fallingLogs.getLong(i);
+			while(i >= 0) {
+				final long packedPos = logs.getLong(i);
 				final BlockPos pos = searchPos.set(packedPos);
 				BlockState state = fallingLogStates.get(i);
 
@@ -891,13 +916,13 @@ public class TreeCutter {
 				}
 
 				dropHandler.doDrops(state, world, pos, null);
+				--i;
 			}
 
 			return this::doLeafClearing;
 		} else {
 			if(FallingLogEntity.canSpawn()) {
-				final int i = fallingLogIndex++;
-				final long packedPos = fallingLogs.getLong(i);
+				final long packedPos = logs.getLong(i);
 				final BlockPos pos = searchPos.set(packedPos);
 				BlockState state = fallingLogStates.get(i);
 
@@ -915,6 +940,32 @@ public class TreeCutter {
 			}
 
 			return opDoLogDropping2;
+		}
+	}
+
+	/** how many logs player can break - used to implement configured limits */
+	private int computeLogLimit(World world) {
+		if (job.player() == null) {
+			return Configurator.nonPlayerLogLimit;
+		} else {
+			int result = Configurator.playerBaseLogLimit;
+
+			if (job.hasAxe()) {
+				final ItemStack stack = job.stack();
+				final Item item = stack.getItem();
+
+				if (item instanceof ToolItem) {
+					final int tier = 1 + ((ToolItem) item).getMaterial().getMiningLevel();
+					result += tier * Configurator.toolTierLogBonus;
+				}
+
+				if (Configurator.enableEfficiencyLogMultiplier) {
+					final int enchant = EnchantmentHelper.getLevel(Enchantments.EFFICIENCY, stack);
+					result *= (enchant + 1);
+				}
+			}
+
+			return result;
 		}
 	}
 }

@@ -49,6 +49,17 @@
 	"config.tdnf.value.leaf_hunger" : "Leaf Hunger",
 	"config.tdnf.help.leaf_hunger" : "Players gain hunger from leaves;in addition to logs.",
 
+	"config.tdnf.value.non_player_log_limit" : "Non-Player Log Limit",
+	"config.tdnf.help.non_player_log_limit" : "Max logs that can be broken by non-player mechanics;like pistons, fire and TNT.",
+	
+	"config.tdnf.value.player_base_log_limit" : "Player Base Log Limit",
+	"config.tdnf.help.player_base_log_limit" : "Logs that can be broken by a player without using a tool.",
+	
+	"config.tdnf.value.tool_tier_log_bonus" : "Log Limit Tool Bonus",
+	"config.tdnf.help.tool_tier_log_bonus" : "Additional logs broken when player uses a tool,; per tier of tool. Set zero to disable.",
+	
+	"config.tdnf.value.enable_efficiency_log_multiplier" : "Log Limit Efficiency Multiplier",
+	"config.tdnf.help.enable_efficiency_log_multiplier" : "Log breaking limit is multiplied by Efficency enchantment level.",
 	
 	"config.tdnf.category.performance" : "Performance",
 	
