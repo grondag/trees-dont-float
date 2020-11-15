@@ -49,7 +49,6 @@ public class Configurator {
 		NOT_SNEAKING() {
 			@Override
 			public boolean test(PlayerEntity playerEntity) {
-				System.out.println("not sneaking " + !playerEntity.isSneaking());
 				return !playerEntity.isSneaking();
 			}
 		},
