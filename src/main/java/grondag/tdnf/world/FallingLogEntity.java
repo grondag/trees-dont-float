@@ -41,7 +41,7 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
-import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 
 import grondag.tdnf.Configurator;
@@ -152,7 +152,7 @@ public class FallingLogEntity extends FallingBlockEntity {
 	public Packet<?> createSpawnPacket() {
 		final PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
 		toBuffer(buf);
-		return ServerSidePacketRegistry.INSTANCE.toPacket(IDENTIFIER, buf);
+		return ServerPlayNetworking.createS2CPacket(IDENTIFIER, buf);
 	}
 
 	@Override
