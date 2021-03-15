@@ -29,7 +29,6 @@ public class ClientInitializer implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ClientPlayNetworking.registerGlobalReceiver(FallingLogEntity.IDENTIFIER, FallingLogNetworkHandler::accept);
-        EntityRendererRegistry.INSTANCE.register(FallingLogEntity.FALLING_LOG,
-                (entityRenderDispatcher, context) -> new FallingLogEntityRenderer(entityRenderDispatcher));
+        EntityRendererRegistry.INSTANCE.register(FallingLogEntity.FALLING_LOG, FallingLogEntityRenderer::new);
     }
 }

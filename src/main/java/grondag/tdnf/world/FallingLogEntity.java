@@ -82,7 +82,7 @@ public class FallingLogEntity extends FallingBlockEntity {
 	@Override
 	public void tick() {
 		if (block.isAir()) {
-			remove();
+			remove(RemovalReason.DISCARDED);
 		} else {
 			prevX = getX();
 			prevY = getY();
@@ -104,7 +104,7 @@ public class FallingLogEntity extends FallingBlockEntity {
 						this.dropItem(block_1);
 					}
 
-					remove();
+					remove(RemovalReason.DISCARDED);
 				}
 			} else {
 				final BlockState localBlockState = world.getBlockState(myPos);
@@ -121,7 +121,7 @@ public class FallingLogEntity extends FallingBlockEntity {
 						onGround = false;
 						verticalCollision = false;
 					} else {
-						remove();
+						remove(RemovalReason.DISCARDED);
 
 						if (!world.isClient) {
 							if (localBlockState
@@ -191,7 +191,7 @@ public class FallingLogEntity extends FallingBlockEntity {
 	private static final ThreadLocal<BlockPos.Mutable> SEARCH_POS = ThreadLocal.withInitial(BlockPos.Mutable::new);
 
 	public void toBuffer(PacketByteBuf buf) {
-		buf.writeVarInt(getEntityId());
+		buf.writeVarInt(getId());
 		buf.writeVarInt(Block.getRawIdFromState(block));
 		buf.writeUuid(uuid);
 		buf.writeDouble(getX());
@@ -224,13 +224,13 @@ public class FallingLogEntity extends FallingBlockEntity {
 
 
 	@Override
-	public void remove() {
+	public void remove(RemovalReason reason) {
 
-		if (!removed && !world.isClient) {
+		if (!isRemoved() && !world.isClient) {
 			--entityCount;
 		}
 
-		super.remove();
+		super.remove(reason);
 	}
 
 	private static int entityCount = 0;

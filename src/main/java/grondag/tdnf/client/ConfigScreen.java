@@ -16,16 +16,6 @@
 
 package grondag.tdnf.client;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
-
-import grondag.tdnf.Configurator;
-import grondag.tdnf.Configurator.ActiveWhen;
-import grondag.tdnf.Configurator.FallCondition;
-import me.shedaniel.clothconfig2.api.ConfigBuilder;
-import me.shedaniel.clothconfig2.api.ConfigCategory;
-import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-
 import static grondag.tdnf.Configurator.DEFAULTS;
 import static grondag.tdnf.Configurator.activeWhen;
 import static grondag.tdnf.Configurator.applyFortune;
@@ -55,6 +45,13 @@ import static grondag.tdnf.Configurator.stackDrops;
 import static grondag.tdnf.Configurator.tickBudget;
 import static grondag.tdnf.Configurator.toolTierLogBonus;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
+import me.shedaniel.clothconfig2.api.ConfigBuilder;
+import me.shedaniel.clothconfig2.api.ConfigCategory;
+import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.text.LiteralText;
@@ -63,6 +60,10 @@ import net.minecraft.text.TranslatableText;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+
+import grondag.tdnf.Configurator;
+import grondag.tdnf.Configurator.ActiveWhen;
+import grondag.tdnf.Configurator.FallCondition;
 
 @Environment(EnvType.CLIENT)
 public class ConfigScreen {

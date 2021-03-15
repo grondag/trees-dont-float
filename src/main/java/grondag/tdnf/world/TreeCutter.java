@@ -19,7 +19,6 @@ package grondag.tdnf.world;
 import java.util.Random;
 import java.util.function.Predicate;
 
-import grondag.tdnf.Configurator;
 import io.netty.util.internal.ThreadLocalRandom;
 import it.unimi.dsi.fastutil.longs.Long2IntMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
@@ -51,6 +50,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.world.World;
+
+import grondag.tdnf.Configurator;
 
 /**
  * Call when log neighbors change. Will check for a tree-like structure starting
@@ -381,7 +382,7 @@ public class TreeCutter {
 				enqueForwardIfViable(BlockPos.add(packedPos, 1, -1, -1), SEARCH_LOG_DIAGONAL, newDepth);
 				enqueForwardIfViable(BlockPos.add(packedPos, 1, -1, 0), SEARCH_LOG_DIAGONAL, newDepth);
 				enqueForwardIfViable(BlockPos.add(packedPos, 1, -1, 1), SEARCH_LOG_DIAGONAL, newDepth);
-			} else if (state.getBlock().isIn(BlockTags.LEAVES)) {
+			} else if (state.isIn(BlockTags.LEAVES)) {
 				forwardVisits.put(packedPos, SEARCH_IGNORE);
 			} else {
 				if (searchType == SEARCH_LOG_DOWN) {
@@ -629,7 +630,7 @@ public class TreeCutter {
 			final Block block = state.getBlock();
 			final int searchType = getVisitPackedType(toVisit);
 
-			if (block.isIn(BlockTags.LEAVES)) {
+			if (state.isIn(BlockTags.LEAVES)) {
 				final LeafInfo inf = LeafInfo.get(block);
 				final int actualDepth = inf.applyAsInt(state);
 
@@ -813,7 +814,7 @@ public class TreeCutter {
 	private void breakBlock(BlockPos pos, ServerWorld world) {
 		final BlockState blockState = world.getBlockState(pos);
 		final Block block = blockState.getBlock();
-		final boolean isLeaf = BlockTags.LEAVES.contains(block);
+		final boolean isLeaf = blockState.isIn(BlockTags.LEAVES);
 
 		if ((TreeBlock.getType(blockState) & logMask) == 0 && !isLeaf) {
 			// notify fx to increase chance because chance is based on totals reported earlier
@@ -822,7 +823,7 @@ public class TreeCutter {
 		}
 
 		final FluidState fluidState = world.getFluidState(pos);
-		final BlockEntity blockEntity = block.hasBlockEntity() ? world.getBlockEntity(pos) : null;
+		final BlockEntity blockEntity = blockState.hasBlockEntity() ? world.getBlockEntity(pos) : null;
 
 		dropHandler.doDrops(blockState, world, pos, blockEntity);
 		Dispatcher.suspend(suspender);

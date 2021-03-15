@@ -18,8 +18,6 @@ package grondag.tdnf.client;
 
 import java.util.Random;
 
-import grondag.tdnf.world.FallingLogEntity;
-
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
@@ -27,8 +25,8 @@ import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.BlockRenderManager;
-import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.entity.EntityRenderer;
+import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
@@ -38,13 +36,15 @@ import net.minecraft.world.World;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
+import grondag.tdnf.world.FallingLogEntity;
+
 /**
  * Straight-up copy of FallingBlockEntityRenderer
  */
 @Environment(EnvType.CLIENT)
 public class FallingLogEntityRenderer extends EntityRenderer<FallingLogEntity> {
-	public FallingLogEntityRenderer(EntityRenderDispatcher entityRenderDispatcher_1) {
-		super(entityRenderDispatcher_1);
+	public FallingLogEntityRenderer(EntityRendererFactory.Context ctx) {
+		super(ctx);
 		shadowRadius = 0.5F;
 	}
 

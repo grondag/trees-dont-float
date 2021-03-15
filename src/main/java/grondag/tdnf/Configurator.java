@@ -299,7 +299,7 @@ public class Configurator {
 			BREAKABLES.add(Material.CARPET);
 			BREAKABLES.add(Material.COBWEB);
 			BREAKABLES.add(Material.GLASS);
-			BREAKABLES.add(Material.SUPPORTED);
+			BREAKABLES.add(Material.AGGREGATE);
 		}
 
 		jobTimeoutTicks = jobTimeoutSeconds * 20;

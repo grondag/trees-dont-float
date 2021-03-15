@@ -45,9 +45,11 @@ public class FallingLogNetworkHandler {
 
     private static void spawn(MinecraftClient client, FallingLogEntity entity) {
         final ClientWorld world = client.world;
+
         if (world == null) {
             return;
         }
-        world.addEntity(entity.getEntityId(), entity);
+
+        world.addEntity(entity.getId(), entity);
     }
 }
