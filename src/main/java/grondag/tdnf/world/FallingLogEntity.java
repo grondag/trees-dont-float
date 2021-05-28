@@ -197,8 +197,8 @@ public class FallingLogEntity extends FallingBlockEntity {
 		buf.writeDouble(getX());
 		buf.writeDouble(getY());
 		buf.writeDouble(getZ());
-		buf.writeByte(MathHelper.floor(pitch * 256.0F / 360.0F));
-		buf.writeByte(MathHelper.floor(yaw * 256.0F / 360.0F));
+		buf.writeByte(MathHelper.floor(getPitch() * 256.0F / 360.0F));
+		buf.writeByte(MathHelper.floor(getYaw() * 256.0F / 360.0F));
 		final Vec3d velocity = getVelocity();
 		buf.writeShort((int) (MathHelper.clamp(velocity.x, -3.9D, 3.9D) * 8000.0D));
 		buf.writeShort((int) (MathHelper.clamp(velocity.y, -3.9D, 3.9D) * 8000.0D));
@@ -214,8 +214,8 @@ public class FallingLogEntity extends FallingBlockEntity {
 		final double z = buf.readDouble();
 		setPos(x, y, z);
 		updateTrackedPosition(x, y, z);
-		pitch = buf.readByte() * 360 / 256.0F;
-		yaw = buf.readByte();
+		setPitch(buf.readByte() * 360 / 256.0F);
+		setYaw(buf.readByte());
 		final double vx = buf.readShort() / 8000.0D;
 		final double vy = buf.readShort() / 8000.0D;
 		final double vz = buf.readShort() / 8000.0D;
