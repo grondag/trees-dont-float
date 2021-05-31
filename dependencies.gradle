@@ -35,9 +35,10 @@ dependencies {
         exclude group :"net.fabricmc.fabric-api"
     }
     
-	//modImplementation ("io.github.prospector:modmenu:${project.modmenu_version}") {
-    //    exclude group :"net.fabricmc.fabric-api"
-    //}
+	modApi("com.terraformersmc:modmenu:${project.modmenu_version}") {
+		exclude group: "net.fabricmc.fabric-api"
+		exclude group: "net.fabricmc.fabric-loader"
+	}
     
 	if (!(gradle.startParameter.taskNames.contains("publish") || gradle.startParameter.taskNames.contains("publishToMavenLocal"))) {
 		include "io.github.cottonmc:Jankson-Fabric:${jankson_version}"

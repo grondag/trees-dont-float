@@ -31,9 +31,5 @@
     "java": ">=16",
     "fabric": "*"
   },
-  "custom": {
-    "modmenu:api": false,
-    "modmenu:clientsideOnly": false
-  },
   "accessWidener": "tdnf.accesswidener"
 }
