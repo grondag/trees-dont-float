@@ -206,7 +206,7 @@ public class FallingLogEntity extends FallingBlockEntity {
 	}
 
 	public void fromBuffer(PacketByteBuf buf) {
-		setEntityId(buf.readVarInt());
+		setId(buf.readVarInt());
 		block = Block.getStateFromRawId(buf.readVarInt());
 		uuid = buf.readUuid();
 		final double x = buf.readDouble();
