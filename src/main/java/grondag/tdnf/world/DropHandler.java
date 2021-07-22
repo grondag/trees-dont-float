@@ -142,7 +142,7 @@ public class DropHandler {
 			for (int i = 0; i < limit; i++) {
 				final ItemStack existing = drops.get(i);
 				final int capacity = existing.getMaxCount() - existing.getCount();
-				if (capacity > 0 && stack.getItem() == existing.getItem() && ItemStack.areTagsEqual(stack, existing)) {
+				if (capacity > 0 && stack.getItem() == existing.getItem() && ItemStack.areNbtEqual(stack, existing)) {
 					final int amt = Math.min(stack.getCount(), capacity);
 					if (amt > 0) {
 						stack.decrement(amt);
