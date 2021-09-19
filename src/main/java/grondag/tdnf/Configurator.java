@@ -26,12 +26,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-
-import net.minecraft.block.Material;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.MathHelper;
-
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.material.Material;
 
 public class Configurator {
 	public enum FallCondition {
@@ -41,21 +39,21 @@ public class Configurator {
 	public enum ActiveWhen {
 		SNEAKING() {
 			@Override
-			public boolean test(PlayerEntity playerEntity) {
-				return playerEntity.isSneaking();
+			public boolean test(Player playerEntity) {
+				return playerEntity.isShiftKeyDown();
 			}
 		},
 
 		NOT_SNEAKING() {
 			@Override
-			public boolean test(PlayerEntity playerEntity) {
-				return !playerEntity.isSneaking();
+			public boolean test(Player playerEntity) {
+				return !playerEntity.isShiftKeyDown();
 			}
 		},
 
 		ALWAYS;
 
-		public boolean test(PlayerEntity playerEntity) {
+		public boolean test(Player playerEntity) {
 			return true;
 		}
 	}
@@ -265,19 +263,19 @@ public class Configurator {
 		protectTools = config.protectTools;
 		applyHunger = config.applyHunger;
 		leafHunger = config.leafHunger;
-		nonPlayerLogLimit = MathHelper.clamp(config.nonPlayerLogLimit, 0, 256);
-		playerBaseLogLimit = MathHelper.clamp(config.playerBaseLogLimit, 0, 256);
-		toolTierLogBonus = MathHelper.clamp(config.toolTierLogBonus, 0, 64);
+		nonPlayerLogLimit = Mth.clamp(config.nonPlayerLogLimit, 0, 256);
+		playerBaseLogLimit = Mth.clamp(config.playerBaseLogLimit, 0, 256);
+		toolTierLogBonus = Mth.clamp(config.toolTierLogBonus, 0, 64);
 		enableEfficiencyLogMultiplier = config.enableEfficiencyLogMultiplier;
 
 		// PERFORMANCE
 		stackDrops = config.stackDrops;
-		maxJobsPerWorld = MathHelper.clamp(config.maxJobsPerWorld, 1, 256);
-		effectsPerSecond = MathHelper.clamp(config.effectsPerSecond, 0, 20);
-		maxBreaksPerSecond = MathHelper.clamp(config.maxBreaksPerSecond, 1, 2560);
-		tickBudget = MathHelper.clamp(config.tickBudget, 1, 5);
-		maxFallingBlocks = MathHelper.clamp(config.maxFallingBlocks, 1, 64);
-		jobTimeoutSeconds = MathHelper.clamp(config.jobTimeoutSeconds, 20, 1800);
+		maxJobsPerWorld = Mth.clamp(config.maxJobsPerWorld, 1, 256);
+		effectsPerSecond = Mth.clamp(config.effectsPerSecond, 0, 20);
+		maxBreaksPerSecond = Mth.clamp(config.maxBreaksPerSecond, 1, 2560);
+		tickBudget = Mth.clamp(config.tickBudget, 1, 5);
+		maxFallingBlocks = Mth.clamp(config.maxFallingBlocks, 1, 64);
+		jobTimeoutSeconds = Mth.clamp(config.jobTimeoutSeconds, 20, 1800);
 		computeDerived();
 		//        logSupportSurface = config.minimumSupportSurface;
 	}
@@ -292,14 +290,14 @@ public class Configurator {
 			BREAKABLES.add(Material.CACTUS);
 			BREAKABLES.add(Material.LEAVES);
 			BREAKABLES.add(Material.PLANT);
-			BREAKABLES.add(Material.GOURD);
+			BREAKABLES.add(Material.VEGETABLE);
 		}
 
 		if (fallingLogsBreakFragile) {
-			BREAKABLES.add(Material.CARPET);
-			BREAKABLES.add(Material.COBWEB);
+			BREAKABLES.add(Material.CLOTH_DECORATION);
+			BREAKABLES.add(Material.WEB);
 			BREAKABLES.add(Material.GLASS);
-			BREAKABLES.add(Material.AGGREGATE);
+			BREAKABLES.add(Material.SAND);
 		}
 
 		jobTimeoutTicks = jobTimeoutSeconds * 20;

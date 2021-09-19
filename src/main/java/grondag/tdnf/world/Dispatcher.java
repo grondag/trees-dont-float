@@ -20,12 +20,10 @@ import java.util.IdentityHashMap;
 import java.util.function.Predicate;
 
 import com.google.common.base.Predicates;
-
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 
 public class Dispatcher {
 
@@ -37,10 +35,10 @@ public class Dispatcher {
 		ServerTickEvents.END_WORLD_TICK.register(Dispatcher::routeTick);
 	}
 
-	private static final IdentityHashMap<ServerWorld, WorldJobs> worldJobs = new IdentityHashMap<>();
+	private static final IdentityHashMap<ServerLevel, WorldJobs> worldJobs = new IdentityHashMap<>();
 
-	public static void routeTick(ServerWorld world) {
-		if (world.isClient) {
+	public static void routeTick(ServerLevel world) {
+		if (world.isClientSide) {
 			return;
 		}
 
@@ -55,8 +53,8 @@ public class Dispatcher {
 		resume();
 	}
 
-	public static void enqueCheck(ServerWorld world, BlockPos pos, ServerPlayerEntity player) {
-		if (world.isClient || suspended) {
+	public static void enqueCheck(ServerLevel world, BlockPos pos, ServerPlayer player) {
+		if (world.isClientSide || suspended) {
 			return;
 		}
 

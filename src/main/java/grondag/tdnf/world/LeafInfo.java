@@ -18,32 +18,31 @@ package grondag.tdnf.world;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.function.ToIntFunction;
-
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.state.property.IntProperty;
-import net.minecraft.state.property.Property;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 
 public class LeafInfo implements ToIntFunction<BlockState> {
 	private static final LeafInfo INVALID = new LeafInfo(null);
 
 	public final int maxDistance;
-	private final IntProperty prop;
+	private final IntegerProperty prop;
 
-	private LeafInfo(IntProperty prop) {
+	private LeafInfo(IntegerProperty prop) {
 		this.prop = prop;
-		maxDistance = prop == null ? 0 : prop.getValues().stream().max(Integer::compare).get();
+		maxDistance = prop == null ? 0 : prop.getPossibleValues().stream().max(Integer::compare).get();
 	}
 
 	private static final IdentityHashMap<Block, LeafInfo> MAP = new IdentityHashMap<>();
 
 	public static LeafInfo get(Block block) {
 		return MAP.computeIfAbsent(block, b -> {
-			final Collection<Property<?>> props = b.getStateManager().getProperties();
+			final Collection<Property<?>> props = b.getStateDefinition().getProperties();
 
 			for (final Property<?> p : props) {
-				if (p.getType() == Integer.class && p.getName().equalsIgnoreCase("distance")) {
-					return new LeafInfo((IntProperty) p);
+				if (p.getValueClass() == Integer.class && p.getName().equalsIgnoreCase("distance")) {
+					return new LeafInfo((IntegerProperty) p);
 				}
 			}
 
@@ -53,6 +52,6 @@ public class LeafInfo implements ToIntFunction<BlockState> {
 
 	@Override
 	public int applyAsInt(BlockState value) {
-		return prop == null ? 1 : value.get(prop);
+		return prop == null ? 1 : value.getValue(prop);
 	}
 }

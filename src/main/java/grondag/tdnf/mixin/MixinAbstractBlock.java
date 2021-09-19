@@ -20,27 +20,26 @@ import grondag.tdnf.Configurator.FallCondition;
 import grondag.tdnf.PlayerBreakHandler;
 import grondag.tdnf.world.Dispatcher;
 import grondag.tdnf.world.TreeBlock;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Registry;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.HugeMushroomBlock;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.Material;
-import net.minecraft.block.MushroomBlock;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.tag.BlockTags;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.world.World;
-
-@Mixin(AbstractBlock.class)
+@Mixin(BlockBehaviour.class)
 public abstract class MixinAbstractBlock implements TreeBlock {
 	private int blockType = UNKNOWN;
 
@@ -54,15 +53,15 @@ public abstract class MixinAbstractBlock implements TreeBlock {
 			final Block self = (Block)(Object) this;
 
 			if(BlockTags.LOGS.contains(self) && (material == Material.WOOD || material == Material.NETHER_WOOD)) {
-				if (self == Blocks.CRIMSON_STEM || self == Blocks.WARPED_STEM || Configurator.moddedFungusLogs.contains(Registry.BLOCK.getId(self).toString())) {
+				if (self == Blocks.CRIMSON_STEM || self == Blocks.WARPED_STEM || Configurator.moddedFungusLogs.contains(Registry.BLOCK.getKey(self).toString())) {
 					result = FUNGUS_LOG;
 				} else {
 					result = LOG;
 				}
-			} else if (MushroomBlock.class.isInstance(this) || Configurator.moddedMushroomBlocks.contains(Registry.BLOCK.getId(self).toString())) {
+			} else if (HugeMushroomBlock.class.isInstance(this) || Configurator.moddedMushroomBlocks.contains(Registry.BLOCK.getKey(self).toString())) {
 				result = FUNGUS_LOG;
 			} else if (self == Blocks.NETHER_WART_BLOCK || self == Blocks.WARPED_WART_BLOCK || self == Blocks.SHROOMLIGHT
-			|| Configurator.moddedFungusLeaves.contains(Registry.BLOCK.getId(self).toString())) {
+			|| Configurator.moddedFungusLeaves.contains(Registry.BLOCK.getKey(self).toString())) {
 				result = FUNGUS_LEAF;
 			} else {
 				result = OTHER;
@@ -75,29 +74,29 @@ public abstract class MixinAbstractBlock implements TreeBlock {
 	}
 
 	@Inject(at = @At("HEAD"), method = "neighborUpdate")
-	private void hookNeighborUpdate(BlockState blockState, World world, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify,  CallbackInfo ci) {
-		if (!world.isClient
+	private void hookNeighborUpdate(BlockState blockState, Level world, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify,  CallbackInfo ci) {
+		if (!world.isClientSide
 		&& PlayerBreakHandler.shouldCheckBreakEvents()
 		&& isLog() && Configurator.fallCondition == FallCondition.NO_SUPPORT
 		&& otherPos.getY() == blockPos.getY() - 1) {
 			//			System.out.println("neighborUpdate notify = " + notify);
 			final BlockState otherState = world.getBlockState(otherPos);
 
-			if (!Block.isFaceFullSquare(otherState.getCollisionShape(world, otherPos, ShapeContext.absent()), Direction.UP)) {
-				Dispatcher.enqueCheck((ServerWorld) world, otherPos, null);
+			if (!Block.isFaceFull(otherState.getCollisionShape(world, otherPos, CollisionContext.empty()), Direction.UP)) {
+				Dispatcher.enqueCheck((ServerLevel) world, otherPos, null);
 			}
 		}
 	}
 
 	@Inject(at = @At("HEAD"), method = "onStateReplaced")
-	private void hookOnStateReplaced(BlockState oldState, World world, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
+	private void hookOnStateReplaced(BlockState oldState, Level world, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
 		if (isLog() && oldState.getBlock() != newState.getBlock()
-		&& !world.isClient
+		&& !world.isClientSide
 		&& PlayerBreakHandler.shouldCheckBreakEvents()
 		&& Configurator.fallCondition != FallCondition.USE_TOOL
-		&& !Block.isFaceFullSquare(newState.getCollisionShape(world, blockPos, ShapeContext.absent()), Direction.UP)) {
+		&& !Block.isFaceFull(newState.getCollisionShape(world, blockPos, CollisionContext.empty()), Direction.UP)) {
 			//			System.out.println("onBlockRemoved notify = " + notify);
-			Dispatcher.enqueCheck((ServerWorld) world, blockPos, null);
+			Dispatcher.enqueCheck((ServerLevel) world, blockPos, null);
 		}
 	}
 }

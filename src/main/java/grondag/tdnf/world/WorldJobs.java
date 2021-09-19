@@ -20,16 +20,15 @@ import grondag.tdnf.Configurator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 
 class WorldJobs {
 	private final ObjectArrayFIFOQueue<TreeJob> waitingJobs = new ObjectArrayFIFOQueue<>();
 	private final LongOpenHashSet queuedPositions = new LongOpenHashSet();
 	private final ObjectArrayList<TreeJob> runningJobs = new ObjectArrayList<>();
 
-	public void run(ServerWorld world) {
+	public void run(ServerLevel world) {
 		final ObjectArrayList<TreeJob> jobs = runningJobs;
 		final int jobLimit = Configurator.maxJobsPerWorld;
 
@@ -85,11 +84,11 @@ class WorldJobs {
 
 	// only add the first report - earlier reports are more reliable/valuable
 	// in particular, break block comes first and includes player
-	public void enqueue(long packedPosition, ServerPlayerEntity player) {
+	public void enqueue(long packedPosition, ServerPlayer player) {
 		if(queuedPositions.add(packedPosition)) {
 			//                System.out.println("Enqueing: " + BlockPos.fromLong(packedPosition).toString() + " player = " +
 			//                        (player == null ? "NULL" : player.toString()));
-			waitingJobs.enqueue(TreeJob.claim(packedPosition, player, player == null ? null : player.getMainHandStack()));
+			waitingJobs.enqueue(TreeJob.claim(packedPosition, player, player == null ? null : player.getMainHandItem()));
 		}
 	}
 }

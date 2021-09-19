@@ -19,14 +19,13 @@ import grondag.tdnf.Configurator.FallCondition;
 import grondag.tdnf.world.Dispatcher;
 import grondag.tdnf.world.DropHandler;
 import grondag.tdnf.world.TreeBlock;
-
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class PlayerBreakHandler {
 	private static boolean isLogInProgress = false;
@@ -48,22 +47,22 @@ public class PlayerBreakHandler {
 		return shouldCheckBreakEvents;
 	}
 
-	public static boolean beforeBreak(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
+	public static boolean beforeBreak(Level world, Player player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
 		isLogInProgress = TreeBlock.isLog(state);
 		shouldCheckBreakEvents = !isLogInProgress && (player == null || Configurator.activeWhen.test(player));
 		return true;
 	}
 
-	public static void onCanceled(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
+	public static void onCanceled(Level world, Player player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
 		isLogInProgress = false;
 		shouldCheckBreakEvents = true;
 	}
 
-	public static void onBreak(World world, PlayerEntity player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
+	public static void onBreak(Level world, Player player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
 		if (isLogInProgress) {
 			if (TreeBlock.isLog(state)) {
-				if (Configurator.fallCondition != FallCondition.USE_TOOL || DropHandler.hasAxe(player, player.getMainHandStack())) {
-					Dispatcher.enqueCheck((ServerWorld) world, pos, (ServerPlayerEntity) player);
+				if (Configurator.fallCondition != FallCondition.USE_TOOL || DropHandler.hasAxe(player, player.getMainHandItem())) {
+					Dispatcher.enqueCheck((ServerLevel) world, pos, (ServerPlayer) player);
 				}
 			}
 

@@ -16,26 +16,24 @@
 
 package grondag.tdnf.client;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.network.PacketByteBuf;
-
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.network.FriendlyByteBuf;
 import grondag.tdnf.Configurator;
 import grondag.tdnf.world.FallingLogEntity;
 
 @Environment(EnvType.CLIENT)
 public class FallingLogNetworkHandler {
-    public static void accept(MinecraftClient client, ClientPlayNetworkHandler handler, PacketByteBuf buffer, PacketSender responseSender) {
+    public static void accept(Minecraft client, ClientPacketListener handler, FriendlyByteBuf buffer, PacketSender responseSender) {
         if (Configurator.renderFallingLogs) {
-            final FallingLogEntity entity = new FallingLogEntity(FallingLogEntity.FALLING_LOG, client.world);
+            final FallingLogEntity entity = new FallingLogEntity(FallingLogEntity.FALLING_LOG, client.level);
             entity.fromBuffer(buffer);
 
-            if (client.isOnThread()) {
+            if (client.isSameThread()) {
                 spawn(client, entity);
             } else {
                 client.execute(() -> spawn(client, entity));
@@ -43,13 +41,13 @@ public class FallingLogNetworkHandler {
         }
     }
 
-    private static void spawn(MinecraftClient client, FallingLogEntity entity) {
-        final ClientWorld world = client.world;
+    private static void spawn(Minecraft client, FallingLogEntity entity) {
+        final ClientLevel world = client.level;
 
         if (world == null) {
             return;
         }
 
-        world.addEntity(entity.getId(), entity);
+        world.putNonPlayerEntity(entity.getId(), entity);
     }
 }

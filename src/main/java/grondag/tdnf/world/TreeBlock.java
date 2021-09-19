@@ -16,7 +16,7 @@
 
 package grondag.tdnf.world;
 
-import net.minecraft.block.BlockState;
+import net.minecraft.world.level.block.state.BlockState;
 
 public interface TreeBlock {
 	int UNKNOWN = 0;

@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.google.common.base.Predicates;
 
 import grondag.tdnf.world.Dispatcher;
-import net.minecraft.block.SaplingBlock;
+import net.minecraft.world.level.block.SaplingBlock;
 
 @Mixin(SaplingBlock.class)
 public class MixinSaplingBlock {

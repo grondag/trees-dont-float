@@ -19,22 +19,20 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import net.minecraft.block.AbstractBlock.AbstractBlockState;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.WorldAccess;
-
 import grondag.tdnf.world.Dispatcher;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.state.BlockBehaviour.BlockStateBase;
+import net.minecraft.world.level.block.state.BlockState;
 
-@Mixin(AbstractBlockState.class)
+@Mixin(BlockStateBase.class)
 public class MixinAbstractBlockState {
 
 	@Inject(at = @At("HEAD"), method = "getStateForNeighborUpdate", cancellable = true)
-	private void hookGetStateForNeighborUpdate(Direction face, BlockState otherState, WorldAccess world,
+	private void hookGetStateForNeighborUpdate(Direction face, BlockState otherState, LevelAccessor world,
 			BlockPos myPos, BlockPos otherPos, CallbackInfoReturnable<BlockState> ci) {
-		if(!world.isClient()) {
+		if(!world.isClientSide()) {
 			final BlockState me = (BlockState)(Object)this;
 			if(!me.isAir() && Dispatcher.isDoomed(myPos)) {
 				ci.setReturnValue((BlockState)(Object)this);

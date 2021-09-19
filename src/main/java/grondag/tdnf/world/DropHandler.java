@@ -18,63 +18,60 @@ package grondag.tdnf.world;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jetbrains.annotations.Nullable;
-
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.GameRules;
-import net.minecraft.world.World;
-
 import net.fabricmc.fabric.api.tool.attribute.v1.FabricToolTags;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import grondag.tdnf.Configurator;
 
 
 public class DropHandler {
-	public static boolean hasAxe(PlayerEntity player, ItemStack stack) {
+	public static boolean hasAxe(Player player, ItemStack stack) {
 		return player != null && stack != null && !stack.isEmpty() && FabricToolTags.AXES.contains(stack.getItem());
 	}
 
 	private TreeJob job = null;
 
-	private final BlockPos.Mutable searchPos = new BlockPos.Mutable();
+	private final BlockPos.MutableBlockPos searchPos = new BlockPos.MutableBlockPos();
 
 	/** holds consolidated drops */
 	private final ObjectArrayList<ItemStack> drops = new ObjectArrayList<>();
 
-	private void doUnstackedDrops(ServerWorld world, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, @Nullable ServerPlayerEntity player, @Nullable ItemStack stack) {
+	private void doUnstackedDrops(ServerLevel world, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, @Nullable ServerPlayer player, @Nullable ItemStack stack) {
 		if(Configurator.directDeposit && job.closeEnough()) {
 			dropDirectDepositStacks(world, pos, state, blockEntity, player, stack);
 		} else if (hasAxe(player, stack) && Configurator.applyFortune) {
-			Block.dropStacks(state, world, pos, blockEntity, player, stack);
+			Block.dropResources(state, world, pos, blockEntity, player, stack);
 		} else {
-			Block.dropStacks(state, world, pos, blockEntity);
+			Block.dropResources(state, world, pos, blockEntity);
 		}
 	}
 
-	public void doDrops(BlockState blockState, ServerWorld world, BlockPos pos, BlockEntity blockEntity) {
-		if (Configurator.stackDrops && !world.isClient) {
+	public void doDrops(BlockState blockState, ServerLevel world, BlockPos pos, BlockEntity blockEntity) {
+		if (Configurator.stackDrops && !world.isClientSide) {
 			if (Configurator.applyFortune && job.hasAxe()) {
-				Block.getDroppedStacks(blockState, world, pos, blockEntity, job.player(), job.stack()).forEach(s -> consolidateDrops(world, s));
+				Block.getDrops(blockState, world, pos, blockEntity, job.player(), job.stack()).forEach(s -> consolidateDrops(world, s));
 				// XP, etc. - probably not needed for logs but just in case
-				blockState.onStacksDropped(world, pos, job.stack());
+				blockState.spawnAfterBreak(world, pos, job.stack());
 			} else {
-				Block.getDroppedStacks(blockState, world, pos, blockEntity).forEach(s -> consolidateDrops(world, s));
+				Block.getDrops(blockState, world, pos, blockEntity).forEach(s -> consolidateDrops(world, s));
 				// XP, etc. - probably not needed for logs but just in case
-				blockState.onStacksDropped(world, pos, ItemStack.EMPTY);
+				blockState.spawnAfterBreak(world, pos, ItemStack.EMPTY);
 			}
 		} else {
 			doUnstackedDrops(world, pos, blockState, blockEntity, job.player(), job.stack());
 		}
 	}
 
-	public void spawnDrops(World world) {
+	public void spawnDrops(Level world) {
 		if (!drops.isEmpty()) {
 			final BlockPos pos = searchPos.set(job.startPos());
 			final int limit = drops.size();
@@ -93,37 +90,37 @@ public class DropHandler {
 	}
 
 	/**
-	 * Version of {@link Block#dropStacks(BlockState, World, BlockPos, BlockEntity, net.minecraft.entity.Entity, ItemStack)}
+	 * Version of {@link Block#dropResources(BlockState, Level, BlockPos, BlockEntity, net.minecraft.world.entity.Entity, ItemStack)}
 	 * that drops items directly to player inventory.
 	 */
-	private void dropDirectDepositStacks(ServerWorld world, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, @Nullable ServerPlayerEntity player, @Nullable ItemStack stack) {
+	private void dropDirectDepositStacks(ServerLevel world, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, @Nullable ServerPlayer player, @Nullable ItemStack stack) {
 		if (hasAxe(player, stack) && Configurator.applyFortune) {
-			Block.getDroppedStacks(state, world, pos, blockEntity, player, stack).forEach(s -> dropStack(world, pos, s, player));
-			state.onStacksDropped(world, pos, stack);
+			Block.getDrops(state, world, pos, blockEntity, player, stack).forEach(s -> dropStack(world, pos, s, player));
+			state.spawnAfterBreak(world, pos, stack);
 		} else {
-			Block.getDroppedStacks(state, world, pos, blockEntity).forEach(s -> dropStack(world, pos, s, player));
-			state.onStacksDropped(world, pos, ItemStack.EMPTY);
+			Block.getDrops(state, world, pos, blockEntity).forEach(s -> dropStack(world, pos, s, player));
+			state.spawnAfterBreak(world, pos, ItemStack.EMPTY);
 		}
 	}
 
 	/**
-	 * Version of {@link Block#dropStack(World, BlockPos, ItemStack)} that gives item to player directly if they have room
+	 * Version of {@link Block#popResource(Level, BlockPos, ItemStack)} that gives item to player directly if they have room
 	 * or otherwise drops near their feet.
 	 */
-	private void dropStack(World world, BlockPos pos, ItemStack stack, ServerPlayerEntity player) {
+	private void dropStack(Level world, BlockPos pos, ItemStack stack, ServerPlayer player) {
 		if(player == null || !(Configurator.directDeposit && job.closeEnough())) {
-			Block.dropStack(world, pos, stack);
-		} else if(!world.isClient && !stack.isEmpty() && world.getGameRules().getBoolean(GameRules.DO_TILE_DROPS)) {
-			if(!player.giveItemStack(stack)) {
-				final BlockPos playerPos = player.getBlockPos();
+			Block.popResource(world, pos, stack);
+		} else if(!world.isClientSide && !stack.isEmpty() && world.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS)) {
+			if(!player.addItem(stack)) {
+				final BlockPos playerPos = player.blockPosition();
 				final ItemEntity itemEntity_1 = new ItemEntity(world, playerPos.getX(), playerPos.getY(), playerPos.getZ(), stack);
-				itemEntity_1.setToDefaultPickupDelay();
-				world.spawnEntity(itemEntity_1);
+				itemEntity_1.setDefaultPickUpDelay();
+				world.addFreshEntity(itemEntity_1);
 			}
 		}
 	}
 
-	private void consolidateDrops(World world, ItemStack stack) {
+	private void consolidateDrops(Level world, ItemStack stack) {
 		if (stack == null || stack.isEmpty()) {
 			return;
 		}
@@ -142,15 +139,15 @@ public class DropHandler {
 			final int limit = drops.size();
 			for (int i = 0; i < limit; i++) {
 				final ItemStack existing = drops.get(i);
-				final int capacity = existing.getMaxCount() - existing.getCount();
-				if (capacity > 0 && stack.getItem() == existing.getItem() && ItemStack.areNbtEqual(stack, existing)) {
+				final int capacity = existing.getMaxStackSize() - existing.getCount();
+				if (capacity > 0 && stack.getItem() == existing.getItem() && ItemStack.tagMatches(stack, existing)) {
 					final int amt = Math.min(stack.getCount(), capacity);
 					if (amt > 0) {
-						stack.decrement(amt);
-						existing.increment(amt);
+						stack.shrink(amt);
+						existing.grow(amt);
 					}
 
-					if (existing.getCount() == existing.getMaxCount()) {
+					if (existing.getCount() == existing.getMaxStackSize()) {
 						dropStack(world, searchPos.set(job.startPos()), existing, job.player());
 						drops.remove(i);
 						break;

@@ -17,21 +17,19 @@
 package grondag.tdnf.world;
 
 import java.util.concurrent.ArrayBlockingQueue;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import grondag.tdnf.Configurator;
 import grondag.tdnf.Configurator.FallCondition;
-
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 public class TreeJob {
 	private TreeJob() {}
 	final TreeCutter cutter = new TreeCutter(this);
 	private long startPos;
-	private ServerPlayerEntity player;
+	private ServerPlayer player;
 	private ItemStack stack;
 	private boolean hasAxe;
 	private boolean canCancel = true;
@@ -42,7 +40,7 @@ public class TreeJob {
 		cutter.reset();
 	}
 
-	public void prepareForTick(ServerWorld world) {
+	public void prepareForTick(ServerLevel world) {
 		cutter.prepareForTick(world);
 		++ticks;
 	}
@@ -51,7 +49,7 @@ public class TreeJob {
 		return cutter.canRun();
 	}
 
-	public void tick(ServerWorld world) {
+	public void tick(ServerLevel world) {
 		cutter.tick(world);
 	}
 
@@ -61,7 +59,7 @@ public class TreeJob {
 	}
 
 	/** player who initiated the break, if known */
-	public ServerPlayerEntity player() {
+	public ServerPlayer player() {
 		return player;
 	}
 
@@ -71,7 +69,7 @@ public class TreeJob {
 	}
 
 	public boolean hasAxe() {
-		return hasAxe && player.getMainHandStack() == stack && !stack.isEmpty();
+		return hasAxe && player.getMainHandItem() == stack && !stack.isEmpty();
 	}
 
 	public boolean isComplete() {
@@ -99,12 +97,12 @@ public class TreeJob {
 	 * <li>Tool-dependent effects are in play
 	 * <li>Player switches away from the tool they had at start.
 	 */
-	public boolean isCancelled(World world) {
+	public boolean isCancelled(Level world) {
 		return canCancel
 		& (player == null
-		|| player.getMainHandStack() != stack
-		|| player.notInAnyWorld
-		|| player.world != world
+		|| player.getMainHandItem() != stack
+		|| player.wonGame
+		|| player.level != world
 		|| !closeEnough());
 	}
 
@@ -113,16 +111,16 @@ public class TreeJob {
 			return false;
 		}
 
-		final BlockPos pos = player.getBlockPos();
-		final int dx = pos.getX() - BlockPos.unpackLongX(startPos);
-		final int dy = pos.getY() - BlockPos.unpackLongY(startPos);
-		final int dz = pos.getZ() - BlockPos.unpackLongZ(startPos);
+		final BlockPos pos = player.blockPosition();
+		final int dx = pos.getX() - BlockPos.getX(startPos);
+		final int dy = pos.getY() - BlockPos.getY(startPos);
+		final int dz = pos.getZ() - BlockPos.getZ(startPos);
 		return dx * dx + dy * dy + dz * dz < 32 * 32;
 	}
 
 	private static final ArrayBlockingQueue<TreeJob> POOL = new ArrayBlockingQueue<>(512);
 
-	public static TreeJob claim(long startPos, ServerPlayerEntity player, ItemStack stack) {
+	public static TreeJob claim(long startPos, ServerPlayer player, ItemStack stack) {
 		TreeJob result = POOL.poll();
 		if (result == null) {
 			result = new TreeJob();

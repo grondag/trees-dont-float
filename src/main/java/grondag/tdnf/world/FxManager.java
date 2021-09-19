@@ -16,10 +16,8 @@
 package grondag.tdnf.world;
 
 import java.util.Random;
-
+import net.minecraft.util.Mth;
 import grondag.tdnf.Configurator;
-
-import net.minecraft.util.math.MathHelper;
 
 public class FxManager {
 	/** Limits particle and sound spawning */
@@ -58,7 +56,7 @@ public class FxManager {
 			if(fxBudget > 0) {
 				final int estimatedTicks = Math.round((fxClockEnd - System.currentTimeMillis()) / 50);
 				final int expectedBreaksThisSecond = Math.min(expectedTotalBreaks, Configurator.maxBreaksPerSecond * estimatedTicks);
-				fxChance = MathHelper.clamp((float)fxBudget / expectedBreaksThisSecond, 0f, 1f);
+				fxChance = Mth.clamp((float)fxBudget / expectedBreaksThisSecond, 0f, 1f);
 			} else {
 				fxChance = 0;
 			}

@@ -18,20 +18,21 @@ package grondag.tdnf.client;
 
 import java.util.Random;
 
-import net.minecraft.block.BlockRenderType;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.RenderLayers;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.block.BlockRenderManager;
-import net.minecraft.client.render.entity.EntityRenderer;
-import net.minecraft.client.render.entity.EntityRendererFactory;
-import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.state.BlockState;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -43,32 +44,32 @@ import grondag.tdnf.world.FallingLogEntity;
  */
 @Environment(EnvType.CLIENT)
 public class FallingLogEntityRenderer extends EntityRenderer<FallingLogEntity> {
-	public FallingLogEntityRenderer(EntityRendererFactory.Context ctx) {
+	public FallingLogEntityRenderer(EntityRendererProvider.Context ctx) {
 		super(ctx);
 		shadowRadius = 0.5F;
 	}
 
 	@Override
-	public void render(FallingLogEntity fallingLogEntity, float yawDelta, float tickDelta, MatrixStack matrixStack, VertexConsumerProvider provider, int light) {
+	public void render(FallingLogEntity fallingLogEntity, float yawDelta, float tickDelta, PoseStack matrixStack, MultiBufferSource provider, int light) {
 		final BlockState blockState = fallingLogEntity.getBlockState();
 
-		if (blockState.getRenderType() == BlockRenderType.MODEL) {
-			final World world = fallingLogEntity.getWorldClient();
+		if (blockState.getRenderShape() == RenderShape.MODEL) {
+			final Level world = fallingLogEntity.getLevel();
 
-			if (blockState != world.getBlockState(new BlockPos(fallingLogEntity.getPos())) && blockState.getRenderType() == BlockRenderType.MODEL) {
-				matrixStack.push();
+			if (blockState != world.getBlockState(new BlockPos(fallingLogEntity.position())) && blockState.getRenderShape() == RenderShape.MODEL) {
+				matrixStack.pushPose();
 				final BlockPos blockPos = new BlockPos(fallingLogEntity.getX(), fallingLogEntity.getBoundingBox().maxY, fallingLogEntity.getZ());
 				matrixStack.translate(-0.5D, 0.0D, -0.5D);
-				final BlockRenderManager blockRenderManager = MinecraftClient.getInstance().getBlockRenderManager();
-				blockRenderManager.getModelRenderer().render(world, blockRenderManager.getModel(blockState), blockState, blockPos, matrixStack, provider.getBuffer(RenderLayers.getBlockLayer(blockState)), false, new Random(), blockState.getRenderingSeed(fallingLogEntity.getFallingBlockPos()), OverlayTexture.DEFAULT_UV);
-				matrixStack.pop();
+				final BlockRenderDispatcher blockRenderManager = Minecraft.getInstance().getBlockRenderer();
+				blockRenderManager.getModelRenderer().tesselateBlock(world, blockRenderManager.getBlockModel(blockState), blockState, blockPos, matrixStack, provider.getBuffer(ItemBlockRenderTypes.getChunkRenderType(blockState)), false, new Random(), blockState.getSeed(fallingLogEntity.getStartPos()), OverlayTexture.NO_OVERLAY);
+				matrixStack.popPose();
 				super.render(fallingLogEntity, yawDelta, tickDelta, matrixStack, provider, light);
 			}
 		}
 	}
 
 	@Override
-	public Identifier getTexture(FallingLogEntity var1) {
-		return SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE;
+	public ResourceLocation getTextureLocation(FallingLogEntity var1) {
+		return TextureAtlas.LOCATION_BLOCKS;
 	}
 }

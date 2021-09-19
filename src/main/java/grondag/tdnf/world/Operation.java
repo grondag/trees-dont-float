@@ -16,15 +16,15 @@
 
 package grondag.tdnf.world;
 
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerLevel;
 
 @FunctionalInterface
 public interface Operation {
-	Operation apply(ServerWorld world);
+	Operation apply(ServerLevel world);
 
 	Operation COMPLETE = Operation::complete;
 
-	static Operation complete(ServerWorld world) {
+	static Operation complete(ServerLevel world) {
 		return COMPLETE;
 	}
 }
