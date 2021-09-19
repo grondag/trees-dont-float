@@ -15,11 +15,12 @@
  ******************************************************************************/
 package grondag.tdnf.mixin;
 
-import grondag.tdnf.Configurator;
-import grondag.tdnf.Configurator.FallCondition;
-import grondag.tdnf.PlayerBreakHandler;
-import grondag.tdnf.world.Dispatcher;
-import grondag.tdnf.world.TreeBlock;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
@@ -33,14 +34,15 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import grondag.tdnf.Configurator;
+import grondag.tdnf.Configurator.FallCondition;
+import grondag.tdnf.PlayerBreakHandler;
+import grondag.tdnf.world.Dispatcher;
+import grondag.tdnf.world.TreeBlock;
 
 @Mixin(BlockBehaviour.class)
-public abstract class MixinAbstractBlock implements TreeBlock {
+public abstract class MixinBlockBehaviour implements TreeBlock {
 	private int blockType = UNKNOWN;
 
 	@Shadow protected Material material;
@@ -73,30 +75,32 @@ public abstract class MixinAbstractBlock implements TreeBlock {
 		return result;
 	}
 
-	@Inject(at = @At("HEAD"), method = "neighborUpdate")
-	private void hookNeighborUpdate(BlockState blockState, Level world, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify,  CallbackInfo ci) {
-		if (!world.isClientSide
-		&& PlayerBreakHandler.shouldCheckBreakEvents()
-		&& isLog() && Configurator.fallCondition == FallCondition.NO_SUPPORT
-		&& otherPos.getY() == blockPos.getY() - 1) {
+	@Inject(at = @At("HEAD"), method = "neighborChanged")
+	private void hookNeighborChanged(BlockState blockState, Level level, BlockPos blockPos, Block otherBlock, BlockPos otherPos, boolean notify,  CallbackInfo ci) {
+		if (!level.isClientSide
+			&& PlayerBreakHandler.shouldCheckBreakEvents()
+			&& isLog() && Configurator.fallCondition == FallCondition.NO_SUPPORT
+			&& otherPos.getY() == blockPos.getY() - 1
+		) {
 			//			System.out.println("neighborUpdate notify = " + notify);
-			final BlockState otherState = world.getBlockState(otherPos);
+			final BlockState otherState = level.getBlockState(otherPos);
 
-			if (!Block.isFaceFull(otherState.getCollisionShape(world, otherPos, CollisionContext.empty()), Direction.UP)) {
-				Dispatcher.enqueCheck((ServerLevel) world, otherPos, null);
+			if (!Block.isFaceFull(otherState.getCollisionShape(level, otherPos, CollisionContext.empty()), Direction.UP)) {
+				Dispatcher.enqueCheck((ServerLevel) level, otherPos, null);
 			}
 		}
 	}
 
-	@Inject(at = @At("HEAD"), method = "onStateReplaced")
-	private void hookOnStateReplaced(BlockState oldState, Level world, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
+	@Inject(at = @At("HEAD"), method = "onRemove")
+	private void hookOnRemove(BlockState oldState, Level level, BlockPos blockPos, BlockState newState, boolean notify, CallbackInfo ci) {
 		if (isLog() && oldState.getBlock() != newState.getBlock()
-		&& !world.isClientSide
-		&& PlayerBreakHandler.shouldCheckBreakEvents()
-		&& Configurator.fallCondition != FallCondition.USE_TOOL
-		&& !Block.isFaceFull(newState.getCollisionShape(world, blockPos, CollisionContext.empty()), Direction.UP)) {
+			&& !level.isClientSide
+			&& PlayerBreakHandler.shouldCheckBreakEvents()
+			&& Configurator.fallCondition != FallCondition.USE_TOOL
+			&& !Block.isFaceFull(newState.getCollisionShape(level, blockPos, CollisionContext.empty()), Direction.UP)
+		) {
 			//			System.out.println("onBlockRemoved notify = " + notify);
-			Dispatcher.enqueCheck((ServerLevel) world, blockPos, null);
+			Dispatcher.enqueCheck((ServerLevel) level, blockPos, null);
 		}
 	}
 }

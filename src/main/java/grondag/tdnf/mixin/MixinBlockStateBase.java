@@ -19,22 +19,23 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import grondag.tdnf.world.Dispatcher;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.state.BlockBehaviour.BlockStateBase;
 import net.minecraft.world.level.block.state.BlockState;
 
-@Mixin(BlockStateBase.class)
-public class MixinAbstractBlockState {
+import grondag.tdnf.world.Dispatcher;
 
-	@Inject(at = @At("HEAD"), method = "getStateForNeighborUpdate", cancellable = true)
-	private void hookGetStateForNeighborUpdate(Direction face, BlockState otherState, LevelAccessor world,
-			BlockPos myPos, BlockPos otherPos, CallbackInfoReturnable<BlockState> ci) {
-		if(!world.isClientSide()) {
-			final BlockState me = (BlockState)(Object)this;
-			if(!me.isAir() && Dispatcher.isDoomed(myPos)) {
+@Mixin(BlockStateBase.class)
+public class MixinBlockStateBase {
+	@Inject(at = @At("HEAD"), method = "updateShape", cancellable = true)
+	private void hookUpdateShape(Direction face, BlockState otherState, LevelAccessor levelAccessor, BlockPos myPos, BlockPos otherPos, CallbackInfoReturnable<BlockState> ci) {
+		if (!levelAccessor.isClientSide()) {
+			final BlockState me = (BlockState) (Object) this;
+
+			if (!me.isAir() && Dispatcher.isDoomed(myPos)) {
 				ci.setReturnValue((BlockState)(Object)this);
 			}
 		}
