@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "grondag.tdnf.mixin.forgeonly",
+  "compatibilityLevel": "JAVA_16",
+  "mixins": [
+    "MixinServerPlayerGameMode"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

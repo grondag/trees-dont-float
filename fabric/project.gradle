@@ -1,0 +1,33 @@
+dependencies {
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	 
+	modImplementation "blue.endless:jankson:1.2.1"
+	include "blue.endless:jankson:1.2.1"
+
+	modImplementation("me.shedaniel.cloth:cloth-config-fabric:5.1.40")
+	include("me.shedaniel.cloth:cloth-config-fabric:5.1.40")
+
+	modCompileOnly "com.terraformersmc:modmenu:2.0.14"
+	modRuntimeOnly "com.terraformersmc:modmenu:2.0.14"
+}
+
+sourceSets {
+	main {
+		java {
+			srcDirs = ['../common/src/main/java', 'src/main/java']
+			include '**/*'
+			exclude '*.DS_Store'
+		}
+		resources {
+			srcDirs = ['../common/src/main/resources', 'src/main/resources']
+			include '**/*'
+			exclude '*.DS_Store'
+		}
+	}
+	test {
+			java {
+				exclude '**/*'
+			}
+	}
+}

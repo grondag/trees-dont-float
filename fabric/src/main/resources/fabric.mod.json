@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "tdnf",
+  "version": "${version}",
+  "name": "Trees Do Not Float",
+  "description": "Trees - or anything made of logs - plus adjacent leaves fall down when the last supporting log is broken.",
+  "authors": [
+    "Grondag"
+  ],
+  "contact": {
+    "homepage": "https://minecraft.curseforge.com/projects/trees-do-not-float",
+    "issues": "https://github.com/grondag/trees-dont-float/issues"
+  },
+  "license": "Apache-2.0",
+  "icon": "assets/tdnf/tdnf_icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [ "grondag.tdnf.FabricInitializer" ],
+    "client": [ "grondag.tdnf.client.FabricClientInitializer" ],
+    "modmenu": [ "grondag.tdnf.client.ModMenuHelper" ]
+  },
+
+  "mixins": [
+    "tdnf.server.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.12.11",
+    "minecraft": "1.17.1",
+    "java": ">=16",
+    "fabric": "*"
+  },
+  "accessWidener": "tdnf.accesswidener"
+}
