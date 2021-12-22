@@ -93,6 +93,19 @@ public abstract class BaseFallingLogEntity extends FallingBlockEntity {
 			return;
 		}
 
+		// Needed starting in 1.18 because vanilla defers removal on client side.
+		// Without it, logs go scurrying along the ground indefinitely.
+		if (this.level.isClientSide && this.removeAtMillis > 0L) {
+            if (System.currentTimeMillis() >= this.removeAtMillis) {
+    			// Using kill here prevents us from resetting the timeout - that logic keys
+    			// off of DISCARD-type remove and is baked into our parent class. We have no
+            	// elegant way to call the grandparent removal method that doesn't reset it.
+                kill();
+            }
+
+            return;
+        }
+
 		// This was in an earlier version but now we never use the origin and don't need to update it.
 		// Vanilla falling block do a clip test from the origin every tick.
 		// Presumably if a piston or something else blocks the path before it
