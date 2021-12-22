@@ -24,7 +24,7 @@ import java.util.Random;
 
 import net.minecraft.util.Mth;
 
-import grondag.tdnf.Configurator;
+import grondag.tdnf.config.Configurator;
 
 public class FxManager {
 	/** Limits particle and sound spawning. */

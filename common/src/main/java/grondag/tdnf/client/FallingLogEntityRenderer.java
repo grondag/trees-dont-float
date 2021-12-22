@@ -38,7 +38,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 
-import grondag.tdnf.world.FallingLogEntity;
+import grondag.tdnf.FallingLogEntity;
 
 /**
  * Straight-up copy of FallingBlockEntityRenderer.

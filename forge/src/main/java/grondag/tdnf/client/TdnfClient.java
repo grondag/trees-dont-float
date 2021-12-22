@@ -22,13 +22,16 @@ package grondag.tdnf.client;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fmlclient.ConfigGuiHandler;
 
+import grondag.tdnf.Platform;
 import grondag.tdnf.TreesDoNotFloat;
+import grondag.tdnf.config.Configurator;
 
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = TreesDoNotFloat.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -36,6 +39,11 @@ public class TdnfClient {
 	@SubscribeEvent
 	public static void clientSetup(FMLClientSetupEvent event) {
 		ModLoadingContext.get().registerExtensionPoint(ConfigGuiHandler.ConfigGuiFactory.class, () ->
-				new ConfigGuiHandler.ConfigGuiFactory((minecraft, screen) -> ConfigScreen.getScreen(screen)));
+				new ConfigGuiHandler.ConfigGuiFactory((minecraft, screen) -> new PresetConfigScreen(screen, Configurator.writeConfig())));
+	}
+
+	@SubscribeEvent
+	public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+		event.registerEntityRenderer(Platform.fallingLogEntityType(), FallingLogEntityRenderer::new);
 	}
 }

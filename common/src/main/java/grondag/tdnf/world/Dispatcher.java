@@ -52,19 +52,23 @@ public class Dispatcher {
 		resume();
 	}
 
-	public static void enqueCheck(ServerLevel world, BlockPos pos, ServerPlayer player) {
+	private static WorldJobs getOrCreateJobsForWorld(ServerLevel world) {
+		WorldJobs jobs = worldJobs.get(world);
+
+		if (jobs == null) {
+			jobs = new WorldJobs(world);
+			worldJobs.put(world, jobs);
+		}
+
+		return jobs;
+	}
+
+	public static void enqueBreak(ServerLevel world, BlockPos pos, ServerPlayer player) {
 		if (world.isClientSide || suspended) {
 			return;
 		}
 
-		WorldJobs jobs = worldJobs.get(world);
-
-		if (jobs == null) {
-			jobs = new WorldJobs();
-			worldJobs.put(world, jobs);
-		}
-
-		jobs.enqueue(BlockPos.asLong(pos.getX(), pos.getY() + 1, pos.getZ()), player);
+		getOrCreateJobsForWorld(world).enqueueBreakAbove(pos.asLong(), player);
 	}
 
 	public static void suspend(Predicate<BlockPos> theDoomed) {
@@ -79,5 +83,11 @@ public class Dispatcher {
 
 	public static boolean isDoomed(BlockPos pos) {
 		return doomTest.test(pos);
+	}
+
+	public static void protect(ServerLevel world, BlockPos pos) {
+		if (!world.isClientSide) {
+			getOrCreateJobsForWorld(world).protectionTracker.protect(pos);
+		}
 	}
 }

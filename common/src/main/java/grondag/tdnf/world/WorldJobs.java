@@ -24,15 +24,22 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayFIFOQueue;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
-import grondag.tdnf.Configurator;
+import grondag.tdnf.config.Configurator;
 
 class WorldJobs {
 	private final ObjectArrayFIFOQueue<TreeJob> waitingJobs = new ObjectArrayFIFOQueue<>();
 	private final LongOpenHashSet queuedPositions = new LongOpenHashSet();
 	private final ObjectArrayList<TreeJob> runningJobs = new ObjectArrayList<>();
+	public final ProtectionTracker protectionTracker;
+
+	WorldJobs(ServerLevel level) {
+		protectionTracker = level.getDataStorage().computeIfAbsent(ProtectionTracker::load, ProtectionTracker::new, ProtectionTracker.FILE_ID);
+	}
 
 	public void run(ServerLevel world) {
 		final ObjectArrayList<TreeJob> jobs = runningJobs;
@@ -90,11 +97,14 @@ class WorldJobs {
 
 	// only add the first report - earlier reports are more reliable/valuable
 	// in particular, break block comes first and includes player
-	public void enqueue(long packedPosition, ServerPlayer player) {
-		if (queuedPositions.add(packedPosition)) {
+	public void enqueueBreakAbove(long packedPosition, ServerPlayer player) {
+		final long above = BlockPos.offset(packedPosition, Direction.UP);
+
+		if (queuedPositions.add(above)) {
 			//                System.out.println("Enqueing: " + BlockPos.fromLong(packedPosition).toString() + " player = " +
 			//                        (player == null ? "NULL" : player.toString()));
-			waitingJobs.enqueue(TreeJob.claim(packedPosition, player, player == null ? null : player.getMainHandItem()));
+			this.protectionTracker.unprotect(packedPosition);
+			waitingJobs.enqueue(TreeJob.claim(above, player, player == null ? null : player.getMainHandItem(), protectionTracker));
 		}
 	}
 }

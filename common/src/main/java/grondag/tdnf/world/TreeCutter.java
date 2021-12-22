@@ -55,7 +55,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
-import grondag.tdnf.Configurator;
+import grondag.tdnf.FallingLogEntity;
+import grondag.tdnf.config.Configurator;
 
 /**
  * Call when log neighbors change. Will check for a tree-like structure starting
@@ -138,6 +139,8 @@ public class TreeCutter {
 	private double zVelocity = 0;
 
 	private Axis fallAxis = Axis.X;
+
+	private ProtectionTracker protectionTracker;
 
 	// Numeric order here drives priority queue
 
@@ -234,7 +237,7 @@ public class TreeCutter {
 		return new BlockPos(x, y, z);
 	}
 
-	public void reset() {
+	public void reset(ProtectionTracker protectionTracker) {
 		dropHandler.reset(job);
 		forwardVisits.clear();
 		leafVisits.clear();
@@ -252,6 +255,7 @@ public class TreeCutter {
 		visitIterator = null;
 		operation = opStartSearch;
 		fallingLogIndex = 0;
+		this.protectionTracker = protectionTracker;
 	}
 
 	public void prepareForTick(ServerLevel world) {
@@ -292,7 +296,7 @@ public class TreeCutter {
 
 		final int logType = TreeBlock.getType(state);
 
-		if ((logType & TreeBlock.LOG_MASK) != 0) {
+		if ((logType & TreeBlock.LOG_MASK) != 0 && !protectionTracker.isProtected(packedPos)) {
 			logMask = logType == TreeBlock.LOG ? TreeBlock.LOG : (Configurator.breakFungalLeaves ? TreeBlock.FUNGUS_MASK : TreeBlock.FUNGUS_LOG);
 			//            this.startState = state;
 			//            this.startBlock = state.getBlock();
@@ -342,7 +346,7 @@ public class TreeCutter {
 
 		final int newDepth = getVisitPackedDepth(toVisit) + 1;
 
-		if (!forwardVisits.containsKey(packedPos)) {
+		if (!forwardVisits.containsKey(packedPos) && !this.protectionTracker.isProtected(packedPos)) {
 			final BlockState state = world.getBlockState(searchPos);
 
 			if ((TreeBlock.getType(state) & logMask) != 0) {
@@ -751,9 +755,9 @@ public class TreeCutter {
 			}
 
 			// normalize
-			final double len = Math.sqrt(xVelocity * xVelocity + zVelocity * zVelocity);
-			xVelocity /= len;
-			zVelocity /= len;
+			final double len = 0.75f / Math.sqrt(xVelocity * xVelocity + zVelocity * zVelocity);
+			xVelocity *= len;
+			zVelocity *= len;
 
 			// first pass for entities is top to bottom, positive index good for building state list
 			fallingLogIndex = 0;

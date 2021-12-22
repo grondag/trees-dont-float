@@ -24,6 +24,8 @@ import net.minecraftforge.fml.IExtensionPoint;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 
+import grondag.tdnf.config.Configurator;
+
 @Mod(TreesDoNotFloat.MODID)
 public class TdnfMod {
 	public TdnfMod() {

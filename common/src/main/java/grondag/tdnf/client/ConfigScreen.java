@@ -20,250 +20,257 @@
 
 package grondag.tdnf.client;
 
-import static grondag.tdnf.Configurator.DEFAULTS;
-import static grondag.tdnf.Configurator.activeWhen;
-import static grondag.tdnf.Configurator.applyFortune;
-import static grondag.tdnf.Configurator.applyHunger;
-import static grondag.tdnf.Configurator.breakFungalLeaves;
-import static grondag.tdnf.Configurator.consumeDurability;
-import static grondag.tdnf.Configurator.directDeposit;
-import static grondag.tdnf.Configurator.effectsPerSecond;
-import static grondag.tdnf.Configurator.enableEfficiencyLogMultiplier;
-import static grondag.tdnf.Configurator.fallCondition;
-import static grondag.tdnf.Configurator.fallingLogsBreakFragile;
-import static grondag.tdnf.Configurator.fallingLogsBreakPlants;
-import static grondag.tdnf.Configurator.fastLeafDecay;
-import static grondag.tdnf.Configurator.jobTimeoutSeconds;
-import static grondag.tdnf.Configurator.jobTimeoutTicks;
-import static grondag.tdnf.Configurator.keepLogsIntact;
-import static grondag.tdnf.Configurator.leafDurability;
-import static grondag.tdnf.Configurator.leafHunger;
-import static grondag.tdnf.Configurator.maxBreaksPerSecond;
-import static grondag.tdnf.Configurator.maxFallingBlocks;
-import static grondag.tdnf.Configurator.maxJobsPerWorld;
-import static grondag.tdnf.Configurator.nonPlayerLogLimit;
-import static grondag.tdnf.Configurator.playerBaseLogLimit;
-import static grondag.tdnf.Configurator.protectTools;
-import static grondag.tdnf.Configurator.renderFallingLogs;
-import static grondag.tdnf.Configurator.stackDrops;
-import static grondag.tdnf.Configurator.tickBudget;
-import static grondag.tdnf.Configurator.toolTierLogBonus;
+import java.util.List;
 
-import java.util.Arrays;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
-import me.shedaniel.clothconfig2.api.ConfigBuilder;
-import me.shedaniel.clothconfig2.api.ConfigCategory;
-import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
 
+import net.minecraft.client.gui.components.AbstractButton;
+import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Checkbox;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 
-import grondag.tdnf.Configurator;
-import grondag.tdnf.Configurator.ActiveWhen;
-import grondag.tdnf.Configurator.FallCondition;
+import grondag.tdnf.config.ConfigData;
+import grondag.tdnf.config.Configurator;
 
-public class ConfigScreen {
-	private static final ConfigEntryBuilder ENTRY_BUILDER = ConfigEntryBuilder.create();
+public abstract class ConfigScreen extends Screen {
+	protected final Screen parent;
+	protected final ObjectArrayList<Label> labels = new ObjectArrayList<>();
+	protected final ConfigData config;
 
-	static Component[] parse(String key) {
-		return Arrays.stream(I18n.get(key).split(";")).map(s -> new TextComponent(s)).toList().toArray(new Component[0]);
+	protected int controlWidth;
+	protected int controlHeight;
+	protected int padding;
+	protected int lineHeight;
+	protected int leftOffset;
+	protected int middleOffset;
+	protected int rightOffset;
+	protected int fullControlWidth;
+	protected int halfControlWidth;
+	protected int rightMargin;
+	protected int halfOffset;
+
+	protected void initSizes() {
+		controlWidth = Mth.clamp((width - 16) / 3, 120, 200);
+		controlHeight = Mth.clamp(height / 12, 16, 20);
+		padding = Mth.clamp(Math.min((width - controlWidth * 3) / 4, (height - controlHeight * 8) / 8), 2, 10);
+		lineHeight = controlHeight + padding;
+		leftOffset = width / 2 - controlWidth - padding - controlWidth / 2;
+		middleOffset = width / 2 - controlWidth / 2;
+		rightOffset = width / 2 + controlWidth / 2 + padding;
+		rightMargin = rightOffset + controlWidth;
+		fullControlWidth = rightMargin - leftOffset;
+		halfControlWidth = (fullControlWidth - padding) / 2;
+		halfOffset = rightMargin - halfControlWidth;
 	}
 
-	public static Screen getScreen(Screen parent) {
-		final ConfigBuilder builder = ConfigBuilder.create()
-			.setParentScreen(parent)
-			.setTitle(new TranslatableComponent("config.tdnf.title"))
-			.setSavingRunnable(ConfigScreen::saveUserInput);
+	protected class Label {
+		protected final Component label;
+		protected final int center;
+		protected final int top;
 
-		builder.setGlobalized(true);
-		builder.setGlobalizedExpanded(false);
+		Label(Component label, int center, int top) {
+			this.label = label;
+			this.center = center;
+			this.top = top;
+		}
 
-		// BLOCKS
-		final ConfigCategory blocks = builder.getOrCreateCategory(new TranslatableComponent("config.tdnf.category.blocks"));
-
-		blocks.addEntry(ENTRY_BUILDER.startEnumSelector(
-			new TranslatableComponent("config.tdnf.value.fall_condition"),
-			FallCondition.class,
-			fallCondition)
-				.setDefaultValue(DEFAULTS.fallCondition)
-				.setSaveConsumer(b -> fallCondition = b)
-				.setEnumNameProvider(a -> new TextComponent(a.toString()))
-				.setTooltip(parse("config.tdnf.help.fall_condition"))
-				.build());
-
-		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.fast_leaf_decat"), fastLeafDecay)
-			.setDefaultValue(DEFAULTS.fastLeafDecay)
-			.setSaveConsumer(b -> fastLeafDecay = b)
-			.setTooltip(parse("config.tdnf.help.fast_leaf_decat"))
-			.build());
-
-		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.keep_logs_intact"), keepLogsIntact)
-			.setDefaultValue(DEFAULTS.keepLogsIntact)
-			.setSaveConsumer(b -> keepLogsIntact = b)
-			.setTooltip(parse("config.tdnf.help.keep_logs_intact"))
-			.build());
-
-		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.render_falling"), renderFallingLogs)
-			.setDefaultValue(DEFAULTS.renderFallingLogs)
-			.setSaveConsumer(b -> renderFallingLogs = b)
-			.setTooltip(parse("config.tdnf.help.render_falling"))
-			.build());
-
-		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.break_leaves"), fallingLogsBreakPlants)
-			.setDefaultValue(DEFAULTS.fallingLogsBreakPlants)
-			.setSaveConsumer(b -> fallingLogsBreakPlants = b)
-			.setTooltip(parse("config.tdnf.help.break_leaves"))
-			.build());
-
-		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.break_fragile"), fallingLogsBreakFragile)
-			.setDefaultValue(DEFAULTS.fallingLogsBreakFragile)
-			.setSaveConsumer(b -> fallingLogsBreakFragile = b)
-			.setTooltip(parse("config.tdnf.help.break_fragile"))
-			.build());
-
-		blocks.addEntry(ENTRY_BUILDER.startEnumSelector(
-			new TranslatableComponent("config.tdnf.value.active_when"),
-			ActiveWhen.class,
-			activeWhen)
-			.setDefaultValue(DEFAULTS.activeWhen)
-			.setSaveConsumer(b -> activeWhen = b)
-			.setEnumNameProvider(a -> new TextComponent(a.toString()))
-			.setTooltip(parse("config.tdnf.help.active_when"))
-			.build());
-
-		blocks.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.break_fungal_leaves"), breakFungalLeaves)
-			.setDefaultValue(DEFAULTS.breakFungalLeaves)
-			.setSaveConsumer(b -> breakFungalLeaves = b)
-			.setTooltip(parse("config.tdnf.help.break_fungal_leaves"))
-			.build());
-
-		// PLAYERS
-		final ConfigCategory players = builder.getOrCreateCategory(new TranslatableComponent("config.tdnf.category.players"));
-
-		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.direct_deposit"), directDeposit)
-			.setDefaultValue(DEFAULTS.directDeposit)
-			.setSaveConsumer(b -> directDeposit = b)
-			.setTooltip(parse("config.tdnf.help.direct_deposit"))
-			.build());
-
-		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.apply_fortune"), applyFortune)
-			.setDefaultValue(DEFAULTS.applyFortune)
-			.setSaveConsumer(b -> applyFortune = b)
-			.setTooltip(parse("config.tdnf.help.apply_fortune"))
-			.build());
-
-		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.consume_durability"), consumeDurability)
-			.setDefaultValue(DEFAULTS.consumeDurability)
-			.setSaveConsumer(b -> consumeDurability = b)
-			.setTooltip(parse("config.tdnf.help.consume_durability"))
-			.build());
-
-		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.leaf_durability"), leafDurability)
-			.setDefaultValue(DEFAULTS.leafDurability)
-			.setSaveConsumer(b -> leafDurability = b)
-			.setTooltip(parse("config.tdnf.help.leaf_durability"))
-			.build());
-
-		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.protect_tools"), protectTools)
-			.setDefaultValue(DEFAULTS.protectTools)
-			.setSaveConsumer(b -> protectTools = b)
-			.setTooltip(parse("config.tdnf.help.protect_tools"))
-			.build());
-
-		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.apply_hunger"), applyHunger)
-			.setDefaultValue(DEFAULTS.applyHunger)
-			.setSaveConsumer(b -> applyHunger = b)
-			.setTooltip(parse("config.tdnf.help.apply_hunger"))
-			.build());
-
-		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.leaf_hunger"), leafHunger)
-			.setDefaultValue(DEFAULTS.leafHunger)
-			.setSaveConsumer(b -> leafHunger = b)
-			.setTooltip(parse("config.tdnf.help.leaf_hunger"))
-			.build());
-
-		players.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableComponent("config.tdnf.value.non_player_log_limit"), nonPlayerLogLimit, 0, 4096)
-			.setDefaultValue(DEFAULTS.nonPlayerLogLimit)
-			.setSaveConsumer(b -> nonPlayerLogLimit = b)
-			.setTooltip(parse("config.tdnf.help.non_player_log_limit"))
-			.build());
-
-		players.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableComponent("config.tdnf.value.player_base_log_limit"), playerBaseLogLimit, 0, 4096)
-			.setDefaultValue(DEFAULTS.playerBaseLogLimit)
-			.setSaveConsumer(b -> playerBaseLogLimit = b)
-			.setTooltip(parse("config.tdnf.help.player_base_log_limit"))
-			.build());
-
-		players.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableComponent("config.tdnf.value.tool_tier_log_bonus"), toolTierLogBonus, 0, 256)
-			.setDefaultValue(DEFAULTS.toolTierLogBonus)
-			.setSaveConsumer(b -> toolTierLogBonus = b)
-			.setTooltip(parse("config.tdnf.help.tool_tier_log_bonus"))
-			.build());
-
-		players.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.enable_efficiency_log_multiplier"), enableEfficiencyLogMultiplier)
-			.setDefaultValue(DEFAULTS.enableEfficiencyLogMultiplier)
-			.setSaveConsumer(b -> enableEfficiencyLogMultiplier = b)
-			.setTooltip(parse("config.tdnf.help.enable_efficiency_log_multiplier"))
-			.build());
-
-		// PERFORMANCE
-		final ConfigCategory performance = builder.getOrCreateCategory(new TranslatableComponent("config.tdnf.category.performance"));
-
-		performance.addEntry(ENTRY_BUILDER.startBooleanToggle(new TranslatableComponent("config.tdnf.value.consolidate_drops"), stackDrops)
-			.setDefaultValue(DEFAULTS.stackDrops)
-			.setSaveConsumer(b -> stackDrops = b)
-			.setTooltip(parse("config.tdnf.help.consolidate_drops"))
-			.build());
-
-		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableComponent("config.tdnf.value.max_jobs_per_world"), maxJobsPerWorld, 1, 256)
-			.setDefaultValue(DEFAULTS.maxJobsPerWorld)
-			.setSaveConsumer(b -> maxJobsPerWorld = b)
-			.setTooltip(parse("config.tdnf.help.max_jobs_per_world"))
-			.build());
-
-		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableComponent("config.tdnf.value.effect_level"), effectsPerSecond, 0, 20)
-			.setDefaultValue(DEFAULTS.effectsPerSecond)
-			.setSaveConsumer(b -> effectsPerSecond = b)
-			.setTooltip(parse("config.tdnf.help.effect_level"))
-			.build());
-
-		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableComponent("config.tdnf.value.max_breaks_per_second"), maxBreaksPerSecond, 1, 2560)
-			.setDefaultValue(DEFAULTS.maxBreaksPerSecond)
-			.setSaveConsumer(b -> maxBreaksPerSecond = b)
-			.setTooltip(parse("config.tdnf.help.max_breaks_per_second"))
-			.build());
-
-		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableComponent("config.tdnf.value.tick_budget"), tickBudget, 1, 5)
-			.setDefaultValue(DEFAULTS.tickBudget)
-			.setSaveConsumer(b -> tickBudget = b)
-			.setTooltip(parse("config.tdnf.help.tick_budget"))
-			.build());
-
-		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableComponent("config.tdnf.value.max_falling_blocks"), maxFallingBlocks, 1, 64)
-			.setDefaultValue(DEFAULTS.maxFallingBlocks)
-			.setSaveConsumer(b -> maxFallingBlocks = b)
-			.setTooltip(parse("config.tdnf.help.max_falling_blocks"))
-			.build());
-
-		performance.addEntry(ENTRY_BUILDER.startIntSlider(new TranslatableComponent("config.tdnf.value.job_timeout_seconds"), jobTimeoutSeconds, 20, 2400)
-			.setDefaultValue(DEFAULTS.jobTimeoutSeconds)
-			.setSaveConsumer(b -> {
-				jobTimeoutSeconds = b;
-				jobTimeoutTicks = b * 20;
-			})
-			.setTooltip(parse("config.tdnf.help.job_timeout_seconds"))
-			.build());
-
-		builder.setDoesConfirmSave(false);
-
-		return builder.build();
+		protected void render(PoseStack matrixStack) {
+			drawCenteredString(matrixStack, font, label, center, top, 16777215);
+		}
 	}
 
-	private static void saveUserInput() {
-		Configurator.computeDerived();
-		Configurator.saveConfig();
+	protected class Toggle extends Checkbox {
+		protected final List<FormattedCharSequence> toolTip;
+
+		protected Toggle(int left, int top, int width, int height, String label_name, boolean value) {
+			super(left, top, width, height, new TranslatableComponent("config.tdnf.value." + label_name), value);
+			toolTip = minecraft.font.split(new TranslatableComponent("config.tdnf.help." + label_name), 200);
+		}
+
+		@Override
+		public void renderButton(PoseStack matrices, int mouseX, int mouseY, float delta) {
+			super.renderButton(matrices, mouseX, mouseY, delta);
+
+			if (isHovered) {
+				ConfigScreen.this.renderTooltip(matrices, toolTip, mouseX, mouseY);
+			}
+		}
+	}
+
+	protected class CycleButton<V extends Enum<?>> extends AbstractButton {
+		protected final List<FormattedCharSequence> toolTip;
+		protected final V[] values;
+		protected final Component[] valueLabels;
+		protected V value;
+
+		protected CycleButton(int left, int top, int width, int height, String label_name, Class<V> e, V value) {
+			super(left, top, width, height, new TranslatableComponent("config.tdnf.value." + label_name));
+			this.values = e.getEnumConstants();
+			this.value = value;
+			this.valueLabels = new Component[values.length];
+
+			final String baseLabel = I18n.get("config.tdnf.value." + label_name) + ": ";
+
+			for (int i = 0; i < values.length; ++i) {
+				valueLabels[i] = new TextComponent(baseLabel + I18n.get("config.tdnf.value." + label_name + "." + values[i].name().toLowerCase()));
+			}
+
+			toolTip = minecraft.font.split(new TranslatableComponent("config.tdnf.help." + label_name), 200);
+			setMessage(valueLabels[value.ordinal()]);
+		}
+
+		@Override
+		public void updateNarration(NarrationElementOutput var1) {
+			// TODO implement?
+		}
+
+		@Override
+		public void onPress() {
+			if (Screen.hasShiftDown()) {
+				this.cycleValue(-1);
+			} else {
+				this.cycleValue(1);
+			}
+		}
+
+		protected void cycleValue(int i) {
+			final int index = Mth.positiveModulo(value.ordinal() + i, values.length);
+			value = values[index];
+			setMessage(valueLabels[index]);
+		}
+
+		protected V getValue() {
+			return value;
+		}
+
+		protected void setValue(V value) {
+			this.value = value;
+			setMessage(valueLabels[value.ordinal()]);
+		}
+
+		@Override
+		public void renderButton(PoseStack matrices, int mouseX, int mouseY, float delta) {
+			super.renderButton(matrices, mouseX, mouseY, delta);
+
+			if (isHovered) {
+				ConfigScreen.this.renderTooltip(matrices, toolTip, mouseX, mouseY);
+			}
+		}
+	}
+
+	protected class Slider extends AbstractSliderButton {
+		protected final int min;
+		protected final int max;
+		protected int intValue;
+		protected final String baseLabel;
+		protected final List<FormattedCharSequence> toolTip;
+
+		protected Slider(int left, int top, int width, int height, String label_name, int min, int max, int value) {
+			super(left, top, width, height, new TranslatableComponent("config.tdnf.value." + label_name), normalize(min, max, value));
+			toolTip = minecraft.font.split(new TranslatableComponent("config.tdnf.help." + label_name), 200);
+			this.intValue = value;
+			this.min = min;
+			this.max = max;
+			baseLabel = I18n.get("config.tdnf.value." + label_name) + ": ";
+			updateMessage();
+		}
+
+		@Override
+		protected void updateMessage() {
+			this.setMessage(new TextComponent(baseLabel + intValue));
+		}
+
+		@Override
+		protected void applyValue() {
+			intValue = (int) Mth.lerp(Mth.clamp(this.value, 0.0, 1.0), min, max);
+		}
+
+		protected int getValue() {
+			return intValue;
+		}
+
+		protected void setValue(int value) {
+			this.intValue = value;
+			this.value = normalize(min, max, value);
+			updateMessage();
+		}
+
+		protected static double normalize(int min, int max, int value) {
+			value = Mth.clamp(value, min, max);
+			return (value - min) / (double) (max - min + 1);
+		}
+
+		@Override
+		public void renderButton(PoseStack matrices, int mouseX, int mouseY, float delta) {
+			super.renderButton(matrices, mouseX, mouseY, delta);
+
+			if (isHovered) {
+				ConfigScreen.this.renderTooltip(matrices, toolTip, mouseX, mouseY);
+			}
+		}
+	}
+
+	public ConfigScreen(Screen parent, ConfigData config) {
+		super(new TranslatableComponent("config.tdnf.title"));
+		this.parent = parent;
+		this.config = config;
+	}
+
+	@Override
+	public void removed() {
+		// NOOP
+	}
+
+	@Override
+	public void onClose() {
+		minecraft.setScreen(parent);
+	}
+
+	@Override
+	protected void init() {
+		initSizes();
+		labels.clear();
+		clearWidgets();
+
+		labels.add(new Label(title, width / 2, padding));
+
+		addControls();
+
+		addRenderableWidget(new Button(width / 2 - 120 - padding / 2, height - lineHeight, 120, controlHeight, CommonComponents.GUI_CANCEL, (buttonWidget) -> {
+			minecraft.setScreen(parent);
+		}));
+
+		addRenderableWidget(new Button(width / 2 + padding / 2, height - lineHeight, 120, controlHeight, new TranslatableComponent("config.tdnf.value.save"), (buttonWidget) -> {
+			saveValues();
+			Configurator.readConfig(config);
+			Configurator.saveConfig(config);
+			minecraft.setScreen(parent);
+		}));
+	}
+
+	protected abstract void addControls();
+
+	protected abstract void saveValues();
+
+	@Override
+	public void render(PoseStack matrixStack, int i, int j, float f) {
+		renderDirtBackground(i);
+
+		for (final var l : labels) {
+			l.render(matrixStack);
+		}
+
+		super.render(matrixStack, i, j, f);
 	}
 }

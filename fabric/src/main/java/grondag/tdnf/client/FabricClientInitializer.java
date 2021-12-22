@@ -24,8 +24,8 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 
+import grondag.tdnf.FallingLogEntity;
 import grondag.tdnf.Platform;
-import grondag.tdnf.world.FallingLogEntity;
 
 public class FabricClientInitializer implements ClientModInitializer {
 	@Override

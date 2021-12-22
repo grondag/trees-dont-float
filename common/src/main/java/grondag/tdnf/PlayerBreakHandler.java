@@ -28,7 +28,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-import grondag.tdnf.Configurator.FallCondition;
+import grondag.tdnf.config.Configurator;
+import grondag.tdnf.config.Configurator.FallCondition;
 import grondag.tdnf.world.Dispatcher;
 import grondag.tdnf.world.DropHandler;
 import grondag.tdnf.world.TreeBlock;
@@ -66,9 +67,9 @@ public class PlayerBreakHandler {
 
 	public static void onBreak(Level world, Player player, BlockPos pos, BlockState state, /* Nullable */ BlockEntity blockEntity) {
 		if (isLogInProgress) {
-			if (TreeBlock.isLog(state)) {
+			if (TreeBlock.isLog(state) && Configurator.activeWhen.test(player)) {
 				if (Configurator.fallCondition != FallCondition.USE_TOOL || DropHandler.hasAxe(player, player.getMainHandItem())) {
-					Dispatcher.enqueCheck((ServerLevel) world, pos, (ServerPlayer) player);
+					Dispatcher.enqueBreak((ServerLevel) world, pos, (ServerPlayer) player);
 				}
 			}
 

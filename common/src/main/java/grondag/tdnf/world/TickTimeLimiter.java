@@ -20,7 +20,7 @@
 
 package grondag.tdnf.world;
 
-import grondag.tdnf.Configurator;
+import grondag.tdnf.config.Configurator;
 
 public class TickTimeLimiter {
 	private TickTimeLimiter() { }

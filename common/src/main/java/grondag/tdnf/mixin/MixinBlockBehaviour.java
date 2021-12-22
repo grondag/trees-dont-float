@@ -39,10 +39,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
-import grondag.tdnf.Configurator;
-import grondag.tdnf.Configurator.FallCondition;
 import grondag.tdnf.Platform;
 import grondag.tdnf.PlayerBreakHandler;
+import grondag.tdnf.config.Configurator;
+import grondag.tdnf.config.Configurator.FallCondition;
 import grondag.tdnf.world.Dispatcher;
 import grondag.tdnf.world.TreeBlock;
 
@@ -92,7 +92,7 @@ public abstract class MixinBlockBehaviour implements TreeBlock {
 			final BlockState otherState = level.getBlockState(otherPos);
 
 			if (!Block.isFaceFull(otherState.getCollisionShape(level, otherPos, CollisionContext.empty()), Direction.UP)) {
-				Dispatcher.enqueCheck((ServerLevel) level, otherPos, null);
+				Dispatcher.enqueBreak((ServerLevel) level, otherPos, null);
 			}
 		}
 	}
@@ -106,7 +106,7 @@ public abstract class MixinBlockBehaviour implements TreeBlock {
 			&& !Block.isFaceFull(newState.getCollisionShape(level, blockPos, CollisionContext.empty()), Direction.UP)
 		) {
 			//			System.out.println("onBlockRemoved notify = " + notify);
-			Dispatcher.enqueCheck((ServerLevel) level, blockPos, null);
+			Dispatcher.enqueBreak((ServerLevel) level, blockPos, null);
 		}
 	}
 }

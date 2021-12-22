@@ -33,8 +33,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
-import grondag.tdnf.world.FallingLogEntity;
-
 @Mod.EventBusSubscriber(modid = TreesDoNotFloat.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Platform {
 	public static Path configDirectory() {
@@ -49,9 +47,9 @@ public class Platform {
 		return block.getRegistryName().toString();
 	}
 
-	private static EntityType<? extends FallingLogEntity> FALLING_LOG;
+	private static EntityType<FallingLogEntity> FALLING_LOG;
 
-	public static EntityType<? extends FallingLogEntity> fallingLogEntityType() {
+	public static EntityType<FallingLogEntity> fallingLogEntityType() {
 		return FALLING_LOG;
 	}
 

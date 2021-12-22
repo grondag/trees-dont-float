@@ -18,16 +18,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package grondag.tdnf.client;
+package grondag.tdnf;
 
-import com.terraformersmc.modmenu.api.ConfigScreenFactory;
-import com.terraformersmc.modmenu.api.ModMenuApi;
+import io.netty.buffer.Unpooled;
 
-import grondag.tdnf.config.Configurator;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
-public class ModMenuHelper implements ModMenuApi {
+import grondag.tdnf.world.BaseFallingLogEntity;
+
+public class FallingLogEntity extends BaseFallingLogEntity {
+	public FallingLogEntity(EntityType<? extends FallingLogEntity> entityType, Level world) {
+		super(entityType, world);
+	}
+
+	public FallingLogEntity(Level world, double x, double y, double z, BlockState state) {
+		super(world, x, y, z, state);
+	}
+
 	@Override
-	public ConfigScreenFactory<?> getModConfigScreenFactory() {
-		return screen -> new PresetConfigScreen(screen, Configurator.writeConfig());
+	public Packet<?> getAddEntityPacket() {
+		final FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+		toBuffer(buf);
+		return new ClientboundCustomPayloadPacket(IDENTIFIER, buf);
 	}
 }

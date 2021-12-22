@@ -28,8 +28,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-import grondag.tdnf.Configurator;
-import grondag.tdnf.Configurator.FallCondition;
+import grondag.tdnf.config.Configurator;
+import grondag.tdnf.config.Configurator.FallCondition;
 
 public class TreeJob {
 	private TreeJob() { }
@@ -42,9 +42,9 @@ public class TreeJob {
 	private boolean canCancel = true;
 	private int ticks = 0;
 
-	private void reset() {
+	private void reset(ProtectionTracker protectionTracker) {
 		ticks = 0;
-		cutter.reset();
+		cutter.reset(protectionTracker);
 	}
 
 	public void prepareForTick(ServerLevel world) {
@@ -127,7 +127,7 @@ public class TreeJob {
 
 	private static final ArrayBlockingQueue<TreeJob> POOL = new ArrayBlockingQueue<>(512);
 
-	public static TreeJob claim(long startPos, ServerPlayer player, ItemStack stack) {
+	public static TreeJob claim(long startPos, ServerPlayer player, ItemStack stack, ProtectionTracker protectionTracker) {
 		TreeJob result = POOL.poll();
 
 		if (result == null) {
@@ -141,7 +141,7 @@ public class TreeJob {
 		// Overall the assumptions here are sloppy for modded - may need to rethink how tools work
 		result.hasAxe = DropHandler.hasAxe(player, stack);
 		result.canCancel = result.hasAxe && Configurator.fallCondition == FallCondition.USE_TOOL;
-		result.reset();
+		result.reset(protectionTracker);
 		return result;
 	}
 }

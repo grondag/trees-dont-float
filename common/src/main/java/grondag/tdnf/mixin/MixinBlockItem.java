@@ -18,22 +18,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package grondag.tdnf;
+package grondag.tdnf.mixin;
 
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import grondag.tdnf.config.Configurator;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.state.BlockState;
+
 import grondag.tdnf.world.Dispatcher;
+import grondag.tdnf.world.TreeBlock;
 
-public class FabricInitializer implements ModInitializer {
-	@Override
-	public void onInitialize() {
-		Configurator.init();
-		ServerTickEvents.END_WORLD_TICK.register(Dispatcher::routeTick);
-		PlayerBlockBreakEvents.BEFORE.register(PlayerBreakHandler::beforeBreak);
-		PlayerBlockBreakEvents.AFTER.register(PlayerBreakHandler::onBreak);
-		PlayerBlockBreakEvents.CANCELED.register(PlayerBreakHandler::onCanceled);
+@Mixin(BlockItem.class)
+public class MixinBlockItem {
+	@Inject(at = @At("RETURN"), method = "placeBlock")
+	private void afterPlace(BlockPlaceContext blockPlaceContext, BlockState blockState, CallbackInfoReturnable<Boolean> ci) {
+		if (ci.getReturnValue() && !blockPlaceContext.getLevel().isClientSide && TreeBlock.isLog(blockState)) {
+			Dispatcher.protect((ServerLevel) blockPlaceContext.getLevel(), blockPlaceContext.getClickedPos());
+		}
 	}
 }

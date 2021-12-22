@@ -25,9 +25,9 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.FriendlyByteBuf;
 
-import grondag.tdnf.Configurator;
+import grondag.tdnf.FallingLogEntity;
 import grondag.tdnf.Platform;
-import grondag.tdnf.world.FallingLogEntity;
+import grondag.tdnf.config.Configurator;
 
 public class FallingLogNetworkHandler {
 	public static void accept(Minecraft client, ClientPacketListener handler, FriendlyByteBuf buffer) {

@@ -33,8 +33,6 @@ import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.fabricmc.fabric.api.tool.attribute.v1.FabricToolTags;
 import net.fabricmc.loader.api.FabricLoader;
 
-import grondag.tdnf.world.FallingLogEntity;
-
 public class Platform {
 	public static boolean isAxe(ItemStack stack) {
 		return FabricToolTags.AXES.contains(stack.getItem());
@@ -48,14 +46,14 @@ public class Platform {
 		return Registry.BLOCK.getKey(block).toString();
 	}
 
-	private static final EntityType<? extends FallingLogEntity> FALLING_LOG;
+	private static final EntityType<FallingLogEntity> FALLING_LOG;
 
 	static {
 		final var type = FabricEntityTypeBuilder.<FallingLogEntity>create(MobCategory.MISC, FallingLogEntity::new).dimensions(EntityDimensions.fixed(0.9f, 0.9f)).build();
 		FALLING_LOG = Registry.register(Registry.ENTITY_TYPE, FallingLogEntity.IDENTIFIER, type);
 	}
 
-	public static EntityType<? extends FallingLogEntity> fallingLogEntityType() {
+	public static EntityType<FallingLogEntity> fallingLogEntityType() {
 		return FALLING_LOG;
 	}
 }

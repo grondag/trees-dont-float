@@ -1,69 +1,101 @@
 {
 	"config.tdnf.title" : "Trees Do Not Float",
-	"config.tdnf.reset" : "Reset",
+	"config.tdnf.value.save" : "Save Changes",
 	
-	"config.tdnf.category.blocks" : "Blocks",
-		
-	"config.tdnf.value.fall_condition" : "Fall Condition",
+	"config.tdnf.title.presets" : "Presets",
+	
+	"config.tdnf.value.presets" : "Presets...",
+	"config.tdnf.help.presets" : "Select from pre-made configurations.",
+	
+	"config.tdnf.value.preset.deforestation" : "Deforestation",
+	"config.tdnf.help.preset.deforestation" : "Overpowered? Yes. Fun? Also yes.",
+	
+	"config.tdnf.value.preset.physics" : "Physics",
+	"config.tdnf.help.preset.physics" : "Trees fall easily but logs are kept intact and may damage nearby objects.",
+	
+	"config.tdnf.value.preset.lumberjack" : "Lumberjack",
+	"config.tdnf.help.preset.lumberjack" : "Axe is required. Better axes and efficiency enchantment increase breaking range. No automated farms.",
+	
+	"config.tdnf.value.preset.progression" : "Progression",
+	"config.tdnf.help.preset.progression" : "Axes help and better axes help more. Automated farms have a modest range.",
+	
+	"config.tdnf.value.preset.hardcore" : "Hardcore",
+	"config.tdnf.help.preset.hardcore" : "Axes are required, logs remain intact, ranges are reduced, leaves cost durability and automation doesn't work.",
+	
+	"config.tdnf.value.preset.skyblock" : "Skyblock",
+	"config.tdnf.help.preset.skyblock" : "Items are directly deposited. Ranges are modest and axes help. Automated farms work.",
+	
+	"config.tdnf.value.custom_config" : "Custom Config...",
+	"config.tdnf.help.custom_config" : "Create custom behavior.",
+	
+	"config.tdnf.value.performance" : "Performance...",
+	"config.tdnf.help.performance" : "Tune mod performance.",
+	
+	"config.tdnf.value.fall_condition" : "Fall When",
 	"config.tdnf.help.fall_condition" : "When do trees break?",
+	"config.tdnf.value.fall_condition.log_break" : "Log Breaks",
+	"config.tdnf.value.fall_condition.use_tool" : "Use Tool",
+	"config.tdnf.value.fall_condition.no_support" : "Unsupported",
 	
-	"config.tdnf.value.fast_leaf_decat" : "Fast Leaf Decay",
-	"config.tdnf.help.fast_leaf_decat" : "Leaves decay instantly. Ignored (enabled);when Keep Logs Intact is true.",
+	"config.tdnf.value.fast_leaf_decay" : "Fast Leaf Decay",
+	"config.tdnf.help.fast_leaf_decay" : "Leaves decay instantly. Ignored (enabled) when Keep Logs Intact is true.",
 	
 	"config.tdnf.value.keep_logs_intact" : "Keep Logs Intact",
-	"config.tdnf.help.keep_logs_intact" : "Log blocks fall to the ground instead of dropping;as items. Can be laggy.",
+	"config.tdnf.help.keep_logs_intact" : "Log blocks fall to the ground instead of dropping as items. Can be laggy.",
 	
 	"config.tdnf.value.render_falling" : "Render Falling",
-	"config.tdnf.help.render_falling" : "Render falling logs? (Affects client side only.) Can be laggy.",
+	"config.tdnf.help.render_falling" : "Renders falling logs as entities. Requires Keep Logs Intact. Client side only. Can be laggy.",
 
 	"config.tdnf.value.break_leaves" : "Break Plants",
-	"config.tdnf.help.break_leaves" : "Falling logs break leaves and other plants;on the way down.",
+	"config.tdnf.help.break_leaves" : "Falling logs break leaves and other plants on the way down.",
 	
 	"config.tdnf.value.break_fragile" : "Break Fragiles",
 	"config.tdnf.help.break_fragile" : "Falling logs break glass and other fragile blocks.",
 	
 	"config.tdnf.value.active_when" : "Active When",
 	"config.tdnf.help.active_when" : "Players can sneak (or not sneak) to disable mod for building.",
+	"config.tdnf.value.active_when.sneaking" : "Sneaking",
+	"config.tdnf.value.active_when.not_sneaking" : "Not Sneaking",
+	"config.tdnf.value.active_when.always" : "Always",
 	
 	"config.tdnf.value.break_fungal_leaves" : "Break Fungal Leaves",
 	"config.tdnf.help.break_fungal_leaves" : "Break large fungal wart blocks and Shroomlamps.",
 	
-	"config.tdnf.category.players" : "Players",
-	
 	"config.tdnf.value.direct_deposit" : "Direct Deposit",
-	"config.tdnf.help.direct_deposit" : "Dropped items go directly to player inventory.;Useful for skyblock packs.",
+	"config.tdnf.help.direct_deposit" : "Dropped items go directly to player inventory. Useful for skyblock packs.",
 	
 	"config.tdnf.value.apply_fortune" : "Apply Fortune",
-	"config.tdnf.help.apply_fortune" : "Apply fortune from tool used to fell;a tree. (If a tool is used)",
+	"config.tdnf.help.apply_fortune" : "Apply fortune from tool used to fell a tree. (If a tool is used)",
 	
 	"config.tdnf.value.consume_durability" : "Consume Durability",
-	"config.tdnf.help.consume_durability" : "Remove durability from a tool used;to fell a tree. (If a tool is used)",
+	"config.tdnf.help.consume_durability" : "Remove durability from a tool used to fell a tree. (If a tool is used)",
 	
 	"config.tdnf.value.leaf_durability" : "Leaf Durability",
-	"config.tdnf.help.leaf_durability" : "Tools take durability loss from leaves as;well as logs. (If a tool is used)",
+	"config.tdnf.help.leaf_durability" : "Tools take durability loss from leaves as well as logs. (If a tool is used)",
 	
 	"config.tdnf.value.protect_tools" : "Protect Tools",
 	"config.tdnf.help.protect_tools" : "Don't break tools when using durability.",
 	
+	"config.tdnf.value.protect_placed_blocks" : "Protect Placed Blocks",
+	"config.tdnf.help.protect_placed_blocks" : "Don't break blocks placed by players.",
+	
 	"config.tdnf.value.apply_hunger" : "Apply Hunger",
-	"config.tdnf.help.apply_hunger" : "Players gain hunger from felling trees,;as if they had broken each log.",
+	"config.tdnf.help.apply_hunger" : "Players gain hunger from felling trees, as if they had broken each log.",
 	
 	"config.tdnf.value.leaf_hunger" : "Leaf Hunger",
-	"config.tdnf.help.leaf_hunger" : "Players gain hunger from leaves;in addition to logs.",
+	"config.tdnf.help.leaf_hunger" : "Players gain hunger from leaves in addition to logs.",
 
 	"config.tdnf.value.non_player_log_limit" : "Non-Player Log Limit",
-	"config.tdnf.help.non_player_log_limit" : "Max logs that can be broken by non-player mechanics;like pistons, fire and TNT.",
+	"config.tdnf.help.non_player_log_limit" : "Max logs that can be broken by non-player mechanics like pistons, fire and TNT.",
 	
 	"config.tdnf.value.player_base_log_limit" : "Player Base Log Limit",
 	"config.tdnf.help.player_base_log_limit" : "Logs that can be broken by a player without using a tool.",
 	
 	"config.tdnf.value.tool_tier_log_bonus" : "Log Limit Tool Bonus",
-	"config.tdnf.help.tool_tier_log_bonus" : "Additional logs broken when player uses a tool,; per tier of tool. Set zero to disable.",
+	"config.tdnf.help.tool_tier_log_bonus" : "Additional logs broken when player uses a tool,  per tier of tool. Set zero to disable.",
 	
-	"config.tdnf.value.enable_efficiency_log_multiplier" : "Log Limit Efficiency Multiplier",
+	"config.tdnf.value.enable_efficiency_log_multiplier" : "Efficiency Multiplier",
 	"config.tdnf.help.enable_efficiency_log_multiplier" : "Log breaking limit is multiplied by Efficency enchantment level.",
-	
-	"config.tdnf.category.performance" : "Performance",
 	
 	"config.tdnf.value.consolidate_drops" : "Combine Stacks",
 	"config.tdnf.help.consolidate_drops" : "Consolidate item drops into stacks to prevent lag",
@@ -72,13 +104,13 @@
 	"config.tdnf.help.max_jobs_per_world" : "Maximum concurrent breaking tasks in each world.",
 	
 	"config.tdnf.value.effect_level" : "Effect Level",
-	"config.tdnf.help.effect_level" : "Spawn breaking particles and play sounds?;Number is max effects per second.",
+	"config.tdnf.help.effect_level" : "Spawn breaking particles and play sounds? Number is max effects per second.",
 	
 	"config.tdnf.value.max_breaks_per_second" : "Break Speed",
 	"config.tdnf.help.max_breaks_per_second" : "Max log & leaf blocks to break per second",
 	
 	"config.tdnf.value.tick_budget" : "Tick Budget",
-	"config.tdnf.help.tick_budget" : "Max percentage of each server tick;that can be used in each world.",
+	"config.tdnf.help.tick_budget" : "Max percentage of each server tick that can be used in each world.",
 	
 	"config.tdnf.value.max_falling_blocks" : "Max Falling Blocks",
 	"config.tdnf.help.max_falling_blocks" : "Max number of active falling block entities.",
@@ -87,5 +119,5 @@
 	"config.tdnf.help.support_surface" : "What counts as support for logs?",
 	
 	"config.tdnf.value.job_timeout_seconds" : "Job Timeout Seconds",
-	"config.tdnf.help.job_timeout_seconds" : "Jobs taking longer than this are abandoned.;Use larger values with slow breaking speeds."
+	"config.tdnf.help.job_timeout_seconds" : "Jobs taking longer than this are abandoned. Use larger values with slow breaking speeds."
 }
