@@ -45,12 +45,12 @@ public abstract class MixinServerPlayerGameMode {
 	@Shadow protected ServerLevel level;
 	@Shadow protected ServerPlayer player;
 
-	@Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;removedByPlayer(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/player/Player;ZLnet/minecraft/world/level/material/FluidState;)Z"), method = "removeBlock", locals = LocalCapture.CAPTURE_FAILHARD, remap = false)
+	@Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;onDestroyedByPlayer(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/player/Player;ZLnet/minecraft/world/level/material/FluidState;)Z"), method = "removeBlock", locals = LocalCapture.CAPTURE_FAILHARD, remap = false)
 	private void beforeBreakBlock(BlockPos pos, boolean canHarvest, CallbackInfoReturnable<Boolean> cir, BlockState state) {
 		PlayerBreakHandler.beforeBreak(level, player, pos, state, null);
 	}
 
-	@Inject(at = @At(value = "INVOKE_ASSIGN", target = "Lnet/minecraft/world/level/block/state/BlockState;removedByPlayer(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/player/Player;ZLnet/minecraft/world/level/material/FluidState;)Z"), method = "removeBlock", locals = LocalCapture.CAPTURE_FAILHARD, remap = false)
+	@Inject(at = @At(value = "INVOKE_ASSIGN", target = "Lnet/minecraft/world/level/block/state/BlockState;onDestroyedByPlayer(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/player/Player;ZLnet/minecraft/world/level/material/FluidState;)Z"), method = "removeBlock", locals = LocalCapture.CAPTURE_FAILHARD, remap = false)
 	private void afterBreakBlock(BlockPos pos, boolean canHarvest, CallbackInfoReturnable<Boolean> cir, BlockState state, boolean removed) {
 		if (removed) {
 			PlayerBreakHandler.onBreak(level, player, pos, state, null);

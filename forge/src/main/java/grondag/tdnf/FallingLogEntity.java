@@ -20,7 +20,7 @@
 
 package grondag.tdnf;
 
-import net.minecraftforge.fmllegacy.common.registry.IEntityAdditionalSpawnData;
+import net.minecraftforge.entity.IEntityAdditionalSpawnData;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.EntityType;
