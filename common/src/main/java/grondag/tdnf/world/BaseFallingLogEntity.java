@@ -108,7 +108,10 @@ public abstract class BaseFallingLogEntity extends FallingBlockEntity {
 		final boolean inWorldRange = myPosPreMove.getY() >= level.getMinBuildHeight() && myPosPreMove.getY() <= level.getMaxBuildHeight();
 
 		if (time > 200 || !inWorldRange) {
-			spawnAtLocation(blockState.getBlock());
+			if (!level.isClientSide && level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+				spawnAtLocation(blockState.getBlock());
+			}
+
 			discard();
 
 			if (DEBUG && !this.level.isClientSide) {
