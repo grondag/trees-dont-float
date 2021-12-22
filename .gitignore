@@ -1,0 +1,47 @@
+## Windows
+Thumbs.db
+
+## exclude large animated textures
+*_anim.png
+*_anim_low.png
+
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+eclipse
+gruntle
+
+build
+run
+
+
+##idea
+*.iml
+*.ipr
+*.iws
+
+## Jars
+
+### OSX (adds a lot of garbage)###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+#stuff
+#config
+logs
+.html
+discarded textures
+*.nps
+/.apt_generated/
+notes.txt
+*.csv
+.mixin.out/audit/mixin_implementation_report.txt
+.vscode
