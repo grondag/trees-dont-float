@@ -749,10 +749,9 @@ public class TreeCutter {
 			if (xVelocity == 0 && zVelocity == 0) {
 				xVelocity = r.nextGaussian();
 				zVelocity = r.nextGaussian();
-				fallAxis = Axis.Y;
-			} else {
-				fallAxis = Math.abs(xVelocity) > Math.abs(zVelocity) ? Axis.X : Axis.Z;
 			}
+
+			fallAxis = Math.abs(xVelocity) > Math.abs(zVelocity) ? Axis.X : Axis.Z;
 
 			// normalize
 			final double len = 0.75f / Math.sqrt(xVelocity * xVelocity + zVelocity * zVelocity);
