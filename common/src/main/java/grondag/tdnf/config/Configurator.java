@@ -119,7 +119,7 @@ public class Configurator {
 		if (configFile.exists()) {
 			loadConfig();
 		} else {
-			saveConfig(loadConfig());
+			createConfig();
 		}
 	}
 
@@ -161,6 +161,12 @@ public class Configurator {
 		maxFallingBlocks = Mth.clamp(config.maxFallingBlocks, 1, 64);
 		jobTimeoutSeconds = Mth.clamp(config.jobTimeoutSeconds, 20, 1800);
 		computeDerived();
+	}
+
+	private static void createConfig() {
+		final ConfigData config = new ConfigData();
+		readConfig(config);
+		saveConfig(config);
 	}
 
 	private static ConfigData loadConfig() {
