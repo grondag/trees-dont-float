@@ -779,7 +779,7 @@ public class TreeCutter {
 		final BlockState state = world.getBlockState(pos);
 		final Block block = state.getBlock();
 
-		if (BlockTags.LEAVES.contains(block)) {
+		if (block.builtInRegistryHolder().is(BlockTags.LEAVES)) {
 			if (!Configurator.leafDurability || checkDurability(world, state, pos)) {
 				breakBlock(pos, world);
 				breakBudget -= 20;

@@ -60,7 +60,7 @@ public abstract class MixinBlockBehaviour implements TreeBlock {
 			final Block self = (Block) (Object) this;
 			final String myName = Platform.getBlockName(self);
 
-			if (BlockTags.LOGS.contains(self) && (material == Material.WOOD || material == Material.NETHER_WOOD)) {
+			if (self.builtInRegistryHolder().is(BlockTags.LOGS) && (material == Material.WOOD || material == Material.NETHER_WOOD)) {
 				if (self == Blocks.CRIMSON_STEM || self == Blocks.WARPED_STEM || Configurator.moddedFungusLogs.contains(myName)) {
 					result = FUNGUS_LOG;
 				} else {

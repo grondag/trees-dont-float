@@ -93,10 +93,12 @@ public abstract class BaseFallingLogEntity extends FallingBlockEntity {
 			return;
 		}
 
+		time++;
+
 		// Needed starting in 1.18 because vanilla defers removal on client side.
 		// Without it, logs go scurrying along the ground indefinitely.
-		if (this.level.isClientSide && this.removeAtMillis > 0L) {
-			if (System.currentTimeMillis() >= this.removeAtMillis) {
+		if (this.level.isClientSide) {
+			if (time > 600) {
 				// Using kill here prevents us from resetting the timeout - that logic keys
 				// off of DISCARD-type remove and is baked into our parent class. We have no
 				// elegant way to call the grandparent removal method that doesn't reset it.
@@ -113,8 +115,6 @@ public abstract class BaseFallingLogEntity extends FallingBlockEntity {
 		//xo = getX();
 		//yo = getY();
 		//zo = getZ();
-
-		time++;
 
 		final BlockPos myPosPreMove = blockPosition();
 

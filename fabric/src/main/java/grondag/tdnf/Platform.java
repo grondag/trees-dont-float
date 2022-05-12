@@ -28,14 +28,14 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
-import net.fabricmc.fabric.api.tool.attribute.v1.FabricToolTags;
 import net.fabricmc.loader.api.FabricLoader;
 
 public class Platform {
 	public static boolean isAxe(ItemStack stack) {
-		return FabricToolTags.AXES.contains(stack.getItem());
+		return stack.getItem().isCorrectToolForDrops(Blocks.ACACIA_LOG.defaultBlockState());
 	}
 
 	public static Path configDirectory() {
