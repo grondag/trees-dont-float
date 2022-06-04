@@ -5,8 +5,8 @@ dependencies {
 	modImplementation "blue.endless:jankson:1.2.1"
 	include "blue.endless:jankson:1.2.1"
 
-	modCompileOnly "com.terraformersmc:modmenu:3.0.1"
-	modRuntimeOnly "com.terraformersmc:modmenu:3.0.1"
+	modCompileOnly "com.terraformersmc:modmenu:3.2.2"
+	modRuntimeOnly "com.terraformersmc:modmenu:3.2.2"
 }
 
 sourceSets {
