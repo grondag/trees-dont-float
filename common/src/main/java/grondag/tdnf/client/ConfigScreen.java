@@ -35,8 +35,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 
@@ -94,8 +92,8 @@ public abstract class ConfigScreen extends Screen {
 		protected final List<FormattedCharSequence> toolTip;
 
 		protected Toggle(int left, int top, int width, int height, String label_name, boolean value) {
-			super(left, top, width, height, new TranslatableComponent("config.tdnf.value." + label_name), value);
-			toolTip = minecraft.font.split(new TranslatableComponent("config.tdnf.help." + label_name), 200);
+			super(left, top, width, height, Component.translatable("config.tdnf.value." + label_name), value);
+			toolTip = minecraft.font.split(Component.translatable("config.tdnf.help." + label_name), 200);
 		}
 
 		@Override
@@ -115,7 +113,7 @@ public abstract class ConfigScreen extends Screen {
 		protected V value;
 
 		protected CycleButton(int left, int top, int width, int height, String label_name, Class<V> e, V value) {
-			super(left, top, width, height, new TranslatableComponent("config.tdnf.value." + label_name));
+			super(left, top, width, height, Component.translatable("config.tdnf.value." + label_name));
 			this.values = e.getEnumConstants();
 			this.value = value;
 			this.valueLabels = new Component[values.length];
@@ -123,10 +121,10 @@ public abstract class ConfigScreen extends Screen {
 			final String baseLabel = I18n.get("config.tdnf.value." + label_name) + ": ";
 
 			for (int i = 0; i < values.length; ++i) {
-				valueLabels[i] = new TextComponent(baseLabel + I18n.get("config.tdnf.value." + label_name + "." + values[i].name().toLowerCase()));
+				valueLabels[i] = Component.literal(baseLabel + I18n.get("config.tdnf.value." + label_name + "." + values[i].name().toLowerCase()));
 			}
 
-			toolTip = minecraft.font.split(new TranslatableComponent("config.tdnf.help." + label_name), 200);
+			toolTip = minecraft.font.split(Component.translatable("config.tdnf.help." + label_name), 200);
 			setMessage(valueLabels[value.ordinal()]);
 		}
 
@@ -177,8 +175,8 @@ public abstract class ConfigScreen extends Screen {
 		protected final List<FormattedCharSequence> toolTip;
 
 		protected Slider(int left, int top, int width, int height, String label_name, int min, int max, int value) {
-			super(left, top, width, height, new TranslatableComponent("config.tdnf.value." + label_name), normalize(min, max, value));
-			toolTip = minecraft.font.split(new TranslatableComponent("config.tdnf.help." + label_name), 200);
+			super(left, top, width, height, Component.translatable("config.tdnf.value." + label_name), normalize(min, max, value));
+			toolTip = minecraft.font.split(Component.translatable("config.tdnf.help." + label_name), 200);
 			this.intValue = value;
 			this.min = min;
 			this.max = max;
@@ -188,7 +186,7 @@ public abstract class ConfigScreen extends Screen {
 
 		@Override
 		protected void updateMessage() {
-			this.setMessage(new TextComponent(baseLabel + intValue));
+			this.setMessage(Component.literal(baseLabel + intValue));
 		}
 
 		@Override
@@ -222,7 +220,7 @@ public abstract class ConfigScreen extends Screen {
 	}
 
 	public ConfigScreen(Screen parent, ConfigData config) {
-		super(new TranslatableComponent("config.tdnf.title"));
+		super(Component.translatable("config.tdnf.title"));
 		this.parent = parent;
 		this.config = config;
 	}
@@ -251,7 +249,7 @@ public abstract class ConfigScreen extends Screen {
 			minecraft.setScreen(parent);
 		}));
 
-		addRenderableWidget(new Button(width / 2 + padding / 2, height - lineHeight, 120, controlHeight, new TranslatableComponent("config.tdnf.value.save"), (buttonWidget) -> {
+		addRenderableWidget(new Button(width / 2 + padding / 2, height - lineHeight, 120, controlHeight, Component.translatable("config.tdnf.value.save"), (buttonWidget) -> {
 			saveValues();
 			Configurator.readConfig(config);
 			Configurator.saveConfig(config);

@@ -65,11 +65,11 @@ public class DropHandler {
 			if (Configurator.applyFortune && job.hasAxe()) {
 				Block.getDrops(blockState, world, pos, blockEntity, job.player(), job.stack()).forEach(s -> consolidateDrops(world, s));
 				// XP, etc. - probably not needed for logs but just in case
-				blockState.spawnAfterBreak(world, pos, job.stack());
+				blockState.spawnAfterBreak(world, pos, job.stack(), true);
 			} else {
 				Block.getDrops(blockState, world, pos, blockEntity).forEach(s -> consolidateDrops(world, s));
 				// XP, etc. - probably not needed for logs but just in case
-				blockState.spawnAfterBreak(world, pos, ItemStack.EMPTY);
+				blockState.spawnAfterBreak(world, pos, ItemStack.EMPTY, true);
 			}
 		} else {
 			doUnstackedDrops(world, pos, blockState, blockEntity, job.player(), job.stack());
@@ -101,10 +101,10 @@ public class DropHandler {
 	private void dropDirectDepositStacks(ServerLevel world, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, @Nullable ServerPlayer player, @Nullable ItemStack stack) {
 		if (hasAxe(player, stack) && Configurator.applyFortune) {
 			Block.getDrops(state, world, pos, blockEntity, player, stack).forEach(s -> dropStack(world, pos, s, player));
-			state.spawnAfterBreak(world, pos, stack);
+			state.spawnAfterBreak(world, pos, stack, true);
 		} else {
 			Block.getDrops(state, world, pos, blockEntity).forEach(s -> dropStack(world, pos, s, player));
-			state.spawnAfterBreak(world, pos, ItemStack.EMPTY);
+			state.spawnAfterBreak(world, pos, ItemStack.EMPTY, true);
 		}
 	}
 

@@ -241,12 +241,12 @@ public abstract class BaseFallingLogEntity extends FallingBlockEntity {
 	public void fromBuffer(FriendlyByteBuf buf) {
 		setId(buf.readVarInt());
 		blockState = Block.stateById(buf.readVarInt());
-		uuid = buf.readUUID();
+		setUUID(buf.readUUID());
 		final double x = buf.readDouble();
 		final double y = buf.readDouble();
 		final double z = buf.readDouble();
-		setPosRaw(x, y, z);
-		setPacketCoordinates(x, y, z);
+		syncPacketPositionCodec(x, y, z);
+		moveTo(x, y, z);
 		setXRot(buf.readByte() * 360 / 256.0F);
 		setYRot(buf.readByte());
 		final double vx = buf.readShort() / 8000.0D;

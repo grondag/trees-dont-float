@@ -22,7 +22,7 @@ package grondag.tdnf.client;
 
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 
 import grondag.tdnf.config.ConfigData;
 import grondag.tdnf.config.ConfigPreset;
@@ -80,7 +80,7 @@ public class PresetConfigScreen extends ConfigScreen {
 	protected void addControls() {
 		int i = lineHeight;
 
-		labels.add(new Label(new TranslatableComponent("config.tdnf.title.presets"), width / 2, i));
+		labels.add(new Label(Component.translatable("config.tdnf.title.presets"), width / 2, i));
 		i += lineHeight;
 
 		presetDeforestation = addRenderableWidget(new PresetToggle(leftOffset, i, halfControlWidth, controlHeight, "preset.deforestation", ConfigPreset.DEFORESTATION));
@@ -105,12 +105,12 @@ public class PresetConfigScreen extends ConfigScreen {
 
 		i += lineHeight;
 
-		addRenderableWidget(new Button(leftOffset, i, halfControlWidth, controlHeight, new TranslatableComponent("config.tdnf.value.custom_config"), (buttonWidget) -> {
+		addRenderableWidget(new Button(leftOffset, i, halfControlWidth, controlHeight, Component.translatable("config.tdnf.value.custom_config"), (buttonWidget) -> {
 			saveValues();
 			minecraft.setScreen(new DetailConfigScreen(parent, config));
 		}));
 
-		addRenderableWidget(new Button(halfOffset, i, halfControlWidth, controlHeight, new TranslatableComponent("config.tdnf.value.performance"), (buttonWidget) -> {
+		addRenderableWidget(new Button(halfOffset, i, halfControlWidth, controlHeight, Component.translatable("config.tdnf.value.performance"), (buttonWidget) -> {
 			saveValues();
 			minecraft.setScreen(new PerformanceConfigScreen(parent, config));
 		}));

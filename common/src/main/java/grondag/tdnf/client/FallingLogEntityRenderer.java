@@ -20,8 +20,6 @@
 
 package grondag.tdnf.client;
 
-import java.util.Random;
-
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.Minecraft;
@@ -34,6 +32,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
@@ -61,7 +60,7 @@ public class FallingLogEntityRenderer extends EntityRenderer<FallingLogEntity> {
 				final BlockPos blockPos = new BlockPos(fallingLogEntity.getX(), fallingLogEntity.getBoundingBox().maxY, fallingLogEntity.getZ());
 				matrixStack.translate(-0.5D, 0.0D, -0.5D);
 				final BlockRenderDispatcher blockRenderManager = Minecraft.getInstance().getBlockRenderer();
-				blockRenderManager.getModelRenderer().tesselateBlock(world, blockRenderManager.getBlockModel(blockState), blockState, blockPos, matrixStack, provider.getBuffer(ItemBlockRenderTypes.getChunkRenderType(blockState)), false, new Random(), blockState.getSeed(fallingLogEntity.getStartPos()), OverlayTexture.NO_OVERLAY);
+				blockRenderManager.getModelRenderer().tesselateBlock(world, blockRenderManager.getBlockModel(blockState), blockState, blockPos, matrixStack, provider.getBuffer(ItemBlockRenderTypes.getChunkRenderType(blockState)), false, RandomSource.create(), blockState.getSeed(fallingLogEntity.getStartPos()), OverlayTexture.NO_OVERLAY);
 				matrixStack.popPose();
 				super.render(fallingLogEntity, yawDelta, tickDelta, matrixStack, provider, light);
 			}

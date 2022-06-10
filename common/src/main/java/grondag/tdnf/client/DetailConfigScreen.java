@@ -24,7 +24,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 
 import grondag.tdnf.config.ConfigData;
 import grondag.tdnf.config.Configurator.ActiveWhen;
@@ -118,12 +118,12 @@ public class DetailConfigScreen extends ConfigScreen {
 
 		i += lineHeight;
 
-		addRenderableWidget(new Button(leftOffset, i, halfControlWidth, controlHeight, new TranslatableComponent("config.tdnf.value.presets"), (buttonWidget) -> {
+		addRenderableWidget(new Button(leftOffset, i, halfControlWidth, controlHeight, Component.translatable("config.tdnf.value.presets"), (buttonWidget) -> {
 			saveValues();
 			minecraft.setScreen(new PresetConfigScreen(parent, config));
 		}));
 
-		addRenderableWidget(new Button(halfOffset, i, halfControlWidth, controlHeight, new TranslatableComponent("config.tdnf.value.performance"), (buttonWidget) -> {
+		addRenderableWidget(new Button(halfOffset, i, halfControlWidth, controlHeight, Component.translatable("config.tdnf.value.performance"), (buttonWidget) -> {
 			saveValues();
 			minecraft.setScreen(new PerformanceConfigScreen(parent, config));
 		}));
