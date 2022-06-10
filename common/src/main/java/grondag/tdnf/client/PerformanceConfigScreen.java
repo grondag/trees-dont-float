@@ -24,7 +24,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 
 import grondag.tdnf.config.ConfigData;
 
@@ -78,12 +78,12 @@ public class PerformanceConfigScreen extends ConfigScreen {
 		jobTimeoutSeconds = addRenderableWidget(new Slider(sliderLeft, i, sliderWidth, controlHeight, "job_timeout_seconds", 0, 4096, config.jobTimeoutSeconds));
 		i += lineHeight;
 
-		addRenderableWidget(new Button(leftOffset, i, halfControlWidth, controlHeight, Component.translatable("config.tdnf.value.presets"), (buttonWidget) -> {
+		addRenderableWidget(new Button(leftOffset, i, halfControlWidth, controlHeight, new TranslatableComponent("config.tdnf.value.presets"), (buttonWidget) -> {
 			saveValues();
 			minecraft.setScreen(new PresetConfigScreen(parent, config));
 		}));
 
-		addRenderableWidget(new Button(rightMargin - halfControlWidth, i, halfControlWidth, controlHeight, Component.translatable("config.tdnf.value.custom_config"), (buttonWidget) -> {
+		addRenderableWidget(new Button(rightMargin - halfControlWidth, i, halfControlWidth, controlHeight, new TranslatableComponent("config.tdnf.value.custom_config"), (buttonWidget) -> {
 			saveValues();
 			minecraft.setScreen(new DetailConfigScreen(parent, config));
 		}));
