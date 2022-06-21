@@ -13,5 +13,5 @@ ext.modrinth_id = 'PxIdJdxN'
 ext.release_type = 'beta'
 
 ext.build_fat_jar = true
-ext.build_forge = false
+ext.build_forge = true
 ext.accesswidener = 'src/main/resources/tdnf.accesswidener'
