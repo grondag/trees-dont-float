@@ -22,10 +22,11 @@ package grondag.tdnf;
 
 import java.nio.file.Path;
 
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -44,7 +45,7 @@ public class Platform {
 	}
 
 	public static String getBlockName(Block block) {
-		return block.getRegistryName().toString();
+		return ForgeRegistries.BLOCKS.getKey(block).toString();
 	}
 
 	private static EntityType<FallingLogEntity> FALLING_LOG;
@@ -54,9 +55,12 @@ public class Platform {
 	}
 
 	@SubscribeEvent
-	public static void registerTE(RegistryEvent.Register<EntityType<?>> evt) {
-		FALLING_LOG = EntityType.Builder.<FallingLogEntity>of(FallingLogEntity::new, MobCategory.MISC).sized(0.9f, 0.9f).build("tdnf_falling_log");
-		FALLING_LOG.setRegistryName(FallingLogEntity.IDENTIFIER);
-		evt.getRegistry().register(FALLING_LOG);
+	public static void registerTE(RegisterEvent event) {
+		event.register(ForgeRegistries.Keys.ENTITY_TYPES,
+			helper -> {
+				FALLING_LOG = EntityType.Builder.<FallingLogEntity>of(FallingLogEntity::new, MobCategory.MISC).sized(0.9f, 0.9f).build("tdnf_falling_log");
+				helper.register(FallingLogEntity.IDENTIFIER, FALLING_LOG);
+			}
+		);
 	}
 }
