@@ -32,10 +32,10 @@ import grondag.tdnf.world.Dispatcher;
 @Mod.EventBusSubscriber(modid = TreesDoNotFloat.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TdnfEvent {
 	@SubscribeEvent
-	public static void worldTickEvent(TickEvent.WorldTickEvent event) {
+	public static void worldTickEvent(TickEvent.LevelTickEvent event) {
 		if (event.side == LogicalSide.SERVER) {
 			if (event.phase == TickEvent.Phase.END) {
-				Dispatcher.routeTick((ServerLevel) event.world);
+				Dispatcher.routeTick((ServerLevel) event.level);
 			}
 		}
 	}

@@ -21,11 +21,9 @@
 package grondag.tdnf.client;
 
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.ConfigGuiHandler;
+import net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -38,8 +36,8 @@ import grondag.tdnf.config.Configurator;
 public class TdnfClient {
 	@SubscribeEvent
 	public static void clientSetup(FMLClientSetupEvent event) {
-		ModLoadingContext.get().registerExtensionPoint(ConfigGuiHandler.ConfigGuiFactory.class, () ->
-				new ConfigGuiHandler.ConfigGuiFactory((minecraft, screen) -> new PresetConfigScreen(screen, Configurator.writeConfig())));
+		ModLoadingContext.get().registerExtensionPoint(ConfigScreenFactory.class, () ->
+				new ConfigScreenFactory((minecraft, screen) -> new PresetConfigScreen(screen, Configurator.writeConfig())));
 	}
 
 	@SubscribeEvent
