@@ -105,15 +105,15 @@ public class PresetConfigScreen extends ConfigScreen {
 
 		i += lineHeight;
 
-		addRenderableWidget(new Button(leftOffset, i, halfControlWidth, controlHeight, Component.translatable("config.tdnf.value.custom_config"), (buttonWidget) -> {
+		addRenderableWidget(Button.builder(Component.translatable("config.tdnf.value.custom_config"), (buttonWidget) -> {
 			saveValues();
 			minecraft.setScreen(new DetailConfigScreen(parent, config));
-		}));
+		}).bounds(leftOffset, i, halfControlWidth, controlHeight).build());
 
-		addRenderableWidget(new Button(halfOffset, i, halfControlWidth, controlHeight, Component.translatable("config.tdnf.value.performance"), (buttonWidget) -> {
+		addRenderableWidget(Button.builder(Component.translatable("config.tdnf.value.performance"), (buttonWidget) -> {
 			saveValues();
 			minecraft.setScreen(new PerformanceConfigScreen(parent, config));
-		}));
+		}).bounds(halfOffset, i, halfControlWidth, controlHeight).build());
 	}
 
 	@Override

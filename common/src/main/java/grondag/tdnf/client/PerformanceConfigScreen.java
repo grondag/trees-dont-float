@@ -78,15 +78,15 @@ public class PerformanceConfigScreen extends ConfigScreen {
 		jobTimeoutSeconds = addRenderableWidget(new Slider(sliderLeft, i, sliderWidth, controlHeight, "job_timeout_seconds", 0, 4096, config.jobTimeoutSeconds));
 		i += lineHeight;
 
-		addRenderableWidget(new Button(leftOffset, i, halfControlWidth, controlHeight, Component.translatable("config.tdnf.value.presets"), (buttonWidget) -> {
+		addRenderableWidget(Button.builder(Component.translatable("config.tdnf.value.presets"), (buttonWidget) -> {
 			saveValues();
 			minecraft.setScreen(new PresetConfigScreen(parent, config));
-		}));
+		}).bounds(leftOffset, i, halfControlWidth, controlHeight).build());
 
-		addRenderableWidget(new Button(rightMargin - halfControlWidth, i, halfControlWidth, controlHeight, Component.translatable("config.tdnf.value.custom_config"), (buttonWidget) -> {
+		addRenderableWidget(Button.builder(Component.translatable("config.tdnf.value.custom_config"), (buttonWidget) -> {
 			saveValues();
 			minecraft.setScreen(new DetailConfigScreen(parent, config));
-		}));
+		}).bounds(rightMargin - halfControlWidth, i, halfControlWidth, controlHeight).build());
 	}
 
 	@Override

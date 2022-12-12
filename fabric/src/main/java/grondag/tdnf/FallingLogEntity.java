@@ -24,6 +24,7 @@ import io.netty.buffer.Unpooled;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
@@ -41,7 +42,7 @@ public class FallingLogEntity extends BaseFallingLogEntity {
 	}
 
 	@Override
-	public Packet<?> getAddEntityPacket() {
+	public Packet<ClientGamePacketListener> getAddEntityPacket() {
 		final FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
 		toBuffer(buf);
 		return new ClientboundCustomPayloadPacket(IDENTIFIER, buf);

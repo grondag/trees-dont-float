@@ -23,6 +23,7 @@ package grondag.tdnf;
 import java.nio.file.Path;
 
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -43,14 +44,14 @@ public class Platform {
 	}
 
 	public static String getBlockName(Block block) {
-		return Registry.BLOCK.getKey(block).toString();
+		return BuiltInRegistries.BLOCK.getKey(block).toString();
 	}
 
 	private static final EntityType<FallingLogEntity> FALLING_LOG;
 
 	static {
 		final var type = FabricEntityTypeBuilder.<FallingLogEntity>create(MobCategory.MISC, FallingLogEntity::new).dimensions(EntityDimensions.fixed(0.9f, 0.9f)).build();
-		FALLING_LOG = Registry.register(Registry.ENTITY_TYPE, FallingLogEntity.IDENTIFIER, type);
+		FALLING_LOG = Registry.register(BuiltInRegistries.ENTITY_TYPE, FallingLogEntity.IDENTIFIER, type);
 	}
 
 	public static EntityType<FallingLogEntity> fallingLogEntityType() {

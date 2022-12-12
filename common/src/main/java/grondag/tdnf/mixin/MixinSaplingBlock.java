@@ -32,13 +32,13 @@ import grondag.tdnf.world.Dispatcher;
 
 @Mixin(SaplingBlock.class)
 public class MixinSaplingBlock {
-	@Inject(at = @At("HEAD"), method = "advanceTree")
-	private void beforeGenerate(CallbackInfo ci) {
+	@Inject(at = @At("HEAD"), method = "advanceTree", expect = 1)
+	private void beforeAdvanceTree(CallbackInfo ci) {
 		Dispatcher.suspend(Predicates.alwaysFalse());
 	}
 
-	@Inject(at = @At("RETURN"), method = "advanceTree")
-	private void afterGenerate(CallbackInfo ci) {
+	@Inject(at = @At("RETURN"), method = "advanceTree", expect = 1)
+	private void afterAdvanceTree(CallbackInfo ci) {
 		Dispatcher.resume();
 	}
 }

@@ -129,7 +129,7 @@ public abstract class ConfigScreen extends Screen {
 		}
 
 		@Override
-		public void updateNarration(NarrationElementOutput var1) {
+		public void updateWidgetNarration(NarrationElementOutput var1) {
 			// TODO implement?
 		}
 
@@ -245,16 +245,16 @@ public abstract class ConfigScreen extends Screen {
 
 		addControls();
 
-		addRenderableWidget(new Button(width / 2 - 120 - padding / 2, height - lineHeight, 120, controlHeight, CommonComponents.GUI_CANCEL, (buttonWidget) -> {
+		addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, (buttonWidget) -> {
 			minecraft.setScreen(parent);
-		}));
+		}).bounds(width / 2 - 120 - padding / 2, height - lineHeight, 120, controlHeight).build());
 
-		addRenderableWidget(new Button(width / 2 + padding / 2, height - lineHeight, 120, controlHeight, Component.translatable("config.tdnf.value.save"), (buttonWidget) -> {
+		addRenderableWidget(Button.builder(Component.translatable("config.tdnf.value.save"), (buttonWidget) -> {
 			saveValues();
 			Configurator.readConfig(config);
 			Configurator.saveConfig(config);
 			minecraft.setScreen(parent);
-		}));
+		}).bounds(width / 2 + padding / 2, height - lineHeight, 120, controlHeight).build());
 	}
 
 	protected abstract void addControls();
